@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum InventoryMovementType {
+  SALE
+  RESTOCK
+  ADJUSTMENT
+  SEED
+}
+
+model Product {
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  sku                String              @unique
+  name               String
+  collection         String
+  description        String
+  notes              String
+  mood               String
+  sizeMl             Int
+  priceCents         Int
+  stock              Int
+  reorderLevel       Int
+  accentHex          String              @default("#C7A27C")
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  orderItems         OrderItem[]
+  inventoryMovements InventoryMovement[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id                 String              @id @default(cuid())
+  orderNumber        String              @unique
+  subtotalCents      Int
+  taxCents           Int
+  totalCents         Int
+  paymentMethod      PaymentMethod
+  notes              String?
+  customerId         String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items              OrderItem[]
+  inventoryMovements InventoryMovement[]
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  productId       String
+  quantity        Int
+  unitPriceCents  Int
+  totalPriceCents Int
+  createdAt       DateTime @default(now())
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model InventoryMovement {
+  id            String                @id @default(cuid())
+  productId     String
+  orderId       String?
+  type          InventoryMovementType
+  quantityDelta Int
+  note          String?
+  createdAt     DateTime              @default(now())
+  product       Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order         Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([orderId])
+}
