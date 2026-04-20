@@ -3,18 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev --hostname 0.0.0.0",
-  "dev:https": "next dev --hostname 0.0.0.0 --experimental-https",
-  "build": "next build",
-  "start": "next start --hostname 0.0.0.0",
-  "lint": "eslint .",
-  "db:push": "prisma db push",
-  "db:seed": "prisma db seed",
-  "db:studio": "prisma studio",
-  "postinstall": "prisma generate"
-},
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "dev": "next dev --hostname 0.0.0.0",
+    "dev:https": "next dev --hostname 0.0.0.0 --experimental-https",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "lint": "eslint .",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
@@ -29,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "prisma": "^6.14.0",
