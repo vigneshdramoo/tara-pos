@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,7 +12,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const navItems: Array<{
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+}> = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "POS", icon: ShoppingBag },
   { href: "/customers", label: "Customers", icon: Users },

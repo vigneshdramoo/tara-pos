@@ -19,7 +19,7 @@ export default async function Home() {
         description="Track today’s revenue, watch what is moving on the fragrance floor, and catch low-stock risks before they disrupt the selling rhythm."
         actions={
           <div className="rounded-[24px] bg-stone-950 px-5 py-4 text-sm font-medium text-stone-50">
-            Premium iPad selling, local SQLite core
+            Premium iPad selling, protected online runtime
           </div>
         }
       />

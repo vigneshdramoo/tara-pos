@@ -4,6 +4,15 @@ import { AppShell } from "@/components/app-shell";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
+function resolveMetadataBase() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+
+  return new URL(configuredUrl ?? "http://localhost:3000");
+}
+
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
@@ -16,13 +25,13 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: resolveMetadataBase(),
   title: {
     default: "TARA Atelier POS",
     template: "%s | TARA Atelier POS",
   },
   description:
-    "A local-first, premium iPad POS experience for the TARA perfume boutique.",
+    "A premium, cloud-ready iPad POS experience for the TARA perfume boutique.",
   applicationName: "TARA Atelier POS",
   manifest: "/manifest.webmanifest",
   icons: {

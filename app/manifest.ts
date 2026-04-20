@@ -4,8 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "TARA Atelier POS",
     short_name: "TARA POS",
-    description:
-      "A local-first iPad point-of-sale app for the TARA perfume boutique.",
+    description: "A premium iPad point-of-sale app for the TARA perfume boutique.",
     start_url: "/",
     display: "standalone",
     orientation: "landscape",

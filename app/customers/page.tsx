@@ -22,7 +22,7 @@ export default async function CustomersPage() {
         <Surface>
           <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Captured profiles</p>
           <p className="mt-4 font-display text-5xl text-stone-950">{customers.length}</p>
-          <p className="mt-2 text-sm text-stone-600">Stored locally in SQLite on the Mac mini.</p>
+          <p className="mt-2 text-sm text-stone-600">Stored in the live boutique database.</p>
         </Surface>
         <Surface>
           <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Repeat buyers</p>
