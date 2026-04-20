@@ -90,6 +90,13 @@ export type DashboardData = {
   topProducts: TopProductInsight[];
   lowStockProducts: LowStockInsight[];
   recentOrders: RecentOrderInsight[];
+  databaseIssue?: string;
+};
+
+export type PosData = {
+  products: ProductCardData[];
+  recentCustomers: RecentCustomerOption[];
+  databaseIssue?: string;
 };
 
 export type CustomerInsight = {
@@ -101,6 +108,11 @@ export type CustomerInsight = {
   ordersCount: number;
   lifetimeValueCents: number;
   lastPurchaseAt: string | null;
+};
+
+export type CustomersData = {
+  customers: CustomerInsight[];
+  databaseIssue?: string;
 };
 
 export type OrderHistoryItem = {
@@ -118,6 +130,11 @@ export type OrderHistoryItem = {
     quantity: number;
     totalPriceCents: number;
   }>;
+};
+
+export type OrdersData = {
+  orders: OrderHistoryItem[];
+  databaseIssue?: string;
 };
 
 export type AssistantReply = {

@@ -4,6 +4,7 @@ import { SalesTrend } from "@/components/dashboard/sales-trend";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TopProducts } from "@/components/dashboard/top-products";
 import { PageIntro } from "@/components/page-intro";
+import { StatusNotice } from "@/components/ui/status-notice";
 import { getDashboardData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ export default async function Home() {
           </div>
         }
       />
+
+      {dashboard.databaseIssue ? <StatusNotice message={dashboard.databaseIssue} /> : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {dashboard.stats.map((stat, index) => (

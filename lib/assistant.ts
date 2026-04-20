@@ -12,6 +12,22 @@ export async function buildAssistantReply(prompt: string): Promise<AssistantRepl
   const heroProduct = dashboard.topProducts[0];
   const restocks = dashboard.lowStockProducts.slice(0, 4);
 
+  if (dashboard.databaseIssue) {
+    return {
+      prompt,
+      reply: [
+        "TARA sales brief",
+        dashboard.databaseIssue,
+        "",
+        "Next step",
+        "- Add the production DATABASE_URL in Vercel.",
+        "- Run `pnpm db:deploy` to apply the schema.",
+        "- Run `pnpm db:seed` if you want the boutique demo catalog to appear.",
+      ].join("\n"),
+      restocks: [],
+    };
+  }
+
   const overview = [
     `Today the boutique is sitting at ${dashboard.stats[0]?.value ?? formatCurrency(0)} in sales, with ${dashboard.stats[0]?.detail ?? "no completed orders yet"}.`,
     heroProduct

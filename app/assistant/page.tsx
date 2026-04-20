@@ -1,5 +1,6 @@
 import { AssistantConsole } from "@/components/assistant/assistant-console";
 import { PageIntro } from "@/components/page-intro";
+import { StatusNotice } from "@/components/ui/status-notice";
 import { Surface } from "@/components/ui/surface";
 import { buildAssistantReply } from "@/lib/assistant";
 import { getDashboardData } from "@/lib/queries";
@@ -19,6 +20,8 @@ export default async function AssistantPage() {
         title="Sales brief assistant"
         description="A store-side assistant that runs entirely on local sales and inventory data, helping staff summarize performance and spot restock moves without a cloud dependency."
       />
+
+      {dashboard.databaseIssue ? <StatusNotice message={dashboard.databaseIssue} /> : null}
 
       <section className="grid gap-4 md:grid-cols-3">
         <Surface>

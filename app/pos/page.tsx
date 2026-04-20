@@ -1,5 +1,6 @@
 import { PageIntro } from "@/components/page-intro";
 import { PosWorkspace } from "@/components/pos/pos-workspace";
+import { StatusNotice } from "@/components/ui/status-notice";
 import { getPosData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export default async function PosPage() {
         title="Product catalog and checkout"
         description="Browse the fragrance collection, keep the cart flowing with big touch targets, and capture customer details at the moment of purchase."
       />
+      {data.databaseIssue ? <StatusNotice message={data.databaseIssue} /> : null}
       <PosWorkspace products={data.products} recentCustomers={data.recentCustomers} />
     </>
   );

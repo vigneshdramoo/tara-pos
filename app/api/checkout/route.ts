@@ -7,7 +7,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { SALES_TAX_RATE } from "@/lib/constants";
-import { prisma } from "@/lib/prisma";
+import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import type { CheckoutPayload } from "@/lib/types";
 
 class CheckoutError extends Error {
@@ -79,6 +79,7 @@ async function resolveCustomer(
 
 export async function POST(request: Request) {
   try {
+    const prisma = requirePrisma();
     const body = (await request.json()) as CheckoutPayload;
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
@@ -200,6 +201,11 @@ export async function POST(request: Request) {
 
     if (error instanceof CheckoutError) {
       return NextResponse.json({ message: error.message }, { status: error.status });
+    }
+
+    const databaseIssue = describeDatabaseIssue(error);
+    if (databaseIssue) {
+      return NextResponse.json({ message: databaseIssue }, { status: 503 });
     }
 
     return NextResponse.json(
