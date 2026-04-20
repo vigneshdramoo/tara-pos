@@ -112,42 +112,26 @@ export async function getDashboardData(): Promise<DashboardData> {
           },
         },
       }),
-      const orderItems = await prisma.orderItem.findMany({
-  where: {
-    order: {
-      createdAt: {
-        gte: topProductsStart,
-      },
-    },
-  },
-  select: {
-    productId: true,
-    quantity: true,
-    totalPriceCents: true,
-  },
-});
-
-const groupedMap = new Map();
-
-for (const item of orderItems) {
-  const existing = groupedMap.get(item.productId) || {
-    quantity: 0,
-    totalPriceCents: 0,
-  };
-
-  existing.quantity += item.quantity;
-  existing.totalPriceCents += item.totalPriceCents;
-
-  groupedMap.set(item.productId, existing);
-}
-
-const groupedTopProducts = Array.from(groupedMap.entries())
-  .map(([productId, data]) => ({
-    productId,
-    _sum: data,
-  }))
-  .sort((a, b) => b._sum.quantity - a._sum.quantity)
-  .slice(0, 5);
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: {
+          order: {
+            createdAt: {
+              gte: topProductsStart,
+            },
+          },
+        },
+        _sum: {
+          quantity: true,
+          totalPriceCents: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: "desc",
+          },
+        },
+        take: 5,
+      }),
     ]);
 
   const topProductRecords = groupedTopProducts.length
