@@ -16,6 +16,7 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - POS selling floor with product catalog, cart, checkout, and customer capture
 - Customer list with lifetime spend and repeat-buyer visibility
 - Order history with item-level breakdown
+- Manager-only staff directory with role-aware access
 - Local AI assistant page for sales summaries and restock prompts
 
 ## Online deployment profile
@@ -33,11 +34,13 @@ Create a `.env` file from `.env.example` and set:
 ```bash
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/tara_pos?schema=public&sslmode=require"
 NEXT_PUBLIC_APP_URL="https://pos.yourdomain.com"
-POS_ADMIN_PASSWORD="a-strong-staff-password"
 POS_SESSION_SECRET="a-long-random-secret"
+SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
+SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 ```
 
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
+The seeded staff usernames are `daniel` and `shireen`.
 
 ## Development setup
 
@@ -65,6 +68,12 @@ pnpm db:push
 
 ```bash
 pnpm db:seed
+```
+
+If you only need to add or refresh staff accounts without touching products, orders, or customers, use:
+
+```bash
+pnpm staff:bootstrap
 ```
 
 5. Start the app:
@@ -113,7 +122,8 @@ To make the POS reachable online:
 2. Deploy this app on any Node.js or Docker host.
 3. Point your domain, such as `pos.taraatelier.com`, to the deployment.
 4. Use HTTPS in production.
-5. Share the staff password only with the team operating the POS.
+5. Share staff account credentials only with the team operating the POS.
+6. Use `pnpm staff:bootstrap` for live staff setup. `pnpm db:seed` resets the demo catalog and sample sales data.
 
 ## PWA notes
 
@@ -138,11 +148,11 @@ pnpm dev
 pnpm dev:https
 pnpm build
 pnpm start
-pnpm db:migrate
 pnpm db:deploy
 pnpm lint
 pnpm db:push
 pnpm db:seed
+pnpm staff:bootstrap
 pnpm db:studio
 ```
 

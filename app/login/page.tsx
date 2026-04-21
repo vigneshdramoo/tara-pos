@@ -51,7 +51,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="text-xs uppercase tracking-[0.24em] text-[rgba(202,158,91,0.84)]">Protection</p>
               <p className="mt-2 text-xl font-semibold">Staff-only</p>
               <p className="mt-2 text-sm leading-6 text-[rgba(247,243,235,0.72)]">
-                Password-gated access keeps the public site from exposing the till.
+                Role-aware staff access keeps the public site from exposing the till.
               </p>
             </div>
           </div>
@@ -62,8 +62,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <p className="text-xs uppercase tracking-[0.34em] text-[var(--brand-gold)]">Private Entry</p>
             <h2 className="mt-3 font-display text-4xl text-foreground">Enter the selling floor</h2>
             <p className="mt-3 max-w-md text-base leading-7 text-[var(--muted)]">
-              Use the staff password to unlock the boutique dashboard, POS, clienteling, and AI
-              sales brief.
+              Use a staff username or email with the account password to unlock the boutique
+              dashboard, POS, clienteling, and AI sales brief.
             </p>
             <div className="mt-6">
               <LoginForm authConfigured={authConfigured} nextPath={nextPath} />

@@ -1,5 +1,7 @@
 import { InventoryMovementType, PaymentMethod, PrismaClient } from "@prisma/client";
 import { SALES_TAX_RATE } from "../lib/constants";
+import { hashPassword } from "../lib/password";
+import { getBootstrapPassword, staffSeeds } from "./staff-seeds";
 
 const prisma = new PrismaClient();
 
@@ -219,11 +221,26 @@ function buildOrderNumber(index: number, createdAt: Date) {
 }
 
 async function main() {
+  await prisma.staffUser.deleteMany();
   await prisma.inventoryMovement.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.product.deleteMany();
+
+  const staffUsers = await Promise.all(
+    staffSeeds.map((seed) =>
+      prisma.staffUser.create({
+        data: {
+          name: seed.name,
+          username: seed.username,
+          email: seed.email,
+          role: seed.role,
+          passwordHash: hashPassword(getBootstrapPassword(seed)),
+        },
+      }),
+    ),
+  );
 
   const soldBySlug = new Map<string, number>();
 
@@ -327,7 +344,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${products.length} products, ${customers.length} customers, and ${seededOrders.length} sample orders.`,
+    `Seeded ${products.length} products, ${customers.length} customers, ${seededOrders.length} sample orders, and ${staffUsers.length} staff accounts.`,
   );
 }
 

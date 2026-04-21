@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import { PwaRegister } from "@/components/pwa-register";
+import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
 import "./globals.css";
 
 function resolveMetadataBase() {
@@ -48,11 +50,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const session = await verifySessionToken(cookieStore.get(getSessionCookieName())?.value);
+
   return (
     <html
       lang="en"
@@ -60,7 +65,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground">
         <PwaRegister />
-        <AppShell>{children}</AppShell>
+        <AppShell session={session}>{children}</AppShell>
       </body>
     </html>
   );

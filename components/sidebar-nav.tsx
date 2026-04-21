@@ -6,13 +6,15 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ScrollText,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Users,
 } from "lucide-react";
+import type { StaffRole } from "@/lib/staff";
 import { cn } from "@/lib/utils";
 
-const navItems: Array<{
+const baseNavItems: Array<{
   href: Route;
   label: string;
   icon: typeof LayoutDashboard;
@@ -24,8 +26,30 @@ const navItems: Array<{
   { href: "/assistant", label: "AI Brief", icon: Sparkles },
 ];
 
-export function SidebarNav({ mobile = false }: { mobile?: boolean }) {
+const managerNavItem = { href: "/staff", label: "Staff", icon: ShieldCheck } satisfies {
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+};
+
+function isActivePath(pathname: string, href: Route) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function SidebarNav({
+  mobile = false,
+  role = null,
+}: {
+  mobile?: boolean;
+  role?: StaffRole | null;
+}) {
   const pathname = usePathname();
+  const navItems =
+    role === "SALES_MANAGER" ? baseNavItems : [...baseNavItems, managerNavItem];
 
   return (
     <nav
@@ -37,7 +61,7 @@ export function SidebarNav({ mobile = false }: { mobile?: boolean }) {
     >
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = pathname === item.href;
+        const active = isActivePath(pathname, item.href);
 
         return (
           <Link

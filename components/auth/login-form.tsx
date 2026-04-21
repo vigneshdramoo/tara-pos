@@ -12,6 +12,7 @@ type LoginFormProps = {
 
 export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
   const router = useRouter();
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -20,7 +21,7 @@ export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
     event.preventDefault();
 
     if (!authConfigured) {
-      setError("Set POS_ADMIN_PASSWORD and POS_SESSION_SECRET before taking the POS online.");
+      setError("Set DATABASE_URL, POS_SESSION_SECRET, and seed the staff accounts before sign-in.");
       return;
     }
 
@@ -31,7 +32,7 @@ export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ identifier, password }),
     });
 
     const payload = (await response.json().catch(() => null)) as { message?: string } | null;
@@ -64,7 +65,25 @@ export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
 
         <label className="mt-6 block">
           <span className="text-xs uppercase tracking-[0.28em] text-[var(--brand-gold)]">
-            Access password
+            Username or email
+          </span>
+          <div className="tara-input mt-3 flex items-center gap-3 rounded-[22px] px-4">
+            <ShieldCheck className="h-4 w-4 text-[var(--muted)]" strokeWidth={1.8} />
+            <input
+              type="text"
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              placeholder="daniel or shireen"
+              className="touch-target w-full bg-transparent text-base text-foreground outline-none placeholder:text-[var(--muted)]"
+              autoComplete="username"
+              disabled={isPending || !authConfigured}
+            />
+          </div>
+        </label>
+
+        <label className="block">
+          <span className="text-xs uppercase tracking-[0.28em] text-[var(--brand-gold)]">
+            Password
           </span>
           <div className="tara-input mt-3 flex items-center gap-3 rounded-[22px] px-4">
             <LockKeyhole className="h-4 w-4 text-[var(--muted)]" strokeWidth={1.8} />
@@ -72,7 +91,7 @@ export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter staff password"
+              placeholder="Enter account password"
               className="touch-target w-full bg-transparent text-base text-foreground outline-none placeholder:text-[var(--muted)]"
               autoComplete="current-password"
               disabled={isPending || !authConfigured}
@@ -88,7 +107,7 @@ export function LoginForm({ authConfigured, nextPath }: LoginFormProps) {
 
         {!authConfigured ? (
           <p className="tara-alert-warning mt-4 rounded-[18px] px-4 py-3 text-sm">
-            The app is protected, but the login environment variables are not set yet.
+            Staff sign-in needs the database, session secret, and seeded staff accounts.
           </p>
         ) : null}
 

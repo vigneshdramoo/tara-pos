@@ -1,3 +1,4 @@
+import type { StaffRole } from "@/lib/staff";
 import type { PaymentMethod } from "@prisma/client";
 
 export type ProductCardData = {
@@ -141,4 +142,20 @@ export type AssistantReply = {
   prompt: string;
   reply: string;
   restocks: LowStockInsight[];
+};
+
+export type StaffUserInsight = {
+  id: string;
+  name: string;
+  username: string;
+  email: string | null;
+  role: StaffRole;
+  active: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
+
+export type StaffUsersData = {
+  staffUsers: StaffUserInsight[];
+  databaseIssue?: string;
 };

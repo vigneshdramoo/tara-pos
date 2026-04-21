@@ -11,6 +11,7 @@ import type {
   PosData,
   ProductCardData,
   RecentOrderInsight,
+  StaffUsersData,
   TopProductInsight,
 } from "@/lib/types";
 
@@ -477,5 +478,41 @@ export async function getPaymentMix() {
       count: 0,
       totalCents: 0,
     }));
+  }
+}
+
+export async function getStaffUsersData(): Promise<StaffUsersData> {
+  try {
+    const prisma = requirePrisma();
+    const staffUsers = await prisma.staffUser.findMany({
+      orderBy: [{ name: "asc" }],
+    });
+    const roleOrder = {
+      MANAGER: 0,
+      SALES_MANAGER: 1,
+    } as const;
+
+    return {
+      staffUsers: staffUsers
+        .map((staffUser) => ({
+          id: staffUser.id,
+          name: staffUser.name,
+          username: staffUser.username,
+          email: staffUser.email,
+          role: staffUser.role,
+          active: staffUser.active,
+          lastLoginAt: staffUser.lastLoginAt?.toISOString() ?? null,
+          createdAt: staffUser.createdAt.toISOString(),
+        }))
+        .sort(
+          (left, right) =>
+            roleOrder[left.role] - roleOrder[right.role] || left.name.localeCompare(right.name),
+        ),
+    };
+  } catch (error) {
+    return {
+      staffUsers: [],
+      databaseIssue: logDatabaseFallback("staff", error),
+    };
   }
 }

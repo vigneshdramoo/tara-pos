@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  canAccessWithSession,
   getSessionCookieName,
   isProtectionEnabled,
   sanitizeNextPath,
@@ -29,7 +30,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(getSessionCookieName())?.value;
-  const isAuthenticated = await verifySessionToken(token);
+  const session = await verifySessionToken(token);
+  const isAuthenticated = Boolean(session);
 
   if (isAuthPath(pathname)) {
     if (pathname === "/login" && isAuthenticated) {
@@ -40,6 +42,14 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAuthenticated) {
+    if (session && !canAccessWithSession(session, pathname)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ message: "You do not have permission for this action." }, { status: 403 });
+      }
+
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
     return NextResponse.next();
   }
 
