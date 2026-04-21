@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Boxes,
   KeyRound,
   LayoutDashboard,
   ScrollText,
@@ -12,7 +13,11 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import type { StaffRole } from "@/lib/staff";
+import {
+  canManageInventory,
+  canManageStaff,
+  type StaffRole,
+} from "@/lib/staff";
 import { cn } from "@/lib/utils";
 
 const baseNavItems: Array<{
@@ -34,6 +39,12 @@ const managerNavItem = { href: "/staff", label: "Staff", icon: ShieldCheck } sat
   icon: typeof LayoutDashboard;
 };
 
+const inventoryNavItem = { href: "/inventory", label: "Inventory", icon: Boxes } satisfies {
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+};
+
 function isActivePath(pathname: string, href: Route) {
   if (href === "/") {
     return pathname === "/";
@@ -50,7 +61,11 @@ export function SidebarNav({
   role?: StaffRole | null;
 }) {
   const pathname = usePathname();
-  const navItems = role === "MANAGER" ? [...baseNavItems, managerNavItem] : baseNavItems;
+  const navItems = [
+    ...baseNavItems,
+    ...(!role || canManageInventory(role) ? [inventoryNavItem] : []),
+    ...(!role || canManageStaff(role) ? [managerNavItem] : []),
+  ];
 
   return (
     <nav

@@ -1,5 +1,5 @@
 import type { StaffRole } from "@/lib/staff";
-import type { PaymentMethod } from "@prisma/client";
+import type { InventoryMovementType, PaymentMethod } from "@prisma/client";
 
 export type ProductCardData = {
   id: string;
@@ -142,6 +142,29 @@ export type AssistantReply = {
   prompt: string;
   reply: string;
   restocks: LowStockInsight[];
+};
+
+export type InventoryAdminProduct = ProductCardData & {
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InventoryMovementInsight = {
+  id: string;
+  productId: string;
+  productName: string;
+  type: InventoryMovementType;
+  quantityDelta: number;
+  note: string | null;
+  createdAt: string;
+  orderNumber: string | null;
+};
+
+export type InventoryAdminData = {
+  products: InventoryAdminProduct[];
+  recentMovements: InventoryMovementInsight[];
+  databaseIssue?: string;
 };
 
 export type StaffUserInsight = {

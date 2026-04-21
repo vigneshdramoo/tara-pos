@@ -6,6 +6,7 @@ import type {
   CustomersData,
   DashboardData,
   DashboardStat,
+  InventoryAdminData,
   LowStockInsight,
   OrdersData,
   PosData,
@@ -514,6 +515,61 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
     return {
       staffUsers: [],
       databaseIssue: logDatabaseFallback("staff", error),
+    };
+  }
+}
+
+export async function getInventoryAdminData(): Promise<InventoryAdminData> {
+  try {
+    const prisma = requirePrisma();
+    const [products, recentMovements] = await prisma.$transaction([
+      prisma.product.findMany({
+        orderBy: [{ active: "desc" }, { collection: "asc" }, { name: "asc" }],
+      }),
+      prisma.inventoryMovement.findMany({
+        take: 14,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          order: {
+            select: {
+              orderNumber: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      products: products.map((product) => ({
+        ...serializeProduct(product),
+        active: product.active,
+        createdAt: product.createdAt.toISOString(),
+        updatedAt: product.updatedAt.toISOString(),
+      })),
+      recentMovements: recentMovements.map((movement) => ({
+        id: movement.id,
+        productId: movement.product.id,
+        productName: movement.product.name,
+        type: movement.type,
+        quantityDelta: movement.quantityDelta,
+        note: movement.note,
+        createdAt: movement.createdAt.toISOString(),
+        orderNumber: movement.order?.orderNumber ?? null,
+      })),
+    };
+  } catch (error) {
+    return {
+      products: [],
+      recentMovements: [],
+      databaseIssue: logDatabaseFallback("inventory-admin", error),
     };
   }
 }

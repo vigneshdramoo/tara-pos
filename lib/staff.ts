@@ -27,9 +27,26 @@ export function getRoleLabel(role: StaffRole) {
   return "Cashier";
 }
 
+export function canManageInventory(role: StaffRole) {
+  return role === "MANAGER" || role === "SALES_MANAGER";
+}
+
+export function canManageStaff(role: StaffRole) {
+  return role === "MANAGER";
+}
+
 export function canAccessPath(role: StaffRole, pathname: string) {
   if (pathname === "/staff" || pathname.startsWith("/staff/")) {
-    return role === "MANAGER";
+    return canManageStaff(role);
+  }
+
+  if (
+    pathname === "/inventory" ||
+    pathname.startsWith("/inventory/") ||
+    pathname === "/api/inventory" ||
+    pathname.startsWith("/api/inventory/")
+  ) {
+    return canManageInventory(role);
   }
 
   return true;
@@ -42,6 +59,7 @@ export function getRoleCapabilities(role: StaffRole) {
       "Customer and order visibility",
       "AI brief access",
       "Personal password reset",
+      "Product editing, restocks, and stock adjustments",
       "Staff directory and role oversight",
     ];
   }
@@ -52,6 +70,7 @@ export function getRoleCapabilities(role: StaffRole) {
       "Customer and order visibility",
       "AI brief access",
       "Personal password reset",
+      "Product editing, restocks, and stock adjustments",
       "No staff administration access",
     ];
   }
@@ -61,6 +80,7 @@ export function getRoleCapabilities(role: StaffRole) {
     "Customer capture visibility",
     "Daily dashboard visibility",
     "Personal password reset",
+    "No inventory administration access",
     "No staff administration access",
   ];
 }
