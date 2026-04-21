@@ -59,7 +59,7 @@ export default async function AccountPage() {
 
           <div className="tara-alert-warning rounded-[24px] px-5 py-4 text-sm leading-7">
             Boutique default password:{" "}
-            <span className="font-semibold text-[var(--brand-onyx)]">TARA2026?3</span>. Change it
+            <span className="font-semibold text-[var(--brand-onyx)]">TARA2026</span>. Change it
             after first sign-in so each staff member has a private credential.
           </div>
         </Surface>

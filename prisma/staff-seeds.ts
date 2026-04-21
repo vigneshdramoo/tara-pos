@@ -14,7 +14,7 @@ export const staffSeeds: StaffSeed[] = [
     email: "daniel.jorge@tara.local",
     role: "MANAGER",
     passwordEnvKey: "SEED_MANAGER_PASSWORD",
-    defaultPassword: "TARA2026?3",
+    defaultPassword: "TARA2026",
   },
   {
     name: "Shireen Radley",
@@ -22,7 +22,7 @@ export const staffSeeds: StaffSeed[] = [
     email: "shireen.radley@tara.local",
     role: "SALES_MANAGER",
     passwordEnvKey: "SEED_SALES_MANAGER_PASSWORD",
-    defaultPassword: "TARA2026?3",
+    defaultPassword: "TARA2026",
   },
 ];
 
