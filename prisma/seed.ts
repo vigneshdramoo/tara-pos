@@ -1,124 +1,10 @@
 import { InventoryMovementType, PaymentMethod, PrismaClient } from "@prisma/client";
 import { SALES_TAX_RATE } from "../lib/constants";
 import { hashPassword } from "../lib/password";
+import { catalogProductSeeds } from "./catalog-seeds";
 import { getBootstrapPassword, staffSeeds } from "./staff-seeds";
 
 const prisma = new PrismaClient();
-
-const productSeeds = [
-  {
-    slug: "midnight-saffron",
-    sku: "TARA-50-001",
-    name: "Midnight Saffron",
-    collection: "Maison Core",
-    description: "Velvet saffron wrapped in rose, suede, and a dusk-soft amber trail.",
-    notes: "Saffron, Turkish rose, suede",
-    mood: "Smoky floral warmth with an evening-lounge finish.",
-    sizeMl: 50,
-    priceCents: 9800,
-    openingStock: 9,
-    reorderLevel: 6,
-    accentHex: "#8F5A47",
-  },
-  {
-    slug: "neroli-veil",
-    sku: "TARA-50-002",
-    name: "Neroli Veil",
-    collection: "Maison Core",
-    description: "Clean citrus and white tea for a bright, airy daytime signature.",
-    notes: "Neroli, petitgrain, white tea",
-    mood: "Fresh linen elegance with a polished citrus top note.",
-    sizeMl: 50,
-    priceCents: 9200,
-    openingStock: 16,
-    reorderLevel: 8,
-    accentHex: "#D7AE68",
-  },
-  {
-    slug: "cedar-silk",
-    sku: "TARA-50-003",
-    name: "Cedar Silk",
-    collection: "Maison Core",
-    description: "Iris and cedar folded into a sheer, skin-soft wood accord.",
-    notes: "Atlas cedar, iris, skin musk",
-    mood: "Quiet structure and soft tailoring.",
-    sizeMl: 50,
-    priceCents: 9600,
-    openingStock: 11,
-    reorderLevel: 6,
-    accentHex: "#8A7765",
-  },
-  {
-    slug: "rose-ash",
-    sku: "TARA-50-004",
-    name: "Rose Ash",
-    collection: "Reserve",
-    description: "Damask rose cut with incense and the dry elegance of cooled ash.",
-    notes: "Damask rose, olibanum, ash accord",
-    mood: "Dark romanticism with a modern mineral edge.",
-    sizeMl: 50,
-    priceCents: 10400,
-    openingStock: 6,
-    reorderLevel: 5,
-    accentHex: "#A77279",
-  },
-  {
-    slug: "fig-nocturne",
-    sku: "TARA-50-005",
-    name: "Fig Nocturne",
-    collection: "Reserve",
-    description: "Green fig and black tea resting on creamy sandalwood.",
-    notes: "Fig leaf, black tea, sandalwood",
-    mood: "Cultured, green, and softly nocturnal.",
-    sizeMl: 50,
-    priceCents: 9900,
-    openingStock: 12,
-    reorderLevel: 7,
-    accentHex: "#76815E",
-  },
-  {
-    slug: "salted-jasmine",
-    sku: "TARA-50-006",
-    name: "Salted Jasmine",
-    collection: "Atelier Fresh",
-    description: "Sea air, jasmine sambac, and driftwood designed for clean summer energy.",
-    notes: "Sea salt, jasmine sambac, driftwood",
-    mood: "Radiant and beach-lit without losing refinement.",
-    sizeMl: 50,
-    priceCents: 8900,
-    openingStock: 15,
-    reorderLevel: 8,
-    accentHex: "#7EA6A8",
-  },
-  {
-    slug: "velvet-amber",
-    sku: "TARA-50-007",
-    name: "Velvet Amber",
-    collection: "Atelier Deep",
-    description: "A slow amber with tonka and smoked vanilla at the base.",
-    notes: "Amber resin, tonka, vanilla smoke",
-    mood: "Lush and enveloping for evening clientele.",
-    sizeMl: 50,
-    priceCents: 10800,
-    openingStock: 7,
-    reorderLevel: 5,
-    accentHex: "#A06D53",
-  },
-  {
-    slug: "white-oud-linen",
-    sku: "TARA-50-008",
-    name: "White Oud Linen",
-    collection: "Atelier Deep",
-    description: "A clean oud interpretation lifted with pear skin and cashmere musk.",
-    notes: "White oud, pear skin, cashmere",
-    mood: "Textural luxury with a luminous top.",
-    sizeMl: 50,
-    priceCents: 11200,
-    openingStock: 5,
-    reorderLevel: 4,
-    accentHex: "#CDB695",
-  },
-] as const;
 
 const customerSeeds = [
   {
@@ -148,19 +34,18 @@ const seededOrders = [
     paymentMethod: PaymentMethod.CARD,
     notes: "Gift wrap requested.",
     items: [
-      { slug: "neroli-veil", quantity: 1 },
-      { slug: "salted-jasmine", quantity: 1 },
+      { slug: "aurora", quantity: 1 },
+      { slug: "nova", quantity: 1 },
     ],
   },
   {
     createdAt: new Date("2026-04-17T15:05:00+08:00"),
     customerEmail: "daniel@example.com",
     paymentMethod: PaymentMethod.CARD,
-    notes: "Requested reserve collection samples.",
+    notes: "Requested a deeper Zeus pairing.",
     items: [
-      { slug: "midnight-saffron", quantity: 1 },
-      { slug: "rose-ash", quantity: 1 },
-      { slug: "velvet-amber", quantity: 1 },
+      { slug: "ardor", quantity: 1 },
+      { slug: "zenith", quantity: 1 },
     ],
   },
   {
@@ -169,8 +54,8 @@ const seededOrders = [
     paymentMethod: PaymentMethod.TRANSFER,
     notes: "Corporate gifting shortlist.",
     items: [
-      { slug: "white-oud-linen", quantity: 1 },
-      { slug: "cedar-silk", quantity: 1 },
+      { slug: "siren", quantity: 1 },
+      { slug: "ember", quantity: 1 },
     ],
   },
   {
@@ -179,9 +64,8 @@ const seededOrders = [
     paymentMethod: PaymentMethod.CASH,
     notes: "Walk-in guest.",
     items: [
-      { slug: "midnight-saffron", quantity: 1 },
-      { slug: "fig-nocturne", quantity: 1 },
-      { slug: "salted-jasmine", quantity: 1 },
+      { slug: "zephyr", quantity: 1 },
+      { slug: "sol", quantity: 1 },
     ],
   },
   {
@@ -190,25 +74,27 @@ const seededOrders = [
     paymentMethod: PaymentMethod.CARD,
     notes: "Repeat purchase for travel set gifting.",
     items: [
-      { slug: "midnight-saffron", quantity: 2 },
-      { slug: "rose-ash", quantity: 1 },
-      { slug: "white-oud-linen", quantity: 1 },
+      { slug: "aurora", quantity: 2 },
+      { slug: "nova", quantity: 1 },
+      { slug: "siren", quantity: 1 },
     ],
   },
   {
     createdAt: new Date("2026-04-20T14:25:00+08:00"),
     customerEmail: "daniel@example.com",
     paymentMethod: PaymentMethod.CARD,
-    notes: "Added one deep scent and one fresh layer.",
+    notes: "Added a full Zeus wardrobe with one warm Hera layer.",
     items: [
-      { slug: "velvet-amber", quantity: 2 },
-      { slug: "neroli-veil", quantity: 2 },
-      { slug: "cedar-silk", quantity: 1 },
-      { slug: "fig-nocturne", quantity: 1 },
-      { slug: "salted-jasmine", quantity: 2 },
+      { slug: "ardor", quantity: 2 },
+      { slug: "zephyr", quantity: 2 },
+      { slug: "sol", quantity: 1 },
+      { slug: "zenith", quantity: 1 },
+      { slug: "ember", quantity: 1 },
     ],
   },
 ] as const;
+
+const catalogSeededAt = new Date("2026-04-15T09:00:00+08:00");
 
 function buildOrderNumber(index: number, createdAt: Date) {
   const stamp = createdAt
@@ -251,22 +137,36 @@ async function main() {
   });
 
   const products = await Promise.all(
-    productSeeds.map((seed) =>
-      prisma.product.create({
-        data: {
-          slug: seed.slug,
-          sku: seed.sku,
-          name: seed.name,
-          collection: seed.collection,
-          description: seed.description,
-          notes: seed.notes,
-          mood: seed.mood,
-          sizeMl: seed.sizeMl,
-          priceCents: seed.priceCents,
-          reorderLevel: seed.reorderLevel,
-          accentHex: seed.accentHex,
-          stock: seed.openingStock - (soldBySlug.get(seed.slug) ?? 0),
-        },
+    catalogProductSeeds.map((seed) =>
+      prisma.$transaction(async (tx) => {
+        const product = await tx.product.create({
+          data: {
+            slug: seed.slug,
+            sku: seed.sku,
+            name: seed.name,
+            collection: seed.collection,
+            description: seed.description,
+            notes: seed.notes,
+            mood: seed.mood,
+            sizeMl: seed.sizeMl,
+            priceCents: seed.priceCents,
+            reorderLevel: seed.reorderLevel,
+            accentHex: seed.accentHex,
+            stock: seed.stock,
+          },
+        });
+
+        await tx.inventoryMovement.create({
+          data: {
+            productId: product.id,
+            type: InventoryMovementType.SEED,
+            quantityDelta: seed.stock + (soldBySlug.get(seed.slug) ?? 0),
+            note: "Initial TARA collection stock",
+            createdAt: catalogSeededAt,
+          },
+        });
+
+        return product;
       }),
     ),
   );

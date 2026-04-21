@@ -72,6 +72,14 @@ pnpm db:push
 pnpm db:seed
 ```
 
+To replace the old demo catalog in an existing database with the live TARA perfume lineup, use:
+
+```bash
+pnpm catalog:sync
+```
+
+This keeps past orders intact, deactivates the legacy demo perfumes, and loads the 8 TARA scents at RM159 for 50 mL with stock set to 50 each.
+
 If you only need to add or refresh staff accounts without touching products, orders, or customers, use:
 
 ```bash
@@ -127,7 +135,8 @@ To make the POS reachable online:
 3. Point your domain, such as `pos.taraatelier.com`, to the deployment.
 4. Use HTTPS in production.
 5. Share staff account credentials only with the team operating the POS.
-6. Use `pnpm staff:bootstrap` for live staff setup. `pnpm db:seed` resets the demo catalog and sample sales data.
+6. Use `pnpm staff:bootstrap` for live staff setup. `pnpm db:seed` resets the database to the TARA catalog and sample sales data.
+7. Use `pnpm catalog:sync` to swap an existing database from the old demo perfumes to the TARA collection without wiping orders or customers.
 
 ## PWA notes
 
@@ -156,6 +165,7 @@ pnpm db:deploy
 pnpm lint
 pnpm db:push
 pnpm db:seed
+pnpm catalog:sync
 pnpm staff:bootstrap
 pnpm db:studio
 ```

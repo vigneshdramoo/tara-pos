@@ -511,7 +511,7 @@ export function InventoryAdminWorkspace({
                 <input
                   value={form.slug}
                   onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-                  placeholder="midnight-saffron"
+                  placeholder="aurora"
                   className="tara-input touch-target rounded-[20px] px-4 outline-none"
                 />
               </label>

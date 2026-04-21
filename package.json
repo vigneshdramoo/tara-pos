@@ -11,6 +11,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "catalog:sync": "tsx prisma/sync-catalog.ts",
     "staff:bootstrap": "tsx prisma/bootstrap-staff.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
