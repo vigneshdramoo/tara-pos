@@ -1,0 +1,1 @@
+ALTER TYPE "public"."StaffRole" ADD VALUE IF NOT EXISTS 'CASHIER';

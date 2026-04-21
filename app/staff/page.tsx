@@ -106,7 +106,7 @@ export default async function StaffPage() {
             {!staffData.staffUsers.length ? (
               <div className="tara-alert-warning rounded-[24px] px-5 py-4 text-sm">
                 No staff accounts are available yet. Seed the database to create the initial
-                manager and sales manager accounts.
+                manager, sales manager, and cashier accounts.
               </div>
             ) : null}
           </div>
@@ -136,7 +136,11 @@ export default async function StaffPage() {
                 <div className="flex items-center justify-between gap-3">
                   <h4 className="text-lg font-semibold text-foreground">{getRoleLabel(role)}</h4>
                   <Pill tone={role === "MANAGER" ? "accent" : "default"}>
-                    {role === "MANAGER" ? "Highest access" : "Sales floor"}
+                    {role === "MANAGER"
+                      ? "Highest access"
+                      : role === "SALES_MANAGER"
+                        ? "Sales leadership"
+                        : "Checkout lane"}
                   </Pill>
                 </div>
 

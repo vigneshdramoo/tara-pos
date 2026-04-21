@@ -37,11 +37,12 @@ NEXT_PUBLIC_APP_URL="https://pos.yourdomain.com"
 POS_SESSION_SECRET="a-long-random-secret"
 SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
 SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
+SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
 ```
 
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
-The seeded staff usernames are `daniel` and `shireen`.
-If you do not override the seed passwords, both accounts default to `TARA2026`.
+The seeded staff usernames are `daniel`, `shireen`, and `cashier`.
+If you do not override the seed passwords, all three accounts default to `TARA2026`.
 
 ## Development setup
 

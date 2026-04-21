@@ -1,4 +1,4 @@
-export const STAFF_ROLES = ["MANAGER", "SALES_MANAGER"] as const;
+export const STAFF_ROLES = ["MANAGER", "SALES_MANAGER", "CASHIER"] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
@@ -16,7 +16,15 @@ export function isStaffRole(value: string): value is StaffRole {
 }
 
 export function getRoleLabel(role: StaffRole) {
-  return role === "MANAGER" ? "Manager" : "Sales Manager";
+  if (role === "MANAGER") {
+    return "Manager";
+  }
+
+  if (role === "SALES_MANAGER") {
+    return "Sales Manager";
+  }
+
+  return "Cashier";
 }
 
 export function canAccessPath(role: StaffRole, pathname: string) {
@@ -38,10 +46,20 @@ export function getRoleCapabilities(role: StaffRole) {
     ];
   }
 
+  if (role === "SALES_MANAGER") {
+    return [
+      "Dashboard and checkout access",
+      "Customer and order visibility",
+      "AI brief access",
+      "Personal password reset",
+      "No staff administration access",
+    ];
+  }
+
   return [
-    "Dashboard and checkout access",
-    "Customer and order visibility",
-    "AI brief access",
+    "Checkout and order lookup access",
+    "Customer capture visibility",
+    "Daily dashboard visibility",
     "Personal password reset",
     "No staff administration access",
   ];

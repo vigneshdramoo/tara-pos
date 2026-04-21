@@ -490,6 +490,7 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
     const roleOrder = {
       MANAGER: 0,
       SALES_MANAGER: 1,
+      CASHIER: 2,
     } as const;
 
     return {

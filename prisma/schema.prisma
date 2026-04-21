@@ -24,6 +24,7 @@ enum InventoryMovementType {
 enum StaffRole {
   MANAGER
   SALES_MANAGER
+  CASHIER
 }
 
 model Product {

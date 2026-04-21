@@ -50,8 +50,7 @@ export function SidebarNav({
   role?: StaffRole | null;
 }) {
   const pathname = usePathname();
-  const navItems =
-    role === "SALES_MANAGER" ? baseNavItems : [...baseNavItems, managerNavItem];
+  const navItems = role === "MANAGER" ? [...baseNavItems, managerNavItem] : baseNavItems;
 
   return (
     <nav
