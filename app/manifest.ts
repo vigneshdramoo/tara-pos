@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "landscape",
-    background_color: "#f6efe7",
-    theme_color: "#f6efe7",
+    background_color: "#F7F3EB",
+    theme_color: "#CA9E5B",
     icons: [
       {
         src: "/icons/tara-mark.svg",

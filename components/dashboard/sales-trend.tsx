@@ -8,8 +8,8 @@ export function SalesTrend({ points }: { points: SalesTrendPoint[] }) {
   return (
     <Surface className="flex flex-col gap-6">
       <div>
-        <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Sales trend</p>
-        <h3 className="mt-3 text-2xl font-semibold text-stone-950">
+        <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Sales trend</p>
+        <h3 className="mt-3 text-2xl font-semibold text-foreground">
           Seven-day revenue rhythm
         </h3>
       </div>
@@ -24,16 +24,16 @@ export function SalesTrend({ points }: { points: SalesTrendPoint[] }) {
 
             return (
               <div key={point.label} className="flex flex-1 flex-col items-center gap-3">
-                <span className="text-xs text-stone-500">{formatCurrency(point.salesCents)}</span>
+                <span className="text-xs text-[var(--muted)]">{formatCurrency(point.salesCents)}</span>
                 <div className="flex h-full w-full items-end">
                   <div
-                    className="w-full rounded-[20px] bg-gradient-to-b from-[#cfa77f] to-[#8f5a47]"
+                    className="w-full rounded-[20px] bg-gradient-to-b from-[#CA9E5B] via-[#C88E4D] to-[#4B306A]"
                     style={{ height: `${height}%` }}
                   />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-stone-900">{point.label}</p>
-                  <p className="text-xs text-stone-500">{point.orders} orders</p>
+                  <p className="text-sm font-medium text-foreground">{point.label}</p>
+                  <p className="text-xs text-[var(--muted)]">{point.orders} orders</p>
                 </div>
               </div>
             );

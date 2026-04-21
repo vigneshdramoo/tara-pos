@@ -46,8 +46,8 @@ export function SidebarNav({ mobile = false }: { mobile?: boolean }) {
             className={cn(
               "touch-target flex items-center gap-3 rounded-2xl px-4 text-sm font-medium transition-all duration-150",
               active
-                ? "bg-stone-950 text-stone-50 shadow-lg"
-                : "text-stone-600 hover:bg-white/70 hover:text-stone-950",
+                ? "tara-panel-dark shadow-lg"
+                : "text-[var(--muted)] hover:bg-white/70 hover:text-[var(--brand-midnight)]",
               mobile && "min-w-fit whitespace-nowrap",
             )}
           >

@@ -19,30 +19,30 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="hidden lg:flex lg:w-[280px] lg:flex-col">
           <div className="tara-surface sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col p-6">
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.38em] text-stone-500">TARA</p>
-              <h1 className="mt-3 font-display text-5xl leading-none text-stone-950">
+              <p className="text-xs uppercase tracking-[0.38em] text-[var(--brand-gold)]">TARA</p>
+              <h1 className="mt-3 font-display text-5xl leading-none text-foreground">
                 Atelier POS
               </h1>
-              <p className="mt-3 max-w-[18rem] text-sm leading-6 text-stone-600">
+              <p className="mt-3 max-w-[18rem] text-sm leading-6 text-[var(--muted)]">
                 A quiet, premium selling floor built for touch-first retail moments.
               </p>
             </div>
 
             <SidebarNav />
 
-            <div className="mt-auto rounded-[24px] bg-stone-950 p-5 text-stone-50">
+            <div className="tara-panel-dark mt-auto rounded-[24px] p-5">
               <div className="flex items-center gap-3 text-sm font-medium">
                 <Cloud className="h-4 w-4" strokeWidth={1.8} />
                 Private online runtime
               </div>
-              <p className="mt-3 text-sm leading-6 text-stone-300">
+              <p className="mt-3 text-sm leading-6 text-[rgba(247,243,235,0.76)]">
                 Deploy this app with hosted Postgres, protect it with a staff password, and
                 open it from any iPad or boutique device.
               </p>
               <form action="/api/auth/logout" method="post" className="mt-4">
                 <button
                   type="submit"
-                  className="touch-target inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 text-sm font-medium text-stone-50 transition hover:bg-white/14"
+                  className="tara-button-inverse touch-target inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium transition"
                 >
                   <LogOut className="h-4 w-4" strokeWidth={1.8} />
                   Sign out
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <form action="/api/auth/logout" method="post">
               <button
                 type="submit"
-                className="touch-target inline-flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white/80 px-4 text-sm font-medium text-stone-700"
+                className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium"
               >
                 <LogOut className="h-4 w-4" strokeWidth={1.8} />
                 Exit

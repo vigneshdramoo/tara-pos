@@ -75,8 +75,8 @@ export function AssistantConsole({
       <Surface className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Conversation</p>
-            <h3 className="mt-3 text-2xl font-semibold text-stone-950">Ask the floor anything</h3>
+            <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Conversation</p>
+            <h3 className="mt-3 text-2xl font-semibold text-foreground">Ask the floor anything</h3>
           </div>
           <Pill tone="accent">Local heuristics</Pill>
         </div>
@@ -87,9 +87,7 @@ export function AssistantConsole({
               key={`${message.role}-${index}`}
               className={cn(
                 "max-w-[92%] rounded-[24px] px-5 py-4 text-sm leading-7 whitespace-pre-line",
-                message.role === "assistant"
-                  ? "bg-white/85 text-stone-800"
-                  : "ml-auto bg-stone-950 text-stone-50",
+                message.role === "assistant" ? "tara-message-assistant" : "tara-message-user ml-auto",
               )}
             >
               {message.content}
@@ -103,14 +101,14 @@ export function AssistantConsole({
               key={prompt}
               type="button"
               onClick={() => submitPrompt(prompt)}
-              className="touch-target rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-medium text-stone-700 transition hover:border-stone-950 hover:text-stone-950"
+              className="tara-button-secondary touch-target rounded-2xl px-4 text-sm font-medium transition"
             >
               {prompt}
             </button>
           ))}
         </div>
 
-        <div className="flex gap-3 rounded-[24px] border border-[var(--line)] bg-white/82 p-3">
+        <div className="tara-card-soft flex gap-3 rounded-[24px] p-3">
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -122,7 +120,7 @@ export function AssistantConsole({
             }}
             rows={3}
             placeholder="Try: Which products should I reorder first?"
-            className="w-full resize-none bg-transparent px-2 py-2 text-sm leading-7 text-stone-900 outline-none"
+            className="w-full resize-none bg-transparent px-2 py-2 text-sm leading-7 text-foreground outline-none"
           />
           <button
             type="button"
@@ -130,9 +128,7 @@ export function AssistantConsole({
             disabled={loading}
             className={cn(
               "touch-target self-end rounded-2xl px-4 text-sm font-semibold transition",
-              loading
-                ? "cursor-not-allowed bg-stone-200 text-stone-400"
-                : "bg-stone-950 text-stone-50",
+              loading ? "cursor-not-allowed tara-button-secondary" : "tara-button-primary",
             )}
           >
             <span className="inline-flex items-center gap-2">
@@ -145,12 +141,12 @@ export function AssistantConsole({
 
       <Surface className="flex flex-col gap-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-950 text-stone-50">
+          <div className="tara-panel-dark flex h-11 w-11 items-center justify-center rounded-full">
             <Sparkles className="h-5 w-5" strokeWidth={1.8} />
           </div>
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Suggested restocks</p>
-            <h3 className="mt-1 text-xl font-semibold text-stone-950">Priority queue</h3>
+            <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Suggested restocks</p>
+            <h3 className="mt-1 text-xl font-semibold text-foreground">Priority queue</h3>
           </div>
         </div>
 
@@ -159,12 +155,12 @@ export function AssistantConsole({
             restocks.map((item) => (
               <div
                 key={item.id}
-                className="rounded-[24px] border border-[var(--line)] bg-white/82 p-4"
+                className="tara-card-soft rounded-[24px] p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-stone-950">{item.name}</p>
-                    <p className="mt-1 text-sm text-stone-600">
+                    <p className="font-semibold text-foreground">{item.name}</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       {item.stock} on hand · floor level {item.reorderLevel}
                     </p>
                   </div>
@@ -173,7 +169,7 @@ export function AssistantConsole({
               </div>
             ))
           ) : (
-            <div className="rounded-[24px] bg-white/82 p-4 text-sm leading-7 text-stone-600">
+            <div className="tara-card-soft rounded-[24px] p-4 text-sm leading-7 text-[var(--muted)]">
               The fragrance floor is currently stocked above the minimum threshold.
             </div>
           )}
