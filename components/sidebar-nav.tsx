@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  KeyRound,
   LayoutDashboard,
   ScrollText,
   ShieldCheck,
@@ -24,6 +25,7 @@ const baseNavItems: Array<{
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
   { href: "/assistant", label: "AI Brief", icon: Sparkles },
+  { href: "/account", label: "Account", icon: KeyRound },
 ];
 
 const managerNavItem = { href: "/staff", label: "Staff", icon: ShieldCheck } satisfies {

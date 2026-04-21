@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     password?: string;
   } | null;
   const identifier = body?.identifier?.trim().toLowerCase();
-  const password = body?.password?.trim();
+  const password = body?.password;
 
   if (!identifier || !password) {
     return NextResponse.json(

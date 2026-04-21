@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { validatePasswordStrength } from "@/lib/password-policy";
 
 const SCRYPT_KEYLEN = 64;
 
@@ -24,3 +25,4 @@ export function verifyPassword(password: string, storedHash: string) {
 
   return timingSafeEqual(stored, derived);
 }
+export { validatePasswordStrength };

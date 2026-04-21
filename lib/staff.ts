@@ -33,6 +33,7 @@ export function getRoleCapabilities(role: StaffRole) {
       "Full dashboard and POS access",
       "Customer and order visibility",
       "AI brief access",
+      "Personal password reset",
       "Staff directory and role oversight",
     ];
   }
@@ -41,6 +42,7 @@ export function getRoleCapabilities(role: StaffRole) {
     "Dashboard and checkout access",
     "Customer and order visibility",
     "AI brief access",
+    "Personal password reset",
     "No staff administration access",
   ];
 }

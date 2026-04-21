@@ -41,6 +41,7 @@ SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
 The seeded staff usernames are `daniel` and `shireen`.
+If you do not override the seed passwords, both accounts default to `TARA2026?3`.
 
 ## Development setup
 
@@ -75,6 +76,8 @@ If you only need to add or refresh staff accounts without touching products, ord
 ```bash
 pnpm staff:bootstrap
 ```
+
+Staff can then change their own password from the in-app `Account` screen after signing in.
 
 5. Start the app:
 
