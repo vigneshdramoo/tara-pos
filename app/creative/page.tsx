@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export default function CreativePage() {
   const initialRequest = normalizeCreativeRequest({
     scentSlug: "aureya",
+    workflow: "hybrid-precision",
     format: "product-image",
     channel: "instagram-feed",
     objective: "launch-drop",
@@ -21,10 +22,10 @@ export default function CreativePage() {
       <PageIntro
         eyebrow="Creative studio"
         title="TARA content model"
-        description="Upload a creative reference, fall back to the saved POS product photo when nothing is uploaded, choose the right aspect ratio and upscale level, and generate TARA-ready prompts that stay true to each scent and audience."
+        description="Upload a creative reference, fall back to the saved POS product photo when nothing is uploaded, choose the right aspect ratio and upscale level, and generate ChatGPT-shaped TARA prompts for either direct in-app rendering or Midjourney precision handoff."
         actions={
           <div className="tara-button-primary rounded-[24px] px-5 py-4 text-sm font-medium">
-            Reference first, product preserved, channel-ready output
+            ChatGPT strategy, product-safe references, Midjourney-ready output
           </div>
         }
       />

@@ -18,7 +18,7 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - Order history with item-level breakdown
 - Manager-only staff directory with role-aware access
 - Local AI assistant page for sales summaries and restock prompts
-- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, and upscale-aware image generation prompts
+- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, upscale-aware image generation prompts, and Midjourney handoff packs
 
 ## Online deployment profile
 
@@ -47,6 +47,7 @@ SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
 The seeded staff usernames are `daniel`, `shireen`, and `cashier`.
 If you do not override the seed passwords, all three accounts default to `TARA2026`.
 `OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
+If you use Midjourney, the Creative Studio can still generate the full strategy, prompt pack, aspect guidance, and reference instructions without that key.
 
 ## Development setup
 

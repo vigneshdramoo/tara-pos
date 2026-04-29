@@ -39,8 +39,14 @@ export type CreativeAspectPreset =
 
 export type CreativeUpscaleMode = "standard" | "enhanced" | "maximum";
 
+export type CreativeWorkflow =
+  | "openai-render"
+  | "midjourney-handoff"
+  | "hybrid-precision";
+
 export type CreativeRequest = {
   scentSlug: string;
+  workflow: CreativeWorkflow;
   format: CreativeFormat;
   channel: CreativeChannel;
   objective: CreativeObjective;
@@ -55,6 +61,15 @@ export type CreativeOption<T extends string = string> = {
   value: T;
   label: string;
   description: string;
+};
+
+export type CreativeMidjourneyPack = {
+  primaryPrompt: string;
+  discordCommand: string;
+  referencePlan: string[];
+  webSetup: string[];
+  parameterGuide: string[];
+  precisionLoop: string[];
 };
 
 export type CreativeBrief = {
@@ -75,11 +90,13 @@ export type CreativeBrief = {
     aspectLabel: string;
     aspectRatio: string;
     upscaleLabel: string;
+    workflowLabel: string;
   };
   modelStack: string[];
   shotList: string[];
   imagePrompt: string;
   videoPrompt: string;
+  midjourney: CreativeMidjourneyPack;
   negativePrompt: string;
   caption: string;
   hashtags: string[];
@@ -384,6 +401,27 @@ export const upscaleOptions: CreativeOption<CreativeUpscaleMode>[] = [
   },
 ];
 
+export const workflowOptions: CreativeOption<CreativeWorkflow>[] = [
+  {
+    value: "hybrid-precision",
+    label: "Hybrid precision",
+    description:
+      "Use ChatGPT to shape the brief and prompt pack, then hand the asset off to Midjourney for final exploration.",
+  },
+  {
+    value: "midjourney-handoff",
+    label: "Midjourney handoff",
+    description:
+      "Build the full TARA strategy and Midjourney-ready prompt pack without rendering inside the POS.",
+  },
+  {
+    value: "openai-render",
+    label: "Render in TARA",
+    description:
+      "Keep the current in-app OpenAI render flow for quick proofs and direct image output from the POS.",
+  },
+];
+
 const presetProfiles: Record<CreativePreset, PresetProfile> = {
   "nocturne-vanity": {
     label: "Nocturne vanity",
@@ -579,6 +617,21 @@ const objectiveAngles: Record<CreativeObjective, string> = {
     "Make the concept creator-friendly for Malaysian social content while preserving TARA's dark luxury tone.",
 };
 
+const workflowLabels: Record<CreativeWorkflow, string> = {
+  "openai-render": "Render in TARA",
+  "midjourney-handoff": "Midjourney handoff",
+  "hybrid-precision": "Hybrid precision",
+};
+
+const workflowDescriptions: Record<CreativeWorkflow, string> = {
+  "openai-render":
+    "Build the strategy in TARA and render directly inside the POS when speed matters more than external iteration.",
+  "midjourney-handoff":
+    "Use TARA to generate the brief, nuance, and Midjourney-ready prompt pack, then finish the visual exploration in Midjourney Web or Discord.",
+  "hybrid-precision":
+    "Use TARA to lock the scent strategy and product rules, optionally render a proof in-app, then push the refined prompt and references into Midjourney for final exploration.",
+};
+
 const channelHashtags: Record<CreativeChannel, string[]> = {
   "instagram-feed": [
     "#TARAScents",
@@ -644,6 +697,7 @@ export function normalizeCreativeRequest(input: Partial<CreativeRequest>): Creat
     scentSlug: input.scentSlug && scentProfiles.some((scent) => scent.slug === input.scentSlug)
       ? input.scentSlug
       : scentProfiles[0]?.slug ?? "aureya",
+    workflow: findOption(workflowOptions, input.workflow ?? "", "hybrid-precision"),
     format,
     channel,
     objective: findOption(objectiveOptions, input.objective ?? "", "launch-drop"),
@@ -808,6 +862,140 @@ function buildImagePrompt(
     .trim();
 }
 
+function midjourneyStylizeFor(preset: CreativePreset) {
+  if (preset === "scent-ingredients") {
+    return 75;
+  }
+
+  if (preset === "influencer-lifestyle") {
+    return 140;
+  }
+
+  return 100;
+}
+
+function buildMidjourneyPrimaryPrompt(
+  scent: ScentProfile,
+  preset: PresetProfile,
+  format: FormatProfile,
+  suggestedAudience: string,
+  suggestedNuance: string,
+  suggestedCreativeDirection: string,
+) {
+  return [
+    `luxury commercial fragrance campaign for TARA ${scent.name}`,
+    `${scent.sizeMl}mL bottle, ${scent.collection} collection`,
+    `${format.composition}`,
+    `${scent.mood.join(", ")} mood`,
+    `notes implied through ${scent.notes.join(", ")}`,
+    preset.environment,
+    preset.lighting,
+    preset.camera,
+    `targeted to ${suggestedAudience.toLowerCase()}`,
+    suggestedNuance,
+    suggestedCreativeDirection,
+    "premium Malaysian setting and audience cues",
+    "product remains photoreal and identical to the reference bottle",
+    "label crisp, centered, readable",
+    "realistic glass, realistic reflections, premium retouching, quiet luxury",
+  ]
+    .join(", ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildMidjourneyDiscordCommand(
+  request: CreativeRequest,
+  scent: ScentProfile,
+  preset: PresetProfile,
+  format: FormatProfile,
+  aspect: AspectProfile,
+  suggestedAudience: string,
+  suggestedNuance: string,
+  suggestedCreativeDirection: string,
+) {
+  const stylize = midjourneyStylizeFor(request.preset);
+  const prompt = buildMidjourneyPrimaryPrompt(
+    scent,
+    preset,
+    format,
+    suggestedAudience,
+    suggestedNuance,
+    suggestedCreativeDirection,
+  );
+
+  return [
+    "/imagine prompt:",
+    "[optional_uploaded_image_prompt_url]",
+    prompt,
+    `--ar ${aspect.aspectRatio}`,
+    "--v 7",
+    "--raw",
+    `--stylize ${stylize}`,
+    "--oref [POS_PRODUCT_OMNI_REFERENCE_URL]",
+    "--ow 250",
+    "--sref [OPTIONAL_UPLOADED_STYLE_REFERENCE_URL]",
+    "--sw 125",
+  ].join(" ");
+}
+
+function buildMidjourneyReferencePlan(aspect: AspectProfile, upscale: UpscaleProfile) {
+  return [
+    "Use the saved POS product photo as the Omni Reference first so the bottle silhouette, cap, glass, and label stay locked to the real TARA product.",
+    "If you upload a content photo, start by using it as the Style Reference for palette, atmosphere, lighting, and vibe transfer.",
+    "If the uploaded photo is really about composition or prop placement instead of mood, rerun with it as an Image Prompt rather than a Style Reference.",
+    `If no content photo is uploaded, proceed with the saved POS product photo alone and let the text prompt control the ${aspect.label.toLowerCase()} scene.`,
+    `Upscale target: ${upscale.label}. Keep the winning frame product-accurate before you upscale anything.`,
+  ];
+}
+
+function buildMidjourneyWebSetup(request: CreativeRequest, aspect: AspectProfile) {
+  const upscaleStep =
+    request.upscaleMode === "standard"
+      ? "Leave the image at the base grid first, or use a very light upscale only after the label is clearly correct."
+      : request.upscaleMode === "enhanced"
+        ? "Use Midjourney's Subtle Upscale on the winning image for cleaner glass and label edges."
+        : "Use Subtle Upscale first, then test Creative Upscale only if the bottle and label still hold perfectly for poster or web review.";
+
+  return [
+    "Open Midjourney Web and start a new image prompt with the TARA brief beside you.",
+    "Attach the saved POS product photo as the Omni Reference to anchor the product identity.",
+    "Attach the uploaded content photo as the Style Reference when you want its mood and lighting carried over.",
+    `Set the aspect ratio to ${aspect.aspectRatio} for ${aspect.label}, paste the Midjourney base prompt, and keep Raw mode on for tighter product control.`,
+    upscaleStep,
+  ];
+}
+
+function buildMidjourneyParameterGuide(
+  request: CreativeRequest,
+  aspect: AspectProfile,
+  upscale: UpscaleProfile,
+) {
+  return [
+    `Aspect ratio: use --ar ${aspect.aspectRatio} to match ${aspect.label}.`,
+    "Version: use V7 so Omni Reference is available and the product can stay locked to the reference photo.",
+    `Raw mode plus stylize: start with --raw and --stylize ${midjourneyStylizeFor(request.preset)} so the scent mood stays elegant without drifting away from the bottle.`,
+    "Omni Reference: start around --ow 250 and only raise it if the label, bottle color, or cap geometry starts drifting.",
+    "Style Reference: when you upload a content photo, begin around --sw 125 and lower it if the style overwhelms the product.",
+    `Upscale: ${upscale.label}. ${upscale.note}`,
+  ];
+}
+
+function buildMidjourneyPrecisionLoop(request: CreativeRequest) {
+  const firstPass =
+    request.workflow === "hybrid-precision"
+      ? "Start by using TARA's own brief and, if helpful, a quick in-app render as the precision check before you widen the exploration in Midjourney."
+      : "Start with one clean Midjourney pass using the product Omni Reference and no extra prompt clutter.";
+
+  return [
+    firstPass,
+    "If the mood is strong but the bottle drifts, raise Omni weight before rewriting the whole prompt.",
+    "If the product is accurate but the scene feels generic, keep the reference setup and only refine the environment, lighting, or prop language.",
+    "If the uploaded content photo feels too dominant, lower style weight or switch that upload from Style Reference to Image Prompt for one comparison run.",
+    "Approve the frame only after the bottle, cap, label, reflections, and Malaysian context all feel correct at full view.",
+  ];
+}
+
 function buildVideoPrompt(
   scent: ScentProfile,
   preset: PresetProfile,
@@ -883,6 +1071,38 @@ function buildNegativePrompt() {
   ].join(", ");
 }
 
+function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
+  if (request.workflow === "openai-render") {
+    return [
+      "Generate the strategy in TARA first, then render directly inside the POS with the saved product photo plus any uploaded content reference.",
+      "Use Malaysian-relevant scenes, subjects, retail environments, and cultural context by default.",
+      "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
+      "Run 4 variations, reject anything with changed product shape, warped label text, duplicated bottles, foreign settings, or unrealistic glass.",
+      "Use the strongest still as the first frame for image-to-video instead of starting video from text only.",
+      `Upscale setting: ${upscale.label}. ${upscale.note}`,
+    ];
+  }
+
+  if (request.workflow === "midjourney-handoff") {
+    return [
+      "Generate the TARA brief and Midjourney prompt pack first so the scent strategy and audience nuance are locked before rendering elsewhere.",
+      "Use the saved POS product photo as the Midjourney Omni Reference, and add an uploaded content photo only when you want extra mood or composition guidance.",
+      "Keep Malaysian-relevant retail, lifestyle, architecture, and model-casting cues visible in every pass.",
+      "Run a small variation set first, reject anything with label drift or product redesign, then refine the best pass rather than rewriting from zero.",
+      `Upscale setting: ${upscale.label}. ${upscale.note}`,
+    ];
+  }
+
+  return [
+    "Use TARA to lock the scent strategy, audience nuance, and product rules before you render anything.",
+    "Render a quick proof in TARA when helpful, then use the Midjourney prompt pack to widen exploration while preserving the same product identity.",
+    "Use the saved POS product photo as the product-accuracy anchor and any uploaded content photo as optional creative direction.",
+    "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
+    "Approve only frames that keep the bottle, label, reflections, and Malaysian context believable at full resolution.",
+    `Upscale setting: ${upscale.label}. ${upscale.note}`,
+  ];
+}
+
 export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBrief {
   const request = normalizeCreativeRequest(input);
   const scent = getScent(request.scentSlug);
@@ -899,6 +1119,24 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
     aspect,
   );
   const shotList = buildShotList(request, scent, preset, format);
+  const midjourneyPrimaryPrompt = buildMidjourneyPrimaryPrompt(
+    scent,
+    preset,
+    format,
+    suggestedAudience,
+    suggestedNuance,
+    suggestedCreativeDirection,
+  );
+  const midjourneyDiscordCommand = buildMidjourneyDiscordCommand(
+    request,
+    scent,
+    preset,
+    format,
+    aspect,
+    suggestedAudience,
+    suggestedNuance,
+    suggestedCreativeDirection,
+  );
 
   return {
     title: `${scent.name} ${format.label} - ${preset.label}`,
@@ -918,15 +1156,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       aspectLabel: aspect.label,
       aspectRatio: aspect.aspectRatio,
       upscaleLabel: upscale.label,
+      workflowLabel: workflowLabels[request.workflow],
     },
-    modelStack: [
-      "Generate the hero still first with the saved POS product photo, and add any uploaded content photo as a second creative reference when available.",
-      "Use Malaysian-relevant scenes, subjects, retail environments, and cultural context by default.",
-      "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
-      "Run 4 variations, reject anything with changed product shape, warped label text, duplicated bottles, foreign settings, or unrealistic glass.",
-      "Use the strongest still as the first frame for image-to-video instead of starting video from text only.",
-      `Upscale setting: ${upscale.label}. ${upscale.note}`,
-    ],
+    modelStack: buildModelStack(request, upscale),
     shotList,
     imagePrompt: buildImagePrompt(
       request,
@@ -940,6 +1172,14 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       suggestedCreativeDirection,
     ),
     videoPrompt: buildVideoPrompt(scent, preset, aspect, suggestedCreativeDirection),
+    midjourney: {
+      primaryPrompt: midjourneyPrimaryPrompt,
+      discordCommand: midjourneyDiscordCommand,
+      referencePlan: buildMidjourneyReferencePlan(aspect, upscale),
+      webSetup: buildMidjourneyWebSetup(request, aspect),
+      parameterGuide: buildMidjourneyParameterGuide(request, aspect, upscale),
+      precisionLoop: buildMidjourneyPrecisionLoop(request),
+    },
     negativePrompt: buildNegativePrompt(),
     caption: buildCaption(request, scent),
     hashtags: Array.from(
@@ -959,6 +1199,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       "Caption makes no medical, attraction-guarantee, or long-wear claims.",
     ],
     productionNotes: [
+      `Preferred workflow: ${workflowLabels[request.workflow]}. ${workflowDescriptions[request.workflow]}`,
       `Preferred aspect ratio: ${aspect.label} (${aspect.aspectRatio}) on a ${aspect.size} canvas.`,
       `Upscale plan: ${upscale.label}. ${upscale.note}`,
       `Primary visual materials: ${sentenceJoin([scent.texture, preset.environment])}.`,

@@ -129,6 +129,18 @@ export async function POST(request: Request) {
     const body = (await request.json()) as CreativeImageRouteBody;
     const creativeRequest = normalizeCreativeRequest(body);
     const brief = buildCreativeBrief(creativeRequest);
+
+    if (creativeRequest.workflow === "midjourney-handoff") {
+      return NextResponse.json(
+        {
+          brief,
+          message:
+            "This brief is set to Midjourney handoff only. Copy the Midjourney pack from the Creative Studio or switch the workflow to Hybrid precision or Render in TARA.",
+        },
+        { status: 409 },
+      );
+    }
+
     const model = process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5";
     const size = imageSizeForRequest(creativeRequest);
     const quality = imageQualityForRequest(creativeRequest);

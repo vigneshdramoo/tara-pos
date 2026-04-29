@@ -27,6 +27,7 @@ import {
   presetOptions,
   scentOptions,
   upscaleOptions,
+  workflowOptions,
   type CreativeAspectPreset,
   type CreativeBrief,
   type CreativeChannel,
@@ -35,6 +36,7 @@ import {
   type CreativePreset,
   type CreativeRequest,
   type CreativeUpscaleMode,
+  type CreativeWorkflow,
 } from "@/lib/creative-model";
 import { getProductImageUrl } from "@/lib/product-media";
 import { cn } from "@/lib/utils";
@@ -234,6 +236,26 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
   const [uploadedReference, setUploadedReference] = useState<UploadedReference | null>(null);
 
   const productReferenceUrl = getProductImageUrl(request.scentSlug);
+  const canRenderInStudio = request.workflow !== "midjourney-handoff";
+  const midjourneyPackText = [
+    "MIDJOURNEY BASE PROMPT",
+    brief.midjourney.primaryPrompt,
+    "",
+    "DISCORD COMMAND",
+    brief.midjourney.discordCommand,
+    "",
+    "REFERENCE PLAN",
+    ...brief.midjourney.referencePlan.map((item, index) => `${index + 1}. ${item}`),
+    "",
+    "WEB SETUP",
+    ...brief.midjourney.webSetup.map((item, index) => `${index + 1}. ${item}`),
+    "",
+    "PARAMETER GUIDE",
+    ...brief.midjourney.parameterGuide.map((item, index) => `${index + 1}. ${item}`),
+    "",
+    "PRECISION LOOP",
+    ...brief.midjourney.precisionLoop.map((item, index) => `${index + 1}. ${item}`),
+  ].join("\n");
 
   function updateRequest<Key extends keyof CreativeRequest>(
     key: Key,
@@ -394,6 +416,12 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
               options={scentOptions}
               onChange={(value) => updateRequest("scentSlug", value)}
             />
+            <SelectField<CreativeWorkflow>
+              label="Workflow"
+              value={request.workflow}
+              options={workflowOptions}
+              onChange={(value) => updateRequest("workflow", value)}
+            />
             <SelectField<CreativeFormat>
               label="Format"
               value={request.format}
@@ -528,7 +556,12 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div
+            className={cn(
+              "grid gap-3",
+              canRenderInStudio ? "sm:grid-cols-3" : "sm:grid-cols-2",
+            )}
+          >
             <button
               type="button"
               onClick={() => generateBrief()}
@@ -547,20 +580,38 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
             </button>
             <button
               type="button"
-              onClick={createImage}
+              onClick={() => copyText("midjourney-pack", midjourneyPackText)}
               disabled={loading || imageLoading}
               className={cn(
                 "touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition",
-                imageLoading ? "tara-button-secondary cursor-not-allowed" : "tara-button-primary",
+                loading || imageLoading
+                  ? "tara-button-secondary cursor-not-allowed"
+                  : "tara-button-secondary",
               )}
             >
-              {imageLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
-              ) : (
-                <ImageIcon className="h-4 w-4" strokeWidth={1.8} />
-              )}
-              Create image
+              <Copy className="h-4 w-4" strokeWidth={1.8} />
+              {copiedKey === "midjourney-pack" ? "Copied" : "Copy MJ pack"}
             </button>
+            {canRenderInStudio ? (
+              <button
+                type="button"
+                onClick={createImage}
+                disabled={loading || imageLoading}
+                className={cn(
+                  "touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition",
+                  imageLoading
+                    ? "tara-button-secondary cursor-not-allowed"
+                    : "tara-button-primary",
+                )}
+              >
+                {imageLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
+                ) : (
+                  <ImageIcon className="h-4 w-4" strokeWidth={1.8} />
+                )}
+                Create image
+              </button>
+            ) : null}
           </div>
 
           {imageError ? (
@@ -622,11 +673,12 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
                     <ImageIcon className="h-6 w-6" strokeWidth={1.8} />
                   </div>
                   <h4 className="mt-4 text-xl font-semibold text-foreground">
-                    No rendered image yet
+                    {canRenderInStudio ? "No rendered image yet" : "Midjourney handoff active"}
                   </h4>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    Use Create image to turn the current TARA brief into an actual visual.
-                    If no API key is connected, the app will show the setup step here.
+                    {canRenderInStudio
+                      ? "Use Create image to turn the current TARA brief into an actual visual. If no API key is connected, the app will show the setup step here."
+                      : "This workflow keeps rendering in Midjourney. Copy the Midjourney pack, then use the reference plan and web setup below for the final generation."}
                   </p>
                 </div>
               </div>
@@ -678,6 +730,12 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
                 {brief.strategy.upscaleLabel}
               </p>
             </div>
+            <div className="rounded-[24px] border border-[var(--line)] bg-white/55 p-5">
+              <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Workflow</p>
+              <p className="mt-3 text-sm leading-7 text-[var(--muted-strong)]">
+                {brief.strategy.workflowLabel}
+              </p>
+            </div>
           </div>
 
           <div className="rounded-[24px] border border-[var(--line)] bg-white/55 p-5">
@@ -701,7 +759,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
         </Surface>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
+      <section className="grid gap-4 xl:grid-cols-3">
         <PromptBlock
           title="Image generation"
           value={brief.imagePrompt}
@@ -710,11 +768,47 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
           onCopy={() => copyText("image", brief.imagePrompt)}
         />
         <PromptBlock
+          title="Midjourney base prompt"
+          value={brief.midjourney.primaryPrompt}
+          icon="camera"
+          copied={copiedKey === "midjourney-primary"}
+          onCopy={() => copyText("midjourney-primary", brief.midjourney.primaryPrompt)}
+        />
+        <PromptBlock
           title="Video generation"
           value={brief.videoPrompt}
           icon="film"
           copied={copiedKey === "video"}
           onCopy={() => copyText("video", brief.videoPrompt)}
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <PromptBlock
+          title="Midjourney Discord command"
+          value={brief.midjourney.discordCommand}
+          icon="camera"
+          copied={copiedKey === "midjourney-command"}
+          onCopy={() => copyText("midjourney-command", brief.midjourney.discordCommand)}
+        />
+        <DetailList
+          title="Midjourney reference plan"
+          items={brief.midjourney.referencePlan}
+          icon="checks"
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        <DetailList title="Midjourney web setup" items={brief.midjourney.webSetup} icon="clipboard" />
+        <DetailList
+          title="Midjourney parameter guide"
+          items={brief.midjourney.parameterGuide}
+          icon="hash"
+        />
+        <DetailList
+          title="Midjourney precision loop"
+          items={brief.midjourney.precisionLoop}
+          icon="checks"
         />
       </section>
 
