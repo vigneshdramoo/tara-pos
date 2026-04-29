@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import Image from "next/image";
 import { formatCurrency } from "@/lib/format";
 import type { ProductCardData } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,18 @@ export function ProductCard({
         <p className="text-xs uppercase tracking-[0.22em] text-white/70">{product.sku}</p>
         <h3 className="mt-4 font-display text-4xl leading-none">{product.name}</h3>
         <p className="mt-4 max-w-[18rem] text-sm leading-6 text-white/80">{product.description}</p>
+        {product.imageUrl ? (
+          <div className="relative mt-5 aspect-[4/5] overflow-hidden rounded-[24px] border border-white/15 bg-white/8 shadow-[0_30px_90px_rgba(10,10,10,0.28)]">
+            <Image
+              src={product.imageUrl}
+              alt={`${product.name} fragrance bottle`}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
+              className="object-cover"
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/20 to-transparent" />
+          </div>
+        ) : null}
       </div>
 
       <div>

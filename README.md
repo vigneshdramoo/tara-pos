@@ -18,6 +18,7 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - Order history with item-level breakdown
 - Manager-only staff directory with role-aware access
 - Local AI assistant page for sales summaries and restock prompts
+- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, and upscale-aware image generation prompts
 
 ## Online deployment profile
 
@@ -35,6 +36,8 @@ Create a `.env` file from `.env.example` and set:
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/tara_pos?schema=public&sslmode=require"
 NEXT_PUBLIC_APP_URL="https://pos.yourdomain.com"
 POS_SESSION_SECRET="a-long-random-secret"
+OPENAI_API_KEY="sk-..."
+OPENAI_IMAGE_MODEL="gpt-image-1.5"
 SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
 SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
@@ -43,6 +46,7 @@ SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
 The seeded staff usernames are `daniel`, `shireen`, and `cashier`.
 If you do not override the seed passwords, all three accounts default to `TARA2026`.
+`OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
 
 ## Development setup
 

@@ -12,6 +12,7 @@ function isPublicPath(pathname: string) {
   return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons") ||
+    pathname.startsWith("/products") ||
     pathname === "/find-your-light" ||
     pathname.startsWith("/find-your-light/") ||
     pathname === "/favicon.ico" ||

@@ -1,6 +1,7 @@
 import { PaymentMethod } from "@prisma/client";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
+import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import type {
   CustomersData,
@@ -49,7 +50,10 @@ function serializeProduct(product: {
   reorderLevel: number;
   accentHex: string;
 }): ProductCardData {
-  return product;
+  return {
+    ...product,
+    imageUrl: getProductImageUrl(product.slug),
+  };
 }
 
 function recommendedRestock(stock: number, reorderLevel: number) {

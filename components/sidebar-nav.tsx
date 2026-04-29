@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
+  Camera,
   KeyRound,
   LayoutDashboard,
   ScrollText,
@@ -30,6 +31,7 @@ const baseNavItems: Array<{
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
   { href: "/assistant", label: "AI Brief", icon: Sparkles },
+  { href: "/creative", label: "Creative", icon: Camera },
   { href: "/account", label: "Account", icon: KeyRound },
 ];
 

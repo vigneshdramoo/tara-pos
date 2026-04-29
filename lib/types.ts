@@ -15,6 +15,7 @@ export type ProductCardData = {
   stock: number;
   reorderLevel: number;
   accentHex: string;
+  imageUrl: string | null;
 };
 
 export type RecentCustomerOption = {
