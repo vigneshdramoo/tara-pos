@@ -11,19 +11,19 @@ const customerSeeds = [
     name: "Alya Rahman",
     email: "alya@example.com",
     phone: "+60123456789",
-    notes: "Prefers airy daytime florals.",
+    notes: "Prefers radiant daytime florals and soft gifting picks.",
   },
   {
     name: "Daniel Wong",
     email: "daniel@example.com",
     phone: "+60187654321",
-    notes: "Often buys darker evening scents.",
+    notes: "Often buys clean masculine scents with a polished finish.",
   },
   {
     name: "Sophia Lee",
     email: "sophia@example.com",
     phone: "+60125550123",
-    notes: "New client, gift buyer.",
+    notes: "Gift buyer looking for intimate but premium signatures.",
   },
 ] as const;
 
@@ -34,18 +34,17 @@ const seededOrders = [
     paymentMethod: PaymentMethod.CARD,
     notes: "Gift wrap requested.",
     items: [
-      { slug: "aurora", quantity: 1 },
-      { slug: "nova", quantity: 1 },
+      { slug: "aureya", quantity: 1 },
+      { slug: "maris", quantity: 1 },
     ],
   },
   {
     createdAt: new Date("2026-04-17T15:05:00+08:00"),
     customerEmail: "daniel@example.com",
     paymentMethod: PaymentMethod.CARD,
-    notes: "Requested a deeper Zeus pairing.",
+    notes: "Asked for a clean daytime signature with strong office presence.",
     items: [
-      { slug: "ardor", quantity: 1 },
-      { slug: "zenith", quantity: 1 },
+      { slug: "zephyr", quantity: 2 },
     ],
   },
   {
@@ -54,8 +53,7 @@ const seededOrders = [
     paymentMethod: PaymentMethod.TRANSFER,
     notes: "Corporate gifting shortlist.",
     items: [
-      { slug: "siren", quantity: 1 },
-      { slug: "ember", quantity: 1 },
+      { slug: "aureya", quantity: 1 },
     ],
   },
   {
@@ -64,32 +62,27 @@ const seededOrders = [
     paymentMethod: PaymentMethod.CASH,
     notes: "Walk-in guest.",
     items: [
-      { slug: "zephyr", quantity: 1 },
-      { slug: "sol", quantity: 1 },
+      { slug: "maris", quantity: 1 },
     ],
   },
   {
     createdAt: new Date("2026-04-20T10:10:00+08:00"),
     customerEmail: "alya@example.com",
     paymentMethod: PaymentMethod.CARD,
-    notes: "Repeat purchase for travel set gifting.",
+    notes: "Repeat purchase before a weekend gifting event.",
     items: [
-      { slug: "aurora", quantity: 2 },
-      { slug: "nova", quantity: 1 },
-      { slug: "siren", quantity: 1 },
+      { slug: "aureya", quantity: 2 },
+      { slug: "maris", quantity: 1 },
     ],
   },
   {
     createdAt: new Date("2026-04-20T14:25:00+08:00"),
     customerEmail: "daniel@example.com",
     paymentMethod: PaymentMethod.CARD,
-    notes: "Added a full Zeus wardrobe with one warm Hera layer.",
+    notes: "Added one fresh office scent and one intimate skin-close layer.",
     items: [
-      { slug: "ardor", quantity: 2 },
       { slug: "zephyr", quantity: 2 },
-      { slug: "sol", quantity: 1 },
-      { slug: "zenith", quantity: 1 },
-      { slug: "ember", quantity: 1 },
+      { slug: "maris", quantity: 1 },
     ],
   },
 ] as const;

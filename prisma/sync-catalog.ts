@@ -1,14 +1,15 @@
 import { InventoryMovementType, PrismaClient } from "@prisma/client";
-import { catalogProductSeeds, legacyDemoProductSlugs } from "./catalog-seeds";
+import { catalogProductSeeds } from "./catalog-seeds";
 
 const prisma = new PrismaClient();
 
 async function main() {
   const summary = await prisma.$transaction(async (tx) => {
-    const demoProducts = await tx.product.findMany({
+    const activeCatalogSlugs = catalogProductSeeds.map((seed) => seed.slug);
+    const retiredProducts = await tx.product.findMany({
       where: {
         slug: {
-          in: [...legacyDemoProductSlugs],
+          notIn: activeCatalogSlugs,
         },
       },
     });
@@ -16,7 +17,7 @@ async function main() {
     let retiredCount = 0;
     let retiredUnits = 0;
 
-    for (const product of demoProducts) {
+    for (const product of retiredProducts) {
       const stockToClear = product.stock;
       const requiresUpdate = product.active || stockToClear !== 0;
 
@@ -38,7 +39,7 @@ async function main() {
             productId: product.id,
             type: InventoryMovementType.ADJUSTMENT,
             quantityDelta: -stockToClear,
-            note: "Retired from the active TARA catalog",
+            note: "Removed from the active TARA catalog",
           },
         });
       }
@@ -137,7 +138,7 @@ async function main() {
   });
 
   console.log(
-    `Catalog synced: ${summary.createdCount} created, ${summary.updatedCount} updated, ${summary.retiredCount} demo products retired, ${summary.adjustedCount} stock resets applied, ${summary.retiredUnits} legacy units cleared.`,
+    `Catalog synced: ${summary.createdCount} created, ${summary.updatedCount} updated, ${summary.retiredCount} non-catalog products retired, ${summary.adjustedCount} stock resets applied, ${summary.retiredUnits} legacy units cleared.`,
   );
 }
 

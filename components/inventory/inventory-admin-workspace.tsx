@@ -40,13 +40,13 @@ function createBlankProductForm(): ProductFormState {
     name: "",
     slug: "",
     sku: "",
-    collection: "Maison Core",
+    collection: "Signature",
     description: "",
     notes: "",
     mood: "",
     sizeMl: "50",
-    price: "0.00",
-    reorderLevel: "4",
+    price: "159.00",
+    reorderLevel: "12",
     accentHex: "#CA9E5B",
     active: true,
     initialStock: "0",
@@ -511,7 +511,7 @@ export function InventoryAdminWorkspace({
                 <input
                   value={form.slug}
                   onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-                  placeholder="aurora"
+                  placeholder="aureya"
                   className="tara-input touch-target rounded-[20px] px-4 outline-none"
                 />
               </label>

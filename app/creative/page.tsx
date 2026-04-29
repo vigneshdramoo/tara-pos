@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default function CreativePage() {
   const initialRequest = normalizeCreativeRequest({
-    scentSlug: "aurora",
+    scentSlug: "aureya",
     format: "product-image",
     channel: "instagram-feed",
     objective: "launch-drop",

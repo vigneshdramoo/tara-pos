@@ -96,6 +96,7 @@ type ScentProfile = {
   mood: string[];
   sizeMl: number;
   accentHex: string;
+  persona: "feminine" | "masculine" | "neutral";
   temperature: string;
   texture: string;
   signatureScene: string;
@@ -159,10 +160,24 @@ const malaysiaMarketRules = [
   "avoid foreign landmarks, winter scenes, Western mansion cues, non-Malaysian street signs, and imported-looking campaign settings",
 ];
 
+function resolveScentPersona(product: (typeof catalogProductSeeds)[number]) {
+  const collection = product.collection.toLowerCase();
+
+  if (collection.includes("her")) {
+    return "feminine" as const;
+  }
+
+  if (collection.includes("him")) {
+    return "masculine" as const;
+  }
+
+  return "neutral" as const;
+}
+
 const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
   const notes = product.notes.split(",").map((note) => note.trim());
   const mood = product.mood.split(",").map((item) => item.trim());
-  const isHera = product.collection.toLowerCase() === "hera";
+  const persona = resolveScentPersona(product);
 
   return {
     slug: product.slug,
@@ -173,11 +188,25 @@ const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
     mood,
     sizeMl: product.sizeMl,
     accentHex: product.accentHex,
-    temperature: isHera ? "luminous, warm, intimate" : "cool, polished, structured",
-    texture: isHera ? "silk, amber haze, soft skin glow" : "tailored fabric, mineral air, clean woods",
-    signatureScene: isHera
-      ? "a candlelit vanity with ivory silk, gold jewelry, and close warm reflections"
-      : "a midnight tailoring table with charcoal cloth, cool glass, and a clean line of gold light",
+    persona,
+    temperature:
+      persona === "feminine"
+        ? "luminous, warm, intimate"
+        : persona === "masculine"
+          ? "cool, polished, structured"
+          : "clean, intimate, softly aquatic",
+    texture:
+      persona === "feminine"
+        ? "silk, amber haze, soft skin glow"
+        : persona === "masculine"
+          ? "tailored fabric, mineral air, clean woods"
+          : "soft daylight, skin-close musk, mineral air, quiet water",
+    signatureScene:
+      persona === "feminine"
+        ? "a candlelit vanity with ivory silk, gold jewelry, and close warm reflections"
+        : persona === "masculine"
+          ? "a midnight tailoring table with charcoal cloth, cool glass, and a clean line of gold light"
+          : "a quiet morning window scene with soft stone, clean glass, and calm close-range light",
   };
 });
 
@@ -614,7 +643,7 @@ export function normalizeCreativeRequest(input: Partial<CreativeRequest>): Creat
   return {
     scentSlug: input.scentSlug && scentProfiles.some((scent) => scent.slug === input.scentSlug)
       ? input.scentSlug
-      : "aurora",
+      : scentProfiles[0]?.slug ?? "aureya",
     format,
     channel,
     objective: findOption(objectiveOptions, input.objective ?? "", "launch-drop"),
@@ -648,20 +677,26 @@ function buildSuggestedAudience(request: CreativeRequest, scent: ScentProfile) {
   }
 
   if (request.objective === "sampling-conversion") {
-    return scent.collection === "Hera"
+    return scent.persona === "feminine"
       ? "Malaysian women at pop-ups and counters who want an intimate feminine scent they can trust after one skin test."
-      : "Malaysian men at pop-ups and counters who want a clean, confident scent they can decide on quickly after one spray.";
+      : scent.persona === "masculine"
+        ? "Malaysian men at pop-ups and counters who want a clean, confident scent they can decide on quickly after one spray."
+        : "Malaysian shoppers who want a skin-close, clean signature that feels intimate, modern, and easy to wear after one test.";
   }
 
   if (request.objective === "ugc-remix") {
-    return scent.collection === "Hera"
+    return scent.persona === "feminine"
       ? "Style-aware Malaysian women who save sensual, polished beauty content and want luxury that still feels wearable."
-      : "Modern Malaysian men who respond to refined grooming, tailoring, and quietly powerful fragrance content.";
+      : scent.persona === "masculine"
+        ? "Modern Malaysian men who respond to refined grooming, tailoring, and quietly powerful fragrance content."
+        : "Style-aware Malaysian audiences who save clean, intimate fragrance content that feels modern, airy, and softly addictive.";
   }
 
-  return scent.collection === "Hera"
+  return scent.persona === "feminine"
     ? "Malaysian women drawn to luminous, skin-close florals with premium softness, gifting appeal, and evening polish."
-    : "Modern Malaysian men drawn to clean structure, confident woods, and premium restraint that feels polished rather than loud.";
+    : scent.persona === "masculine"
+      ? "Modern Malaysian men drawn to clean structure, confident woods, and premium restraint that feels polished rather than loud."
+      : "Modern Malaysian fragrance buyers drawn to clean intimacy, aquatic freshness, and a signature that stays close to skin.";
 }
 
 function buildSuggestedNuance(
@@ -699,7 +734,13 @@ function buildShotList(
       `${scent.name} hero frame: ${format.composition}.`,
       `Notes frame: show ${scent.notes.slice(0, 4).join(", ")} as sparse premium materials.`,
       `Mood frame: translate ${scent.mood.join(", ")} into Malaysian fabric, light, and posture cues.`,
-      `Wear frame: show the bottle beside ${scent.collection === "Hera" ? "modern Malaysian evening details" : "modern Malaysian tailoring details"}.`,
+      `Wear frame: show the bottle beside ${
+        scent.persona === "feminine"
+          ? "modern Malaysian evening details"
+          : scent.persona === "masculine"
+            ? "modern Malaysian tailoring details"
+            : "quiet modern Malaysian daily ritual details"
+      }.`,
       "CTA frame: reserve the 50mL Eau de Parfum, keep text minimal and poster-safe.",
     ];
   }
