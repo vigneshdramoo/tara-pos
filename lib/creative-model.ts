@@ -505,7 +505,8 @@ const formatProfiles: Record<CreativeFormat, FormatProfile> = {
   "image-to-video": {
     label: "Image to video",
     aspectRatio: "9:16",
-    composition: "first frame built like a premium still, leaving room for slow motion",
+    composition:
+      "one single premium vertical hero still built as the opening frame, leaving room for slow motion",
     deliverable: "one still frame plus an image-to-video motion prompt",
   },
   carousel: {
@@ -517,8 +518,9 @@ const formatProfiles: Record<CreativeFormat, FormatProfile> = {
   "story-reel": {
     label: "Story/Reel",
     aspectRatio: "9:16",
-    composition: "vertical sequence with close details, movement, and a clear end CTA",
-    deliverable: "short-form video prompt and shot rhythm",
+    composition:
+      "one single vertical hero frame designed as the cover or anchor shot for a story or reel, with close detail energy and clean CTA-safe space",
+    deliverable: "one story or reel cover image plus a short-form video prompt and shot rhythm",
   },
   "booth-poster": {
     label: "Booth poster",
@@ -839,12 +841,20 @@ function buildImagePrompt(
   const audience = `Target audience: ${suggestedAudience}.`;
   const nuance = `Nuance: ${suggestedNuance}.`;
   const direction = `Creative direction: ${suggestedCreativeDirection}.`;
+  const singleFrameRule =
+    request.format === "story-reel" ||
+    request.format === "image-to-video" ||
+    request.aspectPreset === "tiktok" ||
+    request.aspectPreset === "instagram-story"
+      ? "Output exactly one single full-frame image only. Do not create a collage, grid, diptych, triptych, storyboard, tiled layout, contact sheet, comic panel, or multiple scenes inside one canvas."
+      : null;
 
   return [
     `Create ${format.deliverable} for TARA ${scent.name}, a ${scent.sizeMl}mL Eau de Parfum in the ${scent.collection} collection.`,
     audience,
     nuance,
     direction,
+    singleFrameRule,
     `Brand world: ${brandRules.join("; ")}.`,
     `Malaysia market rules: ${malaysiaMarketRules.join("; ")}.`,
     `Scent mood: ${scent.mood.join(", ")}. Notes to imply visually: ${scent.notes.join(", ")}.`,
@@ -875,6 +885,7 @@ function midjourneyStylizeFor(preset: CreativePreset) {
 }
 
 function buildMidjourneyPrimaryPrompt(
+  request: CreativeRequest,
   scent: ScentProfile,
   preset: PresetProfile,
   format: FormatProfile,
@@ -882,10 +893,19 @@ function buildMidjourneyPrimaryPrompt(
   suggestedNuance: string,
   suggestedCreativeDirection: string,
 ) {
+  const singleFrameRule =
+    request.format === "story-reel" ||
+    request.format === "image-to-video" ||
+    request.aspectPreset === "tiktok" ||
+    request.aspectPreset === "instagram-story"
+      ? "single full-frame image only, no collage, no diptych, no triptych, no storyboard, no multi-panel layout"
+      : null;
+
   return [
     `luxury commercial fragrance campaign for TARA ${scent.name}`,
     `${scent.sizeMl}mL bottle, ${scent.collection} collection`,
     `${format.composition}`,
+    singleFrameRule,
     `${scent.mood.join(", ")} mood`,
     `notes implied through ${scent.notes.join(", ")}`,
     preset.environment,
@@ -916,6 +936,7 @@ function buildMidjourneyDiscordCommand(
 ) {
   const stylize = midjourneyStylizeFor(request.preset);
   const prompt = buildMidjourneyPrimaryPrompt(
+    request,
     scent,
     preset,
     format,
@@ -1056,6 +1077,13 @@ function buildNegativePrompt() {
     "plastic-looking glass",
     "unrealistic reflection",
     "cheap discount poster",
+    "collage",
+    "grid layout",
+    "diptych",
+    "triptych",
+    "storyboard",
+    "contact sheet",
+    "multi-panel composition",
     "cluttered props",
     "neon club lighting",
     "medical claims",
@@ -1120,6 +1148,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
   );
   const shotList = buildShotList(request, scent, preset, format);
   const midjourneyPrimaryPrompt = buildMidjourneyPrimaryPrompt(
+    request,
     scent,
     preset,
     format,

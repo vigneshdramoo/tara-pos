@@ -114,6 +114,15 @@ function referenceLabelFor(productReference: ReferenceImage | null, uploadedRefe
   return "Prompt only";
 }
 
+function shouldForceSingleFrame(request: CreativeRequest) {
+  return (
+    request.format === "story-reel" ||
+    request.format === "image-to-video" ||
+    request.aspectPreset === "tiktok" ||
+    request.aspectPreset === "instagram-story"
+  );
+}
+
 export async function POST(request: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -149,6 +158,9 @@ export async function POST(request: Request) {
     const referenceImages = [productReference, uploadedReference].filter(
       Boolean,
     ) as ReferenceImage[];
+    const singleFrameRule = shouldForceSingleFrame(creativeRequest)
+      ? "Generate exactly one single vertical hero image. Do not return a collage, diptych, grid, storyboard, tiled layout, contact sheet, split-screen, or multiple frames in one canvas."
+      : null;
 
     const prompt = [
       productReference
@@ -160,6 +172,7 @@ export async function POST(request: Request) {
           : "Use the uploaded content photo as the main visual reference while keeping the product premium and believable."
         : "No uploaded content reference was provided, so continue with the saved POS product photo when available.",
       "The generated content may change the scene, lighting, model, pose, and environment, but the actual product must remain visually identical to the TARA reference whenever a POS product photo is present.",
+      singleFrameRule,
       `Output quality: ${brief.strategy.upscaleLabel}.`,
       brief.imagePrompt,
       `Compose the frame for ${brief.strategy.aspectLabel} (${brief.strategy.aspectRatio}) using the ${size} canvas with crop-safe margins.`,
