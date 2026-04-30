@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  ALL_SCENTS_SLUG,
   buildCreativeBrief,
   getAspectProfile,
   getUpscaleProfile,
   normalizeCreativeRequest,
   type CreativeRequest,
 } from "@/lib/creative-model";
-import { getProductImageUrl } from "@/lib/product-media";
+import { getAllProductImageUrls, getProductImageUrls } from "@/lib/product-media";
 
 type UploadedReferenceInput = {
   dataUrl?: string;
@@ -58,24 +59,32 @@ function isImageDataUrl(value: string) {
   return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
 }
 
-async function getProductReference(slug: string): Promise<ReferenceImage | null> {
-  const imageUrl = getProductImageUrl(slug);
+async function getProductReferences(slug: string): Promise<ReferenceImage[]> {
+  const imageUrls =
+    slug === ALL_SCENTS_SLUG ? getAllProductImageUrls() : getProductImageUrls(slug);
 
-  if (!imageUrl?.startsWith("/")) {
-    return null;
-  }
+  const references = await Promise.all(
+    imageUrls
+      .filter((imageUrl) => imageUrl.startsWith("/"))
+      .map(async (imageUrl) => {
+        const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
+        const bytes = await readFile(filePath);
+        const mimeType = getImageMimeType(filePath);
 
-  const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
-  const bytes = await readFile(filePath);
-  const mimeType = getImageMimeType(filePath);
+        return {
+          dataUrl: `data:${mimeType};base64,${bytes.toString("base64")}`,
+          fileName: path.basename(filePath),
+          mimeType,
+          label:
+            slug === ALL_SCENTS_SLUG
+              ? "Saved POS product photos for Aureya, Zephyr, and Maris"
+              : "Saved POS product photo",
+          source: "product" as const,
+        };
+      }),
+  );
 
-  return {
-    dataUrl: `data:${mimeType};base64,${bytes.toString("base64")}`,
-    fileName: path.basename(filePath),
-    mimeType,
-    label: "Saved POS product photo",
-    source: "product",
-  };
+  return references;
 }
 
 function getUploadedReference(input: UploadedReferenceInput | null | undefined): ReferenceImage | null {
@@ -98,17 +107,19 @@ function getUploadedReference(input: UploadedReferenceInput | null | undefined):
   };
 }
 
-function referenceLabelFor(productReference: ReferenceImage | null, uploadedReference: ReferenceImage | null) {
-  if (productReference && uploadedReference) {
-    return "Saved POS product photo + uploaded content photo";
+function referenceLabelFor(productReferences: ReferenceImage[], uploadedReference: ReferenceImage | null) {
+  if (productReferences.length && uploadedReference) {
+    return productReferences.length > 1
+      ? "Saved POS product photos for all 3 scents + uploaded content photo"
+      : "Saved POS product photo + uploaded content photo";
   }
 
   if (uploadedReference) {
     return uploadedReference.label;
   }
 
-  if (productReference) {
-    return productReference.label;
+  if (productReferences.length) {
+    return productReferences[0]?.label ?? "Saved POS product photo";
   }
 
   return "Prompt only";
@@ -153,9 +164,9 @@ export async function POST(request: Request) {
     const model = process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5";
     const size = imageSizeForRequest(creativeRequest);
     const quality = imageQualityForRequest(creativeRequest);
-    const productReference = await getProductReference(creativeRequest.scentSlug);
+    const productReferences = await getProductReferences(creativeRequest.scentSlug);
     const uploadedReference = getUploadedReference(body.uploadedReference);
-    const referenceImages = [productReference, uploadedReference].filter(
+    const referenceImages = [...productReferences, uploadedReference].filter(
       Boolean,
     ) as ReferenceImage[];
     const singleFrameRule = shouldForceSingleFrame(creativeRequest)
@@ -163,15 +174,23 @@ export async function POST(request: Request) {
       : null;
 
     const prompt = [
-      productReference
-        ? "Use the first reference image as the exact TARA product identity reference and preserve it precisely."
+      productReferences.length > 1
+        ? "Use the first three reference images as the exact TARA product identity references for Aureya, Zephyr, and Maris. Preserve each bottle precisely and include all three together in one balanced composition."
+        : productReferences[0]
+          ? "Use the first reference image as the exact TARA product identity reference and preserve it precisely."
         : "No saved POS product image is available, so rely on the remaining references and the prompt for product styling.",
       uploadedReference
-        ? productReference
-          ? "Use the second reference image as extra content direction for scene, framing, creator styling, props, or lighting without changing the product identity."
+        ? productReferences.length
+          ? productReferences.length > 1
+            ? "Use the uploaded content reference as extra direction for scene, framing, creator styling, props, or lighting without changing any of the three product identities."
+            : "Use the second reference image as extra content direction for scene, framing, creator styling, props, or lighting without changing the product identity."
           : "Use the uploaded content photo as the main visual reference while keeping the product premium and believable."
-        : "No uploaded content reference was provided, so continue with the saved POS product photo when available.",
-      "The generated content may change the scene, lighting, model, pose, and environment, but the actual product must remain visually identical to the TARA reference whenever a POS product photo is present.",
+        : productReferences.length > 1
+          ? "No uploaded content reference was provided, so continue with the saved POS product photos for Aureya, Zephyr, and Maris."
+          : "No uploaded content reference was provided, so continue with the saved POS product photo when available.",
+      productReferences.length > 1
+        ? "The generated content may change the scene, lighting, model, pose, and environment, but Aureya, Zephyr, and Maris must each remain visually identical to their TARA reference image and appear only once."
+        : "The generated content may change the scene, lighting, model, pose, and environment, but the actual product must remain visually identical to the TARA reference whenever a POS product photo is present.",
       singleFrameRule,
       `Output quality: ${brief.strategy.upscaleLabel}.`,
       brief.imagePrompt,
@@ -243,7 +262,7 @@ export async function POST(request: Request) {
         dataUrl: `data:image/png;base64,${b64Json}`,
         model,
         size,
-        sourceReferenceLabel: referenceLabelFor(productReference, uploadedReference),
+        sourceReferenceLabel: referenceLabelFor(productReferences, uploadedReference),
         revisedPrompt: result.data?.[0]?.revised_prompt ?? null,
       },
     });

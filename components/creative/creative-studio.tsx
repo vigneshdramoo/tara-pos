@@ -19,6 +19,7 @@ import {
 import { Pill } from "@/components/ui/pill";
 import { Surface } from "@/components/ui/surface";
 import {
+  ALL_SCENTS_SLUG,
   aspectOptions,
   buildCreativeBrief,
   channelOptions,
@@ -38,7 +39,7 @@ import {
   type CreativeUpscaleMode,
   type CreativeWorkflow,
 } from "@/lib/creative-model";
-import { getProductImageUrl } from "@/lib/product-media";
+import { getAllProductImageUrls, getProductImageUrls } from "@/lib/product-media";
 import { cn } from "@/lib/utils";
 
 type CreativeStudioProps = {
@@ -178,12 +179,12 @@ function DetailList({
 function ReferencePreview({
   title,
   description,
-  src,
+  srcs,
   badge,
 }: {
   title: string;
   description: string;
-  src: string | null;
+  srcs: string[];
   badge: string;
 }) {
   return (
@@ -197,13 +198,27 @@ function ReferencePreview({
       </div>
 
       <div className="mt-4 overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--brand-ivory)]">
-        {src ? (
+        {srcs.length > 1 ? (
+          <div className="grid grid-cols-3 gap-2 p-2">
+            {srcs.map((src, index) => (
+              <Image
+                key={`${title}-${index}`}
+                src={src}
+                alt={`${title} ${index + 1}`}
+                width={512}
+                height={640}
+                unoptimized={src.startsWith("data:")}
+                className="aspect-[4/5] w-full rounded-2xl object-cover"
+              />
+            ))}
+          </div>
+        ) : srcs[0] ? (
           <Image
-            src={src}
+            src={srcs[0]}
             alt={title}
             width={1024}
             height={1280}
-            unoptimized={src.startsWith("data:")}
+            unoptimized={srcs[0].startsWith("data:")}
             className="aspect-[4/5] w-full object-cover"
           />
         ) : (
@@ -235,7 +250,10 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [uploadedReference, setUploadedReference] = useState<UploadedReference | null>(null);
 
-  const productReferenceUrl = getProductImageUrl(request.scentSlug);
+  const productReferenceUrls =
+    request.scentSlug === ALL_SCENTS_SLUG
+      ? getAllProductImageUrls()
+      : getProductImageUrls(request.scentSlug);
   const canRenderInStudio = request.workflow !== "midjourney-handoff";
   const midjourneyPackText = [
     "MIDJOURNEY BASE PROMPT",
@@ -528,23 +546,38 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <ReferencePreview
-                  title="Saved POS product photo"
-                  description="This is the default product identity reference from the POS catalog."
-                  src={productReferenceUrl}
-                  badge={productReferenceUrl ? "Fallback ready" : "Missing"}
+                  title={
+                    request.scentSlug === ALL_SCENTS_SLUG
+                      ? "Saved POS product photos"
+                      : "Saved POS product photo"
+                  }
+                  description={
+                    request.scentSlug === ALL_SCENTS_SLUG
+                      ? "These are the default product identity references for Aureya, Zephyr, and Maris."
+                      : "This is the default product identity reference from the POS catalog."
+                  }
+                  srcs={productReferenceUrls}
+                  badge={
+                    productReferenceUrls.length > 1
+                      ? `${productReferenceUrls.length} refs`
+                      : productReferenceUrls[0]
+                        ? "Fallback ready"
+                        : "Missing"
+                  }
                 />
                 <ReferencePreview
                   title="Uploaded content photo"
                   description="Optional extra mood or composition reference for creator-style content."
-                  src={uploadedReference?.dataUrl ?? null}
+                  srcs={uploadedReference?.dataUrl ? [uploadedReference.dataUrl] : []}
                   badge={uploadedReference ? "Attached" : "Optional"}
                 />
               </div>
 
-              {!productReferenceUrl && !uploadedReference ? (
+              {!productReferenceUrls.length && !uploadedReference ? (
                 <div className="tara-alert-warning mt-4 rounded-2xl px-4 py-3 text-sm leading-6">
-                  This scent does not have a saved POS product photo yet. Upload a content photo
-                  or packshot first if you want the renderer to preserve the product more tightly.
+                  This selection does not have a saved POS product photo yet. Upload a content
+                  photo or packshot first if you want the renderer to preserve the product more
+                  tightly.
                 </div>
               ) : null}
             </div>

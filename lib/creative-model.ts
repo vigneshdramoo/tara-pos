@@ -44,6 +44,8 @@ export type CreativeWorkflow =
   | "midjourney-handoff"
   | "hybrid-precision";
 
+export const ALL_SCENTS_SLUG = "all-scents";
+
 export type CreativeRequest = {
   scentSlug: string;
   workflow: CreativeWorkflow;
@@ -227,11 +229,35 @@ const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
   };
 });
 
-export const scentOptions: CreativeOption[] = scentProfiles.map((scent) => ({
-  value: scent.slug,
-  label: scent.name,
-  description: `${scent.collection} - ${scent.mood.join(", ")}`,
-}));
+const allScentsProfile: ScentProfile = {
+  slug: ALL_SCENTS_SLUG,
+  name: "TARA Trilogy",
+  collection: "House Collection",
+  description:
+    "Aureya, Zephyr, and Maris presented together as the core TARA fragrance lineup, balancing radiant softness, clean structure, and intimate skin-close freshness in one premium hero composition.",
+  notes: Array.from(new Set(scentProfiles.flatMap((scent) => scent.notes))),
+  mood: ["Radiant", "Clean", "Intimate", "Elevated"],
+  sizeMl: 50,
+  accentHex: "#CA9E5B",
+  persona: "neutral",
+  temperature: "balanced, radiant, clean, and quietly luxurious",
+  texture: "polished stone, warm gold light, clean glass, and a refined trio arrangement",
+  signatureScene:
+    "a premium trio composition where Aureya, Zephyr, and Maris stand together in one elegant frame with clear separation and equal hero presence",
+};
+
+export const scentOptions: CreativeOption[] = [
+  {
+    value: ALL_SCENTS_SLUG,
+    label: "All 3 scents",
+    description: "Aureya, Zephyr, and Maris together in one hero image.",
+  },
+  ...scentProfiles.map((scent) => ({
+    value: scent.slug,
+    label: scent.name,
+    description: `${scent.collection} - ${scent.mood.join(", ")}`,
+  })),
+];
 
 export const formatOptions: CreativeOption<CreativeFormat>[] = [
   {
@@ -696,9 +722,12 @@ export function normalizeCreativeRequest(input: Partial<CreativeRequest>): Creat
   const channel = findOption(channelOptions, input.channel ?? "", "instagram-feed");
 
   return {
-    scentSlug: input.scentSlug && scentProfiles.some((scent) => scent.slug === input.scentSlug)
-      ? input.scentSlug
-      : scentProfiles[0]?.slug ?? "aureya",
+    scentSlug:
+      input.scentSlug &&
+      (input.scentSlug === ALL_SCENTS_SLUG ||
+        scentProfiles.some((scent) => scent.slug === input.scentSlug))
+        ? input.scentSlug
+        : scentProfiles[0]?.slug ?? "aureya",
     workflow: findOption(workflowOptions, input.workflow ?? "", "hybrid-precision"),
     format,
     channel,
@@ -716,7 +745,23 @@ export function normalizeCreativeRequest(input: Partial<CreativeRequest>): Creat
 }
 
 function getScent(slug: string) {
+  if (slug === ALL_SCENTS_SLUG) {
+    return allScentsProfile;
+  }
+
   return scentProfiles.find((scent) => scent.slug === slug) ?? scentProfiles[0];
+}
+
+function isAllScentsSlug(slug: string) {
+  return slug === ALL_SCENTS_SLUG;
+}
+
+function buildProductGroupingInstruction(request: CreativeRequest) {
+  if (!isAllScentsSlug(request.scentSlug)) {
+    return null;
+  }
+
+  return "Show Aureya, Zephyr, and Maris together in one premium composition. Include each bottle exactly once, fully visible, clearly separated, and with every label readable. Do not omit, duplicate, merge, stack, or crop any of the three scents.";
 }
 
 function sentenceJoin(items: string[]) {
@@ -724,6 +769,12 @@ function sentenceJoin(items: string[]) {
 }
 
 function buildSuggestedAudience(request: CreativeRequest, scent: ScentProfile) {
+  if (isAllScentsSlug(request.scentSlug)) {
+    return request.audienceNote
+      ? request.audienceNote
+      : "Malaysian fragrance shoppers comparing the full TARA house lineup and deciding which scent fits their mood, gifting moment, or signature style.";
+  }
+
   if (request.audienceNote) {
     return request.audienceNote;
   }
@@ -775,8 +826,9 @@ function buildSuggestedCreativeDirection(
   aspect: AspectProfile,
 ) {
   const customBrief = request.customBrief ? ` Honor this added direction: ${request.customBrief}.` : "";
+  const groupingInstruction = buildProductGroupingInstruction(request);
 
-  return `Stage ${scent.name} inside ${preset.environment}, light it with ${preset.lighting}, and keep the world grounded in ${scent.signatureScene}. ${aspect.cropGuidance} Let the frame lean into ${scent.texture} while preserving a premium Malaysian point of view.${customBrief}`;
+  return `Stage ${scent.name} inside ${preset.environment}, light it with ${preset.lighting}, and keep the world grounded in ${scent.signatureScene}. ${aspect.cropGuidance} Let the frame lean into ${scent.texture} while preserving a premium Malaysian point of view.${groupingInstruction ? ` ${groupingInstruction}` : ""}${customBrief}`;
 }
 
 function buildShotList(
@@ -785,9 +837,11 @@ function buildShotList(
   preset: PresetProfile,
   format: FormatProfile,
 ) {
+  const groupingInstruction = buildProductGroupingInstruction(request);
+
   if (request.format === "carousel") {
     return [
-      `${scent.name} hero frame: ${format.composition}.`,
+      `${scent.name} hero frame: ${format.composition}${groupingInstruction ? ` ${groupingInstruction}` : ""}.`,
       `Notes frame: show ${scent.notes.slice(0, 4).join(", ")} as sparse premium materials.`,
       `Mood frame: translate ${scent.mood.join(", ")} into Malaysian fabric, light, and posture cues.`,
       `Wear frame: show the bottle beside ${
@@ -803,7 +857,7 @@ function buildShotList(
 
   if (request.format === "booth-poster") {
     return [
-      `Bottle centered with ${preset.environment}.`,
+      `${groupingInstruction ? "Arrange the three bottles together" : "Bottle centered"} with ${preset.environment}.`,
       "Leave upper negative space for scent name and lower space for price/preorder CTA.",
       "Include a subtle tester strip cue so shoppers understand they can sample it.",
       "Keep the Malaysian pop-up counter premium and clean, with no discount or crowded market cues.",
@@ -812,7 +866,7 @@ function buildShotList(
 
   if (request.format === "story-reel" || request.format === "image-to-video") {
     return [
-      `Opening: ${scent.name} bottle held steady in ${preset.environment}.`,
+      `Opening: ${isAllScentsSlug(request.scentSlug) ? "Aureya, Zephyr, and Maris held together in one balanced hero frame" : `${scent.name} bottle held steady`} in ${preset.environment}.`,
       `Movement: ${preset.motion}.`,
       `Sensory insert: ${scent.notes.slice(0, 3).join(", ")} appear through Malaysian-relevant light, texture, or restrained ingredient details.`,
       "End frame: bottle upright, label readable, warm preorder cue, no hard-sell graphics.",
@@ -820,7 +874,7 @@ function buildShotList(
   }
 
   return [
-    `Hero composition: ${format.composition}.`,
+    `Hero composition: ${format.composition}${groupingInstruction ? ` ${groupingInstruction}` : ""}.`,
     `Scene: ${preset.environment}.`,
     `Light: ${preset.lighting}.`,
     "Final check: label readable, bottle accurate, reflections realistic.",
@@ -841,6 +895,7 @@ function buildImagePrompt(
   const audience = `Target audience: ${suggestedAudience}.`;
   const nuance = `Nuance: ${suggestedNuance}.`;
   const direction = `Creative direction: ${suggestedCreativeDirection}.`;
+  const groupingInstruction = buildProductGroupingInstruction(request);
   const singleFrameRule =
     request.format === "story-reel" ||
     request.format === "image-to-video" ||
@@ -854,6 +909,7 @@ function buildImagePrompt(
     audience,
     nuance,
     direction,
+    groupingInstruction,
     singleFrameRule,
     `Brand world: ${brandRules.join("; ")}.`,
     `Malaysia market rules: ${malaysiaMarketRules.join("; ")}.`,
@@ -893,6 +949,7 @@ function buildMidjourneyPrimaryPrompt(
   suggestedNuance: string,
   suggestedCreativeDirection: string,
 ) {
+  const groupingInstruction = buildProductGroupingInstruction(request);
   const singleFrameRule =
     request.format === "story-reel" ||
     request.format === "image-to-video" ||
@@ -905,6 +962,7 @@ function buildMidjourneyPrimaryPrompt(
     `luxury commercial fragrance campaign for TARA ${scent.name}`,
     `${scent.sizeMl}mL bottle, ${scent.collection} collection`,
     `${format.composition}`,
+    groupingInstruction,
     singleFrameRule,
     `${scent.mood.join(", ")} mood`,
     `notes implied through ${scent.notes.join(", ")}`,
@@ -960,12 +1018,24 @@ function buildMidjourneyDiscordCommand(
   ].join(" ");
 }
 
-function buildMidjourneyReferencePlan(aspect: AspectProfile, upscale: UpscaleProfile) {
+function buildMidjourneyReferencePlan(
+  request: CreativeRequest,
+  aspect: AspectProfile,
+  upscale: UpscaleProfile,
+) {
+  const productReferenceLine = isAllScentsSlug(request.scentSlug)
+    ? "Use the saved POS product photos for Aureya, Zephyr, and Maris as the product reference set so all three bottle silhouettes, caps, glass, and labels stay locked to the real TARA lineup."
+    : "Use the saved POS product photo as the Omni Reference first so the bottle silhouette, cap, glass, and label stay locked to the real TARA product.";
+
+  const noUploadLine = isAllScentsSlug(request.scentSlug)
+    ? `If no content photo is uploaded, proceed with the saved trio product references alone and let the text prompt control the ${aspect.label.toLowerCase()} scene.`
+    : `If no content photo is uploaded, proceed with the saved POS product photo alone and let the text prompt control the ${aspect.label.toLowerCase()} scene.`;
+
   return [
-    "Use the saved POS product photo as the Omni Reference first so the bottle silhouette, cap, glass, and label stay locked to the real TARA product.",
+    productReferenceLine,
     "If you upload a content photo, start by using it as the Style Reference for palette, atmosphere, lighting, and vibe transfer.",
     "If the uploaded photo is really about composition or prop placement instead of mood, rerun with it as an Image Prompt rather than a Style Reference.",
-    `If no content photo is uploaded, proceed with the saved POS product photo alone and let the text prompt control the ${aspect.label.toLowerCase()} scene.`,
+    noUploadLine,
     `Upscale target: ${upscale.label}. Keep the winning frame product-accurate before you upscale anything.`,
   ];
 }
@@ -980,7 +1050,9 @@ function buildMidjourneyWebSetup(request: CreativeRequest, aspect: AspectProfile
 
   return [
     "Open Midjourney Web and start a new image prompt with the TARA brief beside you.",
-    "Attach the saved POS product photo as the Omni Reference to anchor the product identity.",
+    isAllScentsSlug(request.scentSlug)
+      ? "Attach the saved POS product photos for Aureya, Zephyr, and Maris as the product reference set so each scent stays recognizable."
+      : "Attach the saved POS product photo as the Omni Reference to anchor the product identity.",
     "Attach the uploaded content photo as the Style Reference when you want its mood and lighting carried over.",
     `Set the aspect ratio to ${aspect.aspectRatio} for ${aspect.label}, paste the Midjourney base prompt, and keep Raw mode on for tighter product control.`,
     upscaleStep,
@@ -1038,6 +1110,10 @@ function buildVideoPrompt(
 }
 
 function buildCaption(request: CreativeRequest, scent: ScentProfile) {
+  if (isAllScentsSlug(request.scentSlug)) {
+    return `Meet the TARA house lineup in one frame: Aureya, Zephyr, and Maris, each carrying a different mood across one refined collection.\n\nCompare the trio, find your signature, and reserve the 50mL Eau de Parfum that fits your moment through TARA preorder.`;
+  }
+
   const leadByObjective: Record<CreativeObjective, string> = {
     "launch-drop": `${scent.name} steps into the first TARA chapter with ${scent.mood
       .slice(0, 2)
@@ -1102,7 +1178,7 @@ function buildNegativePrompt() {
 function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
   if (request.workflow === "openai-render") {
     return [
-      "Generate the strategy in TARA first, then render directly inside the POS with the saved product photo plus any uploaded content reference.",
+      `Generate the strategy in TARA first, then render directly inside the POS with ${isAllScentsSlug(request.scentSlug) ? "all three saved product photos plus any uploaded content reference" : "the saved product photo plus any uploaded content reference"}.`,
       "Use Malaysian-relevant scenes, subjects, retail environments, and cultural context by default.",
       "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
       "Run 4 variations, reject anything with changed product shape, warped label text, duplicated bottles, foreign settings, or unrealistic glass.",
@@ -1114,7 +1190,7 @@ function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
   if (request.workflow === "midjourney-handoff") {
     return [
       "Generate the TARA brief and Midjourney prompt pack first so the scent strategy and audience nuance are locked before rendering elsewhere.",
-      "Use the saved POS product photo as the Midjourney Omni Reference, and add an uploaded content photo only when you want extra mood or composition guidance.",
+      `Use ${isAllScentsSlug(request.scentSlug) ? "the three saved POS product photos as the Midjourney product reference set" : "the saved POS product photo as the Midjourney Omni Reference"}, and add an uploaded content photo only when you want extra mood or composition guidance.`,
       "Keep Malaysian-relevant retail, lifestyle, architecture, and model-casting cues visible in every pass.",
       "Run a small variation set first, reject anything with label drift or product redesign, then refine the best pass rather than rewriting from zero.",
       `Upscale setting: ${upscale.label}. ${upscale.note}`,
@@ -1124,7 +1200,7 @@ function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
   return [
     "Use TARA to lock the scent strategy, audience nuance, and product rules before you render anything.",
     "Render a quick proof in TARA when helpful, then use the Midjourney prompt pack to widen exploration while preserving the same product identity.",
-    "Use the saved POS product photo as the product-accuracy anchor and any uploaded content photo as optional creative direction.",
+    `Use ${isAllScentsSlug(request.scentSlug) ? "all three saved POS product photos as the product-accuracy anchor set" : "the saved POS product photo as the product-accuracy anchor"} and any uploaded content photo as optional creative direction.`,
     "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
     "Approve only frames that keep the bottle, label, reflections, and Malaysian context believable at full resolution.",
     `Upscale setting: ${upscale.label}. ${upscale.note}`,
@@ -1204,7 +1280,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
     midjourney: {
       primaryPrompt: midjourneyPrimaryPrompt,
       discordCommand: midjourneyDiscordCommand,
-      referencePlan: buildMidjourneyReferencePlan(aspect, upscale),
+      referencePlan: buildMidjourneyReferencePlan(request, aspect, upscale),
       webSetup: buildMidjourneyWebSetup(request, aspect),
       parameterGuide: buildMidjourneyParameterGuide(request, aspect, upscale),
       precisionLoop: buildMidjourneyPrecisionLoop(request),
@@ -1219,7 +1295,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       ]),
     ),
     qaChecklist: [
-      `The viewer can identify ${scent.name} in under two seconds.`,
+      isAllScentsSlug(request.scentSlug)
+        ? "The viewer can identify Aureya, Zephyr, and Maris in under two seconds, with each bottle visible exactly once."
+        : `The viewer can identify ${scent.name} in under two seconds.`,
       "The entire original product look is retained: bottle, cap, label, color, proportions, and packaging details.",
       "Bottle silhouette, cap, label position, and glass weight feel physically real.",
       "Scene supports the scent notes with Malaysian-relevant elements without becoming literal or cluttered.",
@@ -1232,6 +1310,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       `Preferred aspect ratio: ${aspect.label} (${aspect.aspectRatio}) on a ${aspect.size} canvas.`,
       `Upscale plan: ${upscale.label}. ${upscale.note}`,
       `Primary visual materials: ${sentenceJoin([scent.texture, preset.environment])}.`,
+      isAllScentsSlug(request.scentSlug)
+        ? "Use Aureya, Zephyr, and Maris together in one image, with balanced spacing and no bottle duplication."
+        : "Keep the selected scent as the single hero unless the brief explicitly asks for a comparison or collection shot.",
       "For real generation, upload a content photo when you have one. If you do not upload anything, the studio falls back to the saved POS product photo when available.",
       "Keep Malaysian market relevance visible through location, model casting, styling, gifting moments, climate, and retail context.",
       "For video, keep the clip to one scene at first; stitch multiple scenes only after product consistency is proven.",
