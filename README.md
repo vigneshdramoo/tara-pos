@@ -17,8 +17,8 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - Customer list with lifetime spend and repeat-buyer visibility
 - Order history with item-level breakdown
 - Manager-only staff directory with role-aware access
-- Local AI assistant page for sales summaries and restock prompts
-- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, upscale-aware image generation prompts, and Midjourney handoff packs
+- Local AI assistant page for sales summaries, restock prompts, and Tomedes SMART handoff packs
+- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, upscale-aware image generation prompts, Midjourney handoff packs, and Tomedes SMART prompt-refinement briefs
 
 ## Online deployment profile
 

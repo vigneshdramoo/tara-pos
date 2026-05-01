@@ -6,6 +6,7 @@ import {
   Camera,
   ClipboardCheck,
   Copy,
+  ExternalLink,
   Film,
   Hash,
   ImageIcon,
@@ -40,6 +41,7 @@ import {
   type CreativeWorkflow,
 } from "@/lib/creative-model";
 import { getAllProductImageUrls, getProductImageUrls } from "@/lib/product-media";
+import { buildTomedesCreativePromptPack } from "@/lib/tomedes";
 import { cn } from "@/lib/utils";
 
 type CreativeStudioProps = {
@@ -255,6 +257,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
       ? getAllProductImageUrls()
       : getProductImageUrls(request.scentSlug);
   const canRenderInStudio = request.workflow !== "midjourney-handoff";
+  const tomedesPack = buildTomedesCreativePromptPack(brief, request);
   const midjourneyPackText = [
     "MIDJOURNEY BASE PROMPT",
     brief.midjourney.primaryPrompt,
@@ -814,6 +817,68 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
           copied={copiedKey === "video"}
           onCopy={() => copyText("video", brief.videoPrompt)}
         />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <PromptBlock
+          title="Tomedes SMART image brief"
+          value={tomedesPack.imagePromptBrief}
+          icon="camera"
+          copied={copiedKey === "tomedes-image"}
+          onCopy={() => copyText("tomedes-image", tomedesPack.imagePromptBrief)}
+        />
+        <Surface className="flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">
+                Tomedes SMART
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-foreground">Prompt refinement path</h3>
+            </div>
+            <Pill tone="accent">External tools</Pill>
+          </div>
+
+          <div className="grid gap-3">
+            {tomedesPack.links.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="tara-card-soft flex items-start justify-between gap-3 rounded-[24px] p-4 transition hover:bg-white/80"
+              >
+                <div>
+                  <p className="font-semibold text-foreground">{link.label}</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{link.description}</p>
+                </div>
+                <ExternalLink
+                  className="mt-1 h-4 w-4 shrink-0 text-[var(--brand-gold)]"
+                  strokeWidth={1.8}
+                />
+              </a>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => copyText("tomedes-content", tomedesPack.contentWriterBrief)}
+            className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium transition"
+          >
+            <Copy className="h-4 w-4" strokeWidth={1.8} />
+            {copiedKey === "tomedes-content" ? "Copied" : "Copy SMART content brief"}
+          </button>
+
+          <div className="grid gap-3">
+            {tomedesPack.workflowNotes.map((note) => (
+              <div
+                key={note}
+                className="rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]"
+              >
+                {note}
+              </div>
+            ))}
+          </div>
+        </Surface>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">

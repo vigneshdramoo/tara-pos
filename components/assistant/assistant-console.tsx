@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp, Sparkles } from "lucide-react";
+import { ArrowUp, Copy, ExternalLink, Sparkles } from "lucide-react";
 import { Pill } from "@/components/ui/pill";
 import { Surface } from "@/components/ui/surface";
+import { buildTomedesAssistantPromptPack } from "@/lib/tomedes";
 import type { AssistantReply } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,30 @@ type Message = {
   role: "user" | "assistant";
   content: string;
 };
+
+type AssistantWorkflow = "hybrid" | "local" | "tomedes-smart";
+
+const assistantWorkflowOptions: Array<{
+  value: AssistantWorkflow;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "hybrid",
+    label: "Hybrid with Tomedes SMART",
+    description: "Keep the live TARA answer, plus a Tomedes SMART handoff pack for refinement.",
+  },
+  {
+    value: "local",
+    label: "Local only",
+    description: "Use only the in-app TARA sales assistant with no extra handoff pack.",
+  },
+  {
+    value: "tomedes-smart",
+    label: "Tomedes SMART handoff",
+    description: "Build the TARA answer first, then prepare it for Tomedes SMART refinement.",
+  },
+];
 
 export function AssistantConsole({
   initialReply,
@@ -28,11 +53,23 @@ export function AssistantConsole({
   const [restocks, setRestocks] = useState(initialReply.restocks);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [workflow, setWorkflow] = useState<AssistantWorkflow>("hybrid");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [lastPrompt, setLastPrompt] = useState(initialReply.prompt);
+  const latestAssistantMessage =
+    [...messages].reverse().find((message) => message.role === "assistant")?.content ??
+    initialReply.reply;
+  const tomedesPack = buildTomedesAssistantPromptPack(
+    lastPrompt,
+    latestAssistantMessage,
+    restocks,
+  );
 
   async function submitPrompt(prompt: string) {
     if (!prompt.trim()) return;
 
     const cleanPrompt = prompt.trim();
+    setLastPrompt(cleanPrompt);
     setMessages((current) => [...current, { role: "user", content: cleanPrompt }]);
     setInput("");
     setLoading(true);
@@ -70,6 +107,12 @@ export function AssistantConsole({
     }
   }
 
+  async function copyText(key: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(null), 1400);
+  }
+
   return (
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_360px]">
       <Surface className="flex flex-col gap-5">
@@ -78,8 +121,30 @@ export function AssistantConsole({
             <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Conversation</p>
             <h3 className="mt-3 text-2xl font-semibold text-foreground">Ask the floor anything</h3>
           </div>
-          <Pill tone="accent">Local heuristics</Pill>
+          <Pill tone="accent">
+            {workflow === "local" ? "Local heuristics" : "TARA + Tomedes SMART"}
+          </Pill>
         </div>
+
+        <label className="grid gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
+            Assistant workflow
+          </span>
+          <select
+            value={workflow}
+            onChange={(event) => setWorkflow(event.target.value as AssistantWorkflow)}
+            className="tara-input touch-target rounded-2xl px-4 text-sm font-medium outline-none transition"
+          >
+            {assistantWorkflowOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <span className="min-h-10 text-sm leading-5 text-[var(--muted)]">
+            {assistantWorkflowOptions.find((option) => option.value === workflow)?.description}
+          </span>
+        </label>
 
         <div className="scrollbar-hidden flex max-h-[540px] flex-col gap-4 overflow-y-auto pr-1">
           {messages.map((message, index) => (
@@ -139,42 +204,108 @@ export function AssistantConsole({
         </div>
       </Surface>
 
-      <Surface className="flex flex-col gap-5">
-        <div className="flex items-center gap-3">
-          <div className="tara-panel-dark flex h-11 w-11 items-center justify-center rounded-full">
-            <Sparkles className="h-5 w-5" strokeWidth={1.8} />
-          </div>
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Suggested restocks</p>
-            <h3 className="mt-1 text-xl font-semibold text-foreground">Priority queue</h3>
-          </div>
-        </div>
-
-        <div className="grid gap-3">
-          {restocks.length ? (
-            restocks.map((item) => (
-              <div
-                key={item.id}
-                className="tara-card-soft rounded-[24px] p-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-foreground">{item.name}</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {item.stock} on hand · floor level {item.reorderLevel}
-                    </p>
-                  </div>
-                  <Pill tone="danger">+{item.recommendedRestock}</Pill>
-                </div>
+      <div className="grid gap-4">
+        {workflow !== "local" ? (
+          <Surface className="flex flex-col gap-5">
+            <div className="flex items-center gap-3">
+              <div className="tara-panel-dark flex h-11 w-11 items-center justify-center rounded-full">
+                <Sparkles className="h-5 w-5" strokeWidth={1.8} />
               </div>
-            ))
-          ) : (
-            <div className="tara-card-soft rounded-[24px] p-4 text-sm leading-7 text-[var(--muted)]">
-              The fragrance floor is currently stocked above the minimum threshold.
+              <div>
+                <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">
+                  Tomedes SMART
+                </p>
+                <h3 className="mt-1 text-xl font-semibold text-foreground">Assistant handoff</h3>
+              </div>
             </div>
-          )}
-        </div>
-      </Surface>
+
+            <div className="grid gap-3">
+              {tomedesPack.links.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="tara-card-soft flex items-start justify-between gap-3 rounded-[24px] p-4 transition hover:bg-white/80"
+                >
+                  <div>
+                    <p className="font-semibold text-foreground">{link.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{link.description}</p>
+                  </div>
+                  <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-[var(--brand-gold)]" strokeWidth={1.8} />
+                </a>
+              ))}
+            </div>
+
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={() => copyText("tomedes-chat", tomedesPack.chatBrief)}
+                className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium transition"
+              >
+                <Copy className="h-4 w-4" strokeWidth={1.8} />
+                {copiedKey === "tomedes-chat" ? "Copied" : "Copy SMART chat brief"}
+              </button>
+              <button
+                type="button"
+                onClick={() => copyText("tomedes-summary", tomedesPack.summaryBrief)}
+                className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium transition"
+              >
+                <Copy className="h-4 w-4" strokeWidth={1.8} />
+                {copiedKey === "tomedes-summary" ? "Copied" : "Copy SMART summary brief"}
+              </button>
+            </div>
+
+            <div className="grid gap-3">
+              {tomedesPack.workflowNotes.map((note) => (
+                <div
+                  key={note}
+                  className="rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]"
+                >
+                  {note}
+                </div>
+              ))}
+            </div>
+          </Surface>
+        ) : null}
+
+        <Surface className="flex flex-col gap-5">
+          <div className="flex items-center gap-3">
+            <div className="tara-panel-dark flex h-11 w-11 items-center justify-center rounded-full">
+              <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Suggested restocks</p>
+              <h3 className="mt-1 text-xl font-semibold text-foreground">Priority queue</h3>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {restocks.length ? (
+              restocks.map((item) => (
+                <div
+                  key={item.id}
+                  className="tara-card-soft rounded-[24px] p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-foreground">{item.name}</p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">
+                        {item.stock} on hand · floor level {item.reorderLevel}
+                      </p>
+                    </div>
+                    <Pill tone="danger">+{item.recommendedRestock}</Pill>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="tara-card-soft rounded-[24px] p-4 text-sm leading-7 text-[var(--muted)]">
+                The fragrance floor is currently stocked above the minimum threshold.
+              </div>
+            )}
+          </div>
+        </Surface>
+      </div>
     </section>
   );
 }

@@ -18,7 +18,7 @@ export default async function AssistantPage() {
       <PageIntro
         eyebrow="Local AI"
         title="Sales brief assistant"
-        description="A store-side assistant that runs entirely on local sales and inventory data, helping staff summarize performance and spot restock moves without a cloud dependency."
+        description="A store-side assistant grounded in local sales and inventory data, with optional Tomedes SMART handoff packs for tightening sales answers and shift summaries when you want a second pass."
       />
 
       {dashboard.databaseIssue ? <StatusNotice message={dashboard.databaseIssue} /> : null}
