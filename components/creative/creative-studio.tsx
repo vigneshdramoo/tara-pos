@@ -251,6 +251,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
   const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [uploadedReference, setUploadedReference] = useState<UploadedReference | null>(null);
+  const [renderCount, setRenderCount] = useState(0);
 
   const productReferenceUrls =
     request.scentSlug === ALL_SCENTS_SLUG
@@ -289,6 +290,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
     setGeneratedImage(null);
     setError(null);
     setImageError(null);
+    setRenderCount(0);
   }
 
   async function handleReferenceUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -367,6 +369,8 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
     setImageLoading(true);
     setImageError(null);
     setGeneratedImage(null);
+    const nextRenderCount = renderCount + 1;
+    setRenderCount(nextRenderCount);
 
     try {
       const response = await fetch("/api/creative/image", {
@@ -376,6 +380,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
         },
         body: JSON.stringify({
           ...request,
+          variationIndex: nextRenderCount - 1,
           uploadedReference,
         }),
       });
@@ -713,7 +718,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
                   </h4>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                     {canRenderInStudio
-                      ? "Use Create image to turn the current TARA brief into an actual visual. If no API key is connected, the app will show the setup step here."
+                      ? "Use Create image to turn the current TARA brief into an actual visual. Each new render attempt now pushes the preset into a fresh scene, framing, and prop variation. If no API key is connected, the app will show the setup step here."
                       : "This workflow keeps rendering in Midjourney. Copy the Midjourney pack, then use the reference plan and web setup below for the final generation."}
                   </p>
                 </div>
