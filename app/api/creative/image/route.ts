@@ -49,6 +49,98 @@ type VariationPack = {
 };
 
 const variationPacksByPreset: Record<CreativeRequest["preset"], VariationPack[]> = {
+  "after-rain-silence": [
+    {
+      label: "window rain hush",
+      scene: "Place the model near soft window daylight after rain, with the background reduced to a green-gray blur and no visible objects.",
+      framing: "Use a close-to-mid vertical crop on shoulders, neck, collarbone, hands, and the full readable bottle near the collarbone.",
+      styling: "Use slightly damp hair, fine skin droplets, neutral ivory or muted green styling, and relaxed fingers with no accessories.",
+      energy: "Feel quiet, intimate, and melancholic but calming, with skin and light carrying more emotion than pose.",
+    },
+    {
+      label: "deep green stillness",
+      scene: "Move the scene into a darker green-gray gradient world with no scenery, no props, and a stronger post-water silence.",
+      framing: "Hold the bottle in the middle third, secondary to the face and collarbone but still clear and label-forward.",
+      styling: "Use off-shoulder wet fabric, natural skin texture, soft droplets, and hair falling naturally across one shoulder.",
+      energy: "Feel editorial, restrained, and skin-close rather than glamorous or performative.",
+    },
+    {
+      label: "eyes closed breath",
+      scene: "Make the private moment about eyes closed and a slow breath after water, using only diffused daylight and soft shadow.",
+      framing: "Crop just below the upper torso with generous negative space above and beside the subject.",
+      styling: "Keep makeup nearly invisible, skin fresh, fabric neutral, and the hand holding the bottle loose rather than staged.",
+      energy: "Feel like an emotional pause, not a product demonstration.",
+    },
+  ],
+  "golden-distance": [
+    {
+      label: "last warm light",
+      scene: "Use a barely defined golden-hour backdrop with warm sky and champagne blur, no objects, no furniture, and no beach details.",
+      framing: "Frame thigh-to-head or upper body, with the bottle held near waist or collarbone at natural scale.",
+      styling: "Use radiant natural skin, soft blush or ivory bikini styling, tousled hair, and a distant gaze away from camera.",
+      energy: "Feel warm, sensual, effortless, and expensive without becoming posed or flashy.",
+    },
+    {
+      label: "sun on shoulder",
+      scene: "Let the image turn around a soft sun highlight across shoulder and glass, keeping the environment abstract and minimal.",
+      framing: "Use a balanced vertical composition with skin and product sharing attention, bottle readable but not enlarged.",
+      styling: "Keep wardrobe champagne or ivory, no patterns, no jewelry, and no heavy makeup.",
+      energy: "Feel quiet-luxury magnetic, like a private pause before leaving.",
+    },
+    {
+      label: "seated golden calm",
+      scene: "Seat the subject naturally in warm light against a neutral blurred backdrop with no props and no scenic dominance.",
+      framing: "Use upper-body focus, relaxed posture, bottle near thigh or waist, face turned slightly away.",
+      styling: "Use smooth natural skin highlights, simple neutral bikini styling, and hair with soft natural movement.",
+      energy: "Feel composed, intimate, and editorial, not influencer-style.",
+    },
+  ],
+  "skin-memory": [
+    {
+      label: "collarbone witness",
+      scene: "Make the scent feel like a memory held against the skin in a near-abstract neutral backdrop with no props.",
+      framing: "Tight vertical crop on neck, collarbone, shoulder, hand, and full readable bottle pressed lightly near the sternum.",
+      styling: "Use natural skin texture, relaxed fingers, neutral off-shoulder fabric, and eyes lowered or outside the frame.",
+      energy: "Feel close, human, quiet, and memorable.",
+    },
+    {
+      label: "hands and breath",
+      scene: "Let hands and skin-light interaction carry the story, with the model mostly still and the world blurred away.",
+      framing: "Use shallow depth of field with the bottle sharp enough for label reading and the face softly secondary.",
+      styling: "Keep wardrobe beige, ivory, muted green, champagne, or soft blush with no accessories.",
+      energy: "Feel private, refined, and emotionally restrained.",
+    },
+    {
+      label: "soft side light",
+      scene: "Move the light to one side so the shoulder, hand, and glass catch a narrow gentle highlight.",
+      framing: "Keep shoulders, neck, and product inside the frame, avoiding full-body glamour composition.",
+      styling: "Use no heavy makeup, no glossy retouching, and a natural posture that feels grounded.",
+      energy: "Feel intimate and cinematic, like scent becoming part of skin.",
+    },
+  ],
+  "quiet-threshold": [
+    {
+      label: "before leaving",
+      scene: "Place the subject at a minimal doorway or window-edge threshold with a calm neutral gradient and no visible props.",
+      framing: "Use a vertical mid shot with the body angled away and the bottle held near shoulder or waist.",
+      styling: "Use understated neutral wardrobe, natural grooming, and a gaze downward or away from camera.",
+      energy: "Feel poised, thoughtful, and emotionally charged without drama.",
+    },
+    {
+      label: "green-gray pause",
+      scene: "Reduce the space to a soft green-gray wall and a single directional daylight gradient.",
+      framing: "Keep strong negative space, bottle clear in the middle third, and product scale believable.",
+      styling: "Use clean skin, soft fabric, no patterns, no jewelry, and no flashy colors.",
+      energy: "Feel restrained, premium, and quietly memorable.",
+    },
+    {
+      label: "held composure",
+      scene: "Focus on a calm standing posture as if the subject has paused mid-transition, with no set dressing at all.",
+      framing: "Balance skin, face, hands, and product with shallow depth of field and smooth background falloff.",
+      styling: "Keep expression distant but soft, posture confident, and bottle held loosely rather than presented.",
+      energy: "Feel confident without performance, luxury without noise.",
+    },
+  ],
   "nocturne-vanity": [
     {
       label: "mirror glow",
@@ -216,6 +308,10 @@ function isImageDataUrl(value: string) {
   return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
 }
 
+function stripQueryFromAssetPath(assetPath: string) {
+  return assetPath.split("?")[0] ?? assetPath;
+}
+
 async function getProductReferences(slug: string): Promise<ReferenceImage[]> {
   const imageUrls =
     slug === ALL_SCENTS_SLUG ? getAllProductImageUrls() : getProductImageUrls(slug);
@@ -224,7 +320,11 @@ async function getProductReferences(slug: string): Promise<ReferenceImage[]> {
     imageUrls
       .filter((imageUrl) => imageUrl.startsWith("/"))
       .map(async (imageUrl) => {
-        const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
+        const filePath = path.join(
+          process.cwd(),
+          "public",
+          stripQueryFromAssetPath(imageUrl).replace(/^\//, ""),
+        );
         const bytes = await readFile(filePath);
         const mimeType = getImageMimeType(filePath);
 

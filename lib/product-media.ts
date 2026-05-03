@@ -1,7 +1,9 @@
+const PRODUCT_REFERENCE_VERSION = "20260503";
+
 const productImageMap: Record<string, string> = {
-  aureya: "/products/aureya.png",
-  zephyr: "/products/zephyr.png",
-  maris: "/products/maris.png",
+  aureya: `/products/aureya.png?v=${PRODUCT_REFERENCE_VERSION}`,
+  zephyr: `/products/zephyr.png?v=${PRODUCT_REFERENCE_VERSION}`,
+  maris: `/products/maris.png?v=${PRODUCT_REFERENCE_VERSION}`,
 };
 
 export function getProductImageUrl(slug: string) {
