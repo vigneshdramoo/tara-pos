@@ -3,10 +3,7 @@ export type StaffSeed = {
   username: string;
   email: string;
   role: "MANAGER" | "SALES_MANAGER" | "CASHIER";
-  passwordEnvKey:
-    | "SEED_MANAGER_PASSWORD"
-    | "SEED_SALES_MANAGER_PASSWORD"
-    | "SEED_CASHIER_PASSWORD";
+  passwordEnvKey: string;
   defaultPassword: string;
 };
 
@@ -33,6 +30,14 @@ export const staffSeeds: StaffSeed[] = [
     email: "cashier@tara.local",
     role: "CASHIER",
     passwordEnvKey: "SEED_CASHIER_PASSWORD",
+    defaultPassword: "TARA2026",
+  },
+  {
+    name: "Nur Syazwana Binti Armansah",
+    username: "syaz",
+    email: "nursyawana1@gmail.com",
+    role: "CASHIER",
+    passwordEnvKey: "SEED_SYAZ_PASSWORD",
     defaultPassword: "TARA2026",
   },
 ];

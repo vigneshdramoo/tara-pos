@@ -1,5 +1,6 @@
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { PageIntro } from "@/components/page-intro";
+import { CommissionProgress } from "@/components/staff/commission-progress";
 import { StatusNotice } from "@/components/ui/status-notice";
 import { Pill } from "@/components/ui/pill";
 import { Surface } from "@/components/ui/surface";
@@ -20,7 +21,7 @@ export default async function StaffPage() {
       <PageIntro
         eyebrow="Staff access"
         title="Boutique team control"
-        description="Review the live TARA staff roster, confirm which roles can reach sensitive areas, and keep boutique access aligned with responsibilities on the floor."
+        description="Review the live TARA staff roster, sales attribution, commission progress, and role access from the same floor control view."
         actions={
           <div className="flex flex-wrap gap-2">
             <Pill tone="accent">{activeStaffCount} active staff</Pill>
@@ -99,6 +100,13 @@ export default async function StaffPage() {
                       {formatFullDateTime(staffUser.createdAt)}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-5">
+                  <CommissionProgress
+                    progress={staffUser.commissionProgress}
+                    title="Personal target progress"
+                  />
                 </div>
               </article>
             ))}

@@ -26,11 +26,17 @@ export function RecentOrders({ orders }: { orders: RecentOrderInsight[] }) {
               <p className="mt-1 text-sm text-[var(--muted)]">
                 {order.itemCount} items · {formatCompactDate(order.createdAt)}
               </p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Sold by {order.salespersonName ?? "unassigned"}
+              </p>
             </div>
             <div className="self-center text-right">
               <Pill tone="accent">{order.paymentMethod}</Pill>
               <p className="mt-3 text-2xl font-semibold text-foreground">
                 {formatCurrency(order.totalCents)}
+              </p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                {formatCurrency(order.commissionCents)} commission
               </p>
             </div>
           </div>

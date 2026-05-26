@@ -5,7 +5,14 @@ import {
   type Customer,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  getSessionCookieName,
+  isProtectionEnabled,
+  verifySessionToken,
+} from "@/lib/auth";
+import { calculateLineCommission } from "@/lib/commissions";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import type { CheckoutPayload } from "@/lib/types";
@@ -33,6 +40,21 @@ function generateOrderNumber() {
 
 function normalizeValue(value?: string) {
   return value?.trim() || undefined;
+}
+
+async function getCheckoutSession() {
+  if (!isProtectionEnabled()) {
+    return null;
+  }
+
+  const cookieStore = await cookies();
+  const session = await verifySessionToken(cookieStore.get(getSessionCookieName())?.value);
+
+  if (!session) {
+    throw new CheckoutError("Sign in again before completing checkout.", 401);
+  }
+
+  return session;
 }
 
 async function resolveCustomer(
@@ -80,6 +102,7 @@ async function resolveCustomer(
 export async function POST(request: Request) {
   try {
     const prisma = requirePrisma();
+    const session = await getCheckoutSession();
     const body = (await request.json()) as CheckoutPayload;
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
@@ -126,6 +149,11 @@ export async function POST(request: Request) {
         product,
         quantity: item.quantity,
         totalPriceCents: product.priceCents * item.quantity,
+        commission: calculateLineCommission({
+          sizeMl: product.sizeMl,
+          unitPriceCents: product.priceCents,
+          quantity: item.quantity,
+        }),
       };
     });
 
@@ -134,7 +162,26 @@ export async function POST(request: Request) {
       const subtotalCents = normalizedItems.reduce((sum, item) => sum + item.totalPriceCents, 0);
       const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
       const totalCents = subtotalCents + taxCents;
+      const commissionCents = normalizedItems.reduce(
+        (sum, item) => sum + item.commission.commissionCents,
+        0,
+      );
       const orderNumber = generateOrderNumber();
+      const salesperson = session
+        ? await tx.staffUser.findFirst({
+            where: {
+              id: session.staffId,
+              active: true,
+            },
+            select: {
+              id: true,
+            },
+          })
+        : null;
+
+      if (session && !salesperson) {
+        throw new CheckoutError("This staff account is unavailable for checkout.", 403);
+      }
 
       const order = await tx.order.create({
         data: {
@@ -142,15 +189,19 @@ export async function POST(request: Request) {
           subtotalCents,
           taxCents,
           totalCents,
+          commissionCents,
           paymentMethod: body.paymentMethod,
           notes: normalizeValue(body.notes),
           customerId: customer?.id,
+          salespersonId: salesperson?.id,
           items: {
             create: normalizedItems.map((item) => ({
               productId: item.product.id,
               quantity: item.quantity,
               unitPriceCents: item.product.priceCents,
               totalPriceCents: item.totalPriceCents,
+              commissionRateBps: item.commission.commissionRateBps,
+              commissionCents: item.commission.commissionCents,
             })),
           },
         },
@@ -186,6 +237,8 @@ export async function POST(request: Request) {
       return {
         orderNumber: order.orderNumber,
         totalCents: order.totalCents,
+        commissionCents: order.commissionCents,
+        salespersonName: session?.name ?? null,
       };
     });
 
@@ -194,6 +247,8 @@ export async function POST(request: Request) {
     revalidatePath("/customers");
     revalidatePath("/orders");
     revalidatePath("/assistant");
+    revalidatePath("/account");
+    revalidatePath("/staff");
 
     return NextResponse.json(result);
   } catch (error) {

@@ -201,7 +201,12 @@ function ReferencePreview({
 
       <div className="mt-4 overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--brand-ivory)]">
         {srcs.length > 1 ? (
-          <div className="grid grid-cols-3 gap-2 p-2">
+          <div
+            className={cn(
+              "grid gap-2 p-2",
+              srcs.length >= 4 ? "grid-cols-2" : "grid-cols-3",
+            )}
+          >
             {srcs.map((src, index) => (
               <Image
                 key={`${title}-${index}`}
@@ -252,6 +257,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [uploadedReference, setUploadedReference] = useState<UploadedReference | null>(null);
   const [renderCount, setRenderCount] = useState(0);
+  const [creativeRunIndex, setCreativeRunIndex] = useState(initialRequest.variationIndex ?? 0);
 
   const productReferenceUrls =
     request.scentSlug === ALL_SCENTS_SLUG
@@ -291,6 +297,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
     setError(null);
     setImageError(null);
     setRenderCount(0);
+    setCreativeRunIndex(0);
   }
 
   async function handleReferenceUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -338,6 +345,8 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
   async function generateBrief(nextRequest = request) {
     setLoading(true);
     setError(null);
+    const nextCreativeRunIndex = creativeRunIndex + 1;
+    setCreativeRunIndex(nextCreativeRunIndex);
 
     try {
       const response = await fetch("/api/creative", {
@@ -345,7 +354,10 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(nextRequest),
+        body: JSON.stringify({
+          ...nextRequest,
+          variationIndex: nextCreativeRunIndex,
+        }),
       });
       const result = (await response.json()) as CreativeBrief & { message?: string };
 
@@ -370,7 +382,9 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
     setImageError(null);
     setGeneratedImage(null);
     const nextRenderCount = renderCount + 1;
+    const nextCreativeRunIndex = creativeRunIndex + 1;
     setRenderCount(nextRenderCount);
+    setCreativeRunIndex(nextCreativeRunIndex);
 
     try {
       const response = await fetch("/api/creative/image", {
@@ -380,7 +394,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
         },
         body: JSON.stringify({
           ...request,
-          variationIndex: nextRenderCount - 1,
+          variationIndex: nextCreativeRunIndex,
           uploadedReference,
         }),
       });
@@ -431,8 +445,10 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
 
           <div className="rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
             TARA rules means each output uses the house palette, scent data, tone, and
-            product-accuracy checks, with Malaysian audiences, local environments, and
-            respectful Malay, Chinese, and Indian representation built in.
+            product-accuracy checks, with 10 emotional-storytelling prompt modes, Malaysian
+            audiences, local environments, and respectful Malay, Chinese, and Indian
+            representation built in. Every build rotates a freshness cue so repeat requests
+            avoid same-looking results.
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
@@ -617,7 +633,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
               ) : (
                 <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
               )}
-              Build brief
+              Fresh brief
             </button>
             <button
               type="button"
@@ -675,7 +691,8 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
             <div
               className="h-14 w-14 rounded-2xl border border-white/60 shadow-lg"
               style={{ background: brief.scent.accentHex }}
-              aria-label={`${brief.scent.name} accent color`}
+              aria-label={`${brief.scent.name} ${brief.scent.liquidTintName} liquid tint`}
+              title={`${brief.scent.liquidTintName} ${brief.scent.liquidTintHex}`}
             />
           </div>
 
@@ -718,7 +735,7 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
                   </h4>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                     {canRenderInStudio
-                      ? "Use Create image to turn the current TARA brief into an actual visual. Each new render attempt now pushes the preset into a fresh scene, framing, and prop variation. If no API key is connected, the app will show the setup step here."
+                      ? "Use Create image to turn the current TARA brief into an actual visual. Each brief and render request now rotates a fresh scene, framing, gesture, and material cue. If no API key is connected, the app will show the setup step here."
                       : "This workflow keeps rendering in Midjourney. Copy the Midjourney pack, then use the reference plan and web setup below for the final generation."}
                   </p>
                 </div>
@@ -775,6 +792,14 @@ export function CreativeStudio({ initialBrief, initialRequest }: CreativeStudioP
               <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Workflow</p>
               <p className="mt-3 text-sm leading-7 text-[var(--muted-strong)]">
                 {brief.strategy.workflowLabel}
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-[var(--line)] bg-white/55 p-5 md:col-span-2">
+              <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">
+                Freshness cue
+              </p>
+              <p className="mt-3 text-sm leading-7 text-[var(--muted-strong)]">
+                {brief.strategy.freshness}
               </p>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Boxes,
   Camera,
+  ClipboardList,
   KeyRound,
   LayoutDashboard,
   ScrollText,
@@ -28,6 +29,7 @@ const baseNavItems: Array<{
 }> = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "POS", icon: ShoppingBag },
+  { href: "/leads", label: "Leads", icon: ClipboardList },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
   { href: "/assistant", label: "AI Brief", icon: Sparkles },
@@ -73,7 +75,7 @@ export function SidebarNav({
     <nav
       className={cn(
         mobile
-          ? "tara-surface scrollbar-hidden flex items-center gap-2 overflow-x-auto p-2 lg:hidden"
+          ? "tara-surface scrollbar-hidden flex items-center gap-2 overflow-x-auto rounded-[20px] p-1.5 lg:hidden"
           : "hidden flex-col gap-2 lg:flex",
       )}
     >
@@ -90,7 +92,7 @@ export function SidebarNav({
               active
                 ? "tara-panel-dark shadow-lg"
                 : "text-[var(--muted)] hover:bg-white/70 hover:text-[var(--brand-midnight)]",
-              mobile && "min-w-fit whitespace-nowrap",
+              mobile && "min-w-fit gap-2 whitespace-nowrap px-3 text-xs sm:gap-3 sm:px-4 sm:text-sm",
             )}
           >
             <Icon className="h-5 w-5" strokeWidth={1.8} />

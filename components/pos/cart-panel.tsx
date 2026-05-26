@@ -19,6 +19,7 @@ type CartPanelProps = {
   subtotalCents: number;
   taxCents: number;
   totalCents: number;
+  commissionCents: number;
   submitting: boolean;
   refreshing: boolean;
   feedback: { type: "success" | "error"; message: string } | null;
@@ -44,6 +45,7 @@ export function CartPanel({
   subtotalCents,
   taxCents,
   totalCents,
+  commissionCents,
   submitting,
   refreshing,
   feedback,
@@ -59,13 +61,23 @@ export function CartPanel({
   const disabled = cart.length === 0 || submitting || refreshing;
 
   return (
-    <aside className="tara-surface sticky top-4 flex max-h-[calc(100vh-2rem)] flex-col gap-5 p-5 md:p-6">
-      <div>
-        <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Cart</p>
-        <h3 className="mt-3 text-3xl font-semibold text-foreground">Checkout</h3>
+    <aside
+      id="checkout-panel"
+      className="tara-surface scroll-mt-24 flex flex-col gap-4 p-4 md:p-5 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:gap-5 xl:p-6"
+    >
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-gold)]">Cart</p>
+          <h3 className="mt-2 text-2xl font-semibold text-foreground md:mt-3 md:text-3xl">
+            Checkout
+          </h3>
+        </div>
+        <p className="rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+          {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+        </p>
       </div>
 
-      <div className="scrollbar-hidden flex-1 space-y-4 overflow-y-auto pr-1">
+      <div className="space-y-4 xl:scrollbar-hidden xl:flex-1 xl:overflow-y-auto xl:pr-1">
         <div className="space-y-3">
           {cart.length ? (
             cart.map((item) => (
@@ -74,7 +86,7 @@ export function CartPanel({
                 className="tara-card-soft rounded-[24px] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-foreground">{item.name}</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
                       {item.collection} · {formatCurrency(item.priceCents)}
@@ -83,13 +95,13 @@ export function CartPanel({
                   <button
                     type="button"
                     onClick={() => onRemove(item.id)}
-                    className="tara-chip-default rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]"
+                    className="tara-chip-default shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]"
                   >
                     Remove
                   </button>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -122,7 +134,7 @@ export function CartPanel({
           )}
         </div>
 
-        <div className="tara-card-soft rounded-[24px] p-4">
+        <div className="tara-card-soft rounded-[22px] p-4 md:rounded-[24px]">
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Recent customers</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {recentCustomers.map((recent) => (
@@ -138,7 +150,7 @@ export function CartPanel({
           </div>
         </div>
 
-        <div className="tara-card-soft grid gap-3 rounded-[24px] p-4">
+        <div className="tara-card-soft grid gap-3 rounded-[22px] p-4 md:rounded-[24px]">
           <div>
             <label className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Customer name</label>
             <input
@@ -180,7 +192,7 @@ export function CartPanel({
           </div>
         </div>
 
-        <div className="tara-card-soft rounded-[24px] p-4">
+        <div className="tara-card-soft rounded-[22px] p-4 md:rounded-[24px]">
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Payment method</p>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {paymentOptions.map((option) => (
@@ -201,7 +213,7 @@ export function CartPanel({
           </div>
         </div>
 
-        <div className="tara-card-soft rounded-[24px] p-4">
+        <div className="tara-card-soft rounded-[22px] p-4 md:rounded-[24px]">
           <label className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Order note</label>
           <textarea
             value={notes}
@@ -213,7 +225,7 @@ export function CartPanel({
         </div>
       </div>
 
-      <div className="tara-panel-dark rounded-[24px] p-5">
+      <div className="tara-panel-dark rounded-[22px] p-4 md:rounded-[24px] md:p-5 xl:shrink-0">
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-[rgba(247,243,235,0.72)]">Subtotal</span>
@@ -222,6 +234,10 @@ export function CartPanel({
           <div className="flex items-center justify-between">
             <span className="text-[rgba(247,243,235,0.72)]">Tax</span>
             <span>{formatCurrency(taxCents)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[rgba(247,243,235,0.72)]">Salesperson commission</span>
+            <span>{formatCurrency(commissionCents)}</span>
           </div>
           <div className="flex items-center justify-between border-t border-white/10 pt-3 text-lg font-semibold">
             <span>Total</span>

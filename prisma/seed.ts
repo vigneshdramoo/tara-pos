@@ -1,4 +1,5 @@
 import { InventoryMovementType, PaymentMethod, PrismaClient } from "@prisma/client";
+import { calculateLineCommission } from "../lib/commissions";
 import { SALES_TAX_RATE } from "../lib/constants";
 import { hashPassword } from "../lib/password";
 import { catalogProductSeeds } from "./catalog-seeds";
@@ -31,6 +32,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-16T11:15:00+08:00"),
     customerEmail: "alya@example.com",
+    salespersonUsername: "shireen",
     paymentMethod: PaymentMethod.CARD,
     notes: "Gift wrap requested.",
     items: [
@@ -41,6 +43,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-17T15:05:00+08:00"),
     customerEmail: "daniel@example.com",
+    salespersonUsername: "cashier",
     paymentMethod: PaymentMethod.CARD,
     notes: "Asked for a clean daytime signature with strong office presence.",
     items: [
@@ -50,6 +53,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-18T13:40:00+08:00"),
     customerEmail: "sophia@example.com",
+    salespersonUsername: "syaz",
     paymentMethod: PaymentMethod.TRANSFER,
     notes: "Corporate gifting shortlist.",
     items: [
@@ -59,6 +63,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-19T17:20:00+08:00"),
     customerEmail: null,
+    salespersonUsername: "cashier",
     paymentMethod: PaymentMethod.CASH,
     notes: "Walk-in guest.",
     items: [
@@ -68,6 +73,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-20T10:10:00+08:00"),
     customerEmail: "alya@example.com",
+    salespersonUsername: "shireen",
     paymentMethod: PaymentMethod.CARD,
     notes: "Repeat purchase before a weekend gifting event.",
     items: [
@@ -78,6 +84,7 @@ const seededOrders = [
   {
     createdAt: new Date("2026-04-20T14:25:00+08:00"),
     customerEmail: "daniel@example.com",
+    salespersonUsername: "syaz",
     paymentMethod: PaymentMethod.CARD,
     notes: "Added one fresh office scent and one intimate skin-close layer.",
     items: [
@@ -120,6 +127,7 @@ async function main() {
       }),
     ),
   );
+  const staffUserMap = new Map(staffUsers.map((staffUser) => [staffUser.username, staffUser]));
 
   const soldBySlug = new Map<string, number>();
 
@@ -188,12 +196,22 @@ async function main() {
         product,
         quantity: item.quantity,
         totalPriceCents: product.priceCents * item.quantity,
+        commission: calculateLineCommission({
+          sizeMl: product.sizeMl,
+          unitPriceCents: product.priceCents,
+          quantity: item.quantity,
+        }),
       };
     });
 
     const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalPriceCents, 0);
     const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
     const totalCents = subtotalCents + taxCents;
+    const commissionCents = lineItems.reduce(
+      (sum, item) => sum + item.commission.commissionCents,
+      0,
+    );
+    const salesperson = staffUserMap.get(seededOrder.salespersonUsername);
 
     const order = await prisma.order.create({
       data: {
@@ -201,8 +219,10 @@ async function main() {
         subtotalCents,
         taxCents,
         totalCents,
+        commissionCents,
         paymentMethod: seededOrder.paymentMethod,
         notes: seededOrder.notes,
+        salespersonId: salesperson?.id,
         customerId: seededOrder.customerEmail
           ? customerMap.get(seededOrder.customerEmail)?.id
           : null,
@@ -214,6 +234,8 @@ async function main() {
             quantity: item.quantity,
             unitPriceCents: item.product.priceCents,
             totalPriceCents: item.totalPriceCents,
+            commissionRateBps: item.commission.commissionRateBps,
+            commissionCents: item.commission.commissionCents,
             createdAt: seededOrder.createdAt,
           })),
         },

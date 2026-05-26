@@ -57,6 +57,7 @@ export function getRoleCapabilities(role: StaffRole) {
     return [
       "Full dashboard and POS access",
       "Customer and order visibility",
+      "Booth lead and quiz participant capture",
       "AI brief access",
       "Creative studio access",
       "Personal password reset",
@@ -69,6 +70,7 @@ export function getRoleCapabilities(role: StaffRole) {
     return [
       "Dashboard and checkout access",
       "Customer and order visibility",
+      "Booth lead and quiz participant capture",
       "AI brief access",
       "Creative studio access",
       "Personal password reset",
@@ -79,8 +81,9 @@ export function getRoleCapabilities(role: StaffRole) {
 
   return [
     "Checkout and order lookup access",
-    "Customer capture visibility",
-    "Daily dashboard visibility",
+      "Customer capture visibility",
+      "Booth lead and quiz participant capture",
+      "Daily dashboard visibility",
     "Creative studio access",
     "Personal password reset",
     "No inventory administration access",

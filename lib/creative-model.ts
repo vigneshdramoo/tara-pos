@@ -22,6 +22,16 @@ export type CreativeObjective =
   | "ugc-remix";
 
 export type CreativePreset =
+  | "after-rain-silence"
+  | "golden-distance"
+  | "skin-memory"
+  | "quiet-threshold"
+  | "first-light-afterglow"
+  | "steam-veil"
+  | "dusk-skin-veil"
+  | "mirror-pause"
+  | "midnight-balcony"
+  | "remembered-room"
   | "nocturne-vanity"
   | "after-dark-tailoring"
   | "influencer-lifestyle"
@@ -55,6 +65,7 @@ export type CreativeRequest = {
   preset: CreativePreset;
   aspectPreset: CreativeAspectPreset;
   upscaleMode: CreativeUpscaleMode;
+  variationIndex?: number;
   audienceNote?: string;
   customBrief?: string;
 };
@@ -82,6 +93,8 @@ export type CreativeBrief = {
     notes: string[];
     mood: string[];
     accentHex: string;
+    liquidTintName: string;
+    liquidTintHex: string;
   };
   strategy: {
     angle: string;
@@ -93,6 +106,7 @@ export type CreativeBrief = {
     aspectRatio: string;
     upscaleLabel: string;
     workflowLabel: string;
+    freshness: string;
   };
   modelStack: string[];
   shotList: string[];
@@ -115,10 +129,13 @@ type ScentProfile = {
   mood: string[];
   sizeMl: number;
   accentHex: string;
+  liquidTintName: string;
+  liquidTintHex: string;
   persona: "feminine" | "masculine" | "neutral";
   temperature: string;
   texture: string;
   signatureScene: string;
+  productIdentityCue: string;
 };
 
 type PresetProfile = {
@@ -129,6 +146,14 @@ type PresetProfile = {
   styling: string;
   motion: string;
   sound: string;
+};
+
+export type CreativeVariationCue = {
+  label: string;
+  storyBeat: string;
+  compositionShift: string;
+  materialShift: string;
+  antiRepeatRule: string;
 };
 
 type FormatProfile = {
@@ -160,6 +185,15 @@ const brandRules = [
   "exact bottle silhouette, cap, label alignment, and product proportions preserved",
 ];
 
+const emotionalStorytellingRules = [
+  "build every campaign still around an implied private moment rather than a literal product demo",
+  "use mixed emotion: calm with a trace of longing, warmth with restraint, confidence without performance",
+  "let the product act as an emotional witness, clearly visible and readable but never oversized",
+  "prioritize skin, light, breath, hands, gaze direction, negative space, and shallow depth of field",
+  "when a model appears, use modern Malaysian adult casting with natural beauty, relaxed posture, and no direct-to-camera performance",
+  "avoid exaggerated sensuality, heavy makeup, dramatic effects, beach cliches, or influencer-style over-posing",
+];
+
 const productPreservationRules = [
   "always retain the original look of the entire product",
   "preserve the exact TARA bottle shape, cap geometry, color, material, label, proportions, and packaging details",
@@ -179,6 +213,174 @@ const malaysiaMarketRules = [
   "avoid foreign landmarks, winter scenes, Western mansion cues, non-Malaysian street signs, and imported-looking campaign settings",
 ];
 
+const emotionalPromptPresets = new Set<CreativePreset>([
+  "after-rain-silence",
+  "golden-distance",
+  "skin-memory",
+  "quiet-threshold",
+  "first-light-afterglow",
+  "steam-veil",
+  "dusk-skin-veil",
+  "mirror-pause",
+  "midnight-balcony",
+  "remembered-room",
+]);
+
+const creativePresetOffsets: Record<CreativePreset, number> = {
+  "after-rain-silence": 0,
+  "golden-distance": 1,
+  "skin-memory": 2,
+  "quiet-threshold": 3,
+  "first-light-afterglow": 4,
+  "steam-veil": 5,
+  "dusk-skin-veil": 6,
+  "mirror-pause": 7,
+  "midnight-balcony": 8,
+  "remembered-room": 9,
+  "nocturne-vanity": 10,
+  "after-dark-tailoring": 11,
+  "influencer-lifestyle": 12,
+  "scent-ingredients": 13,
+  "booth-glow": 14,
+  "gift-box-ritual": 15,
+};
+
+const creativeVariationCues: CreativeVariationCue[] = [
+  {
+    label: "lowered gaze close-range",
+    storyBeat:
+      "the subject feels caught in a private second after a decision, eyes lowered or softly closed, with no direct performance to camera",
+    compositionShift:
+      "compose close to the neck, collarbone, shoulder, hands, and full readable bottle, using shallow depth of field and clean negative space",
+    materialShift:
+      "let skin sheen, fine hair texture, glass edge highlights, and one quiet fabric plane carry the emotion",
+    antiRepeatRule:
+      "do not reuse a straight-on centered product demo; avoid repeated hand positions from the previous attempt",
+  },
+  {
+    label: "off-center breathing room",
+    storyBeat:
+      "the frame should feel like a pause before leaving, confident but slightly distant, with the product held casually rather than presented",
+    compositionShift:
+      "place the subject or bottle off-center and leave one side of the frame open for silence, air, and editorial tension",
+    materialShift:
+      "prioritize smooth background gradients, believable glass reflection, and soft neutral wardrobe with no visible clutter",
+    antiRepeatRule:
+      "change the direction of gaze, bottle height, and background gradient from the previous output",
+  },
+  {
+    label: "hands as memory",
+    storyBeat:
+      "make the hands feel like they are remembering the scent, not selling it, with relaxed fingers and restrained body language",
+    compositionShift:
+      "crop around hands, wrist, collarbone, and the full bottle, allowing the face to be partial, softened, or outside the sharpest focus",
+    materialShift:
+      "use soft tactile cues such as damp skin, cotton, silk, stone, or glass haze while keeping props minimal",
+    antiRepeatRule:
+      "change the hand gesture and camera distance so the render does not echo the last composition",
+  },
+  {
+    label: "threshold turn-away",
+    storyBeat:
+      "the model should appear between two emotional states, turned slightly away as if staying private inside a larger quiet world",
+    compositionShift:
+      "use a doorway, window edge, soft wall, or abstract light boundary without adding set dressing or scenery dominance",
+    materialShift:
+      "combine directional daylight with muted green, champagne, ivory, or gray undertones and realistic skin texture",
+    antiRepeatRule:
+      "make the body angle, background boundary, and bottle placement visibly different from earlier attempts",
+  },
+  {
+    label: "first light skin hush",
+    storyBeat:
+      "suggest the first calm breath of the morning, after water or after sleep, with a fresh and emotionally quiet expression",
+    compositionShift:
+      "keep the frame vertical and intimate, with window light falling across shoulder, neck, and bottle without showing a busy room",
+    materialShift:
+      "use linen, soft cotton, pale stone, clear glass, and lightly warm daylight balanced by cool shadows",
+    antiRepeatRule:
+      "avoid repeating dusk or rain cues; make this attempt cleaner, paler, and more morning-led",
+  },
+  {
+    label: "soft steam veil",
+    storyBeat:
+      "the scene should feel post-shower and private, with breath, skin warmth, and a softened outline rather than visible splash drama",
+    compositionShift:
+      "let a fogged-glass or steam-softened plane blur the background while keeping the bottle crisp and fully readable",
+    materialShift:
+      "use fine condensation, subdued glass haze, neutral wet fabric, and controlled highlights with no dripping water spectacle",
+    antiRepeatRule:
+      "change the moisture language from droplets to haze, and keep the pose quieter than a glamour shot",
+  },
+  {
+    label: "dusk on skin",
+    storyBeat:
+      "make the scent feel worn at the edge of evening, warm but reflective, as if the moment is remembered after it passes",
+    compositionShift:
+      "use a balanced mid shot with one warm side and one cooler green-gray side, bottle held near neck, waist, or thigh",
+    materialShift:
+      "blend champagne warmth, muted teal shadow, skin glow, and clean glass reflections without visible props",
+    antiRepeatRule:
+      "avoid the same window or beach-tone backdrop; shift the color temperature split and body direction",
+  },
+  {
+    label: "mirror without looking",
+    storyBeat:
+      "use a mirror or reflective suggestion to imply self-recognition while keeping the model's eyes away from the camera",
+    compositionShift:
+      "frame an angled reflection, partial face, shoulder line, and full bottle, making the product readable through the main plane rather than distorted in reflection",
+    materialShift:
+      "use soft mirror bloom, muted metal, glass edge light, and natural skin texture with no vanity clutter",
+    antiRepeatRule:
+      "do not create a standard mirror selfie; keep it editorial, distant, and product-accurate",
+  },
+  {
+    label: "humid midnight quiet",
+    storyBeat:
+      "the emotion should feel after-dark and intimate, with humid Malaysian night air implied through softness rather than obvious skyline scenery",
+    compositionShift:
+      "compose against a deep teal, charcoal, or amber blur with the bottle catching one precise highlight and the subject turned away",
+    materialShift:
+      "use dark glass reflections, damp hair texture, warm edge light, and restrained black or neutral fabric",
+    antiRepeatRule:
+      "avoid candle vanity repetition; make the scene more airy, nocturnal, and minimal",
+  },
+  {
+    label: "remembered room",
+    storyBeat:
+      "make the product feel like the remaining trace of a person or evening, emotionally present even when the pose is very still",
+    compositionShift:
+      "use a product-led or partial-body frame with negative space, a softened surface, and the bottle positioned as the quiet witness",
+    materialShift:
+      "use warm-cool mixed light, subtle fabric falloff, clean shadow, and physically plausible bottle reflections",
+    antiRepeatRule:
+      "avoid adding extra props; differentiate through silence, emptier framing, and a changed focal distance",
+  },
+];
+
+const liquidTintSpecs: Record<string, { name: string; hex: string; cue: string }> = {
+  aureya: {
+    name: "Blush Pink",
+    hex: "#F6C6D0",
+    cue: "transparent Blush Pink liquid tint (#F6C6D0)",
+  },
+  zephyr: {
+    name: "Ice Air Blue",
+    hex: "#DFF4FF",
+    cue: "transparent Ice Air Blue liquid tint (#DFF4FF)",
+  },
+  maris: {
+    name: "Deep Ocean Teal",
+    hex: "#2F5F5B",
+    cue: "transparent Deep Ocean Teal liquid tint (#2F5F5B)",
+  },
+  eliora: {
+    name: "Light Champagne",
+    hex: "#F1DFA8",
+    cue: "transparent Light Champagne liquid tint (#F1DFA8)",
+  },
+};
+
 function resolveScentPersona(product: (typeof catalogProductSeeds)[number]) {
   const collection = product.collection.toLowerCase();
 
@@ -193,10 +395,43 @@ function resolveScentPersona(product: (typeof catalogProductSeeds)[number]) {
   return "neutral" as const;
 }
 
+function getLiquidTintSpec(slug: string, fallbackHex: string) {
+  return (
+    liquidTintSpecs[slug] ?? {
+      name: "TARA Liquid Tint",
+      hex: fallbackHex,
+      cue: `transparent TARA liquid tint (${fallbackHex})`,
+    }
+  );
+}
+
+function getProductIdentityCue(slug: string) {
+  const tint = getLiquidTintSpec(slug, "#CA9E5B");
+
+  if (slug === "aureya") {
+    return `Aureya must keep its ${tint.cue}, luminous rosy glass feel, and polished gold cap.`;
+  }
+
+  if (slug === "zephyr") {
+    return `Zephyr must keep its ${tint.cue} with a dark reflective gunmetal cap. Do not shift it toward colorless clear glass, gray, aqua, or turquoise.`;
+  }
+
+  if (slug === "maris") {
+    return `Maris must keep its ${tint.cue} with a cool silver cap. Do not shift it toward pale sea-glass aqua, bright green, or blue.`;
+  }
+
+  if (slug === "eliora") {
+    return `Eliora must keep its ${tint.cue} in the Zephyr bottle silhouette with a thick base, tall cylindrical glass, and dark reflective cap.`;
+  }
+
+  return `The bottle must keep its ${tint.cue}.`;
+}
+
 const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
   const notes = product.notes.split(",").map((note) => note.trim());
   const mood = product.mood.split(",").map((item) => item.trim());
   const persona = resolveScentPersona(product);
+  const liquidTint = getLiquidTintSpec(product.slug, product.accentHex);
 
   return {
     slug: product.slug,
@@ -206,7 +441,9 @@ const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
     notes,
     mood,
     sizeMl: product.sizeMl,
-    accentHex: product.accentHex,
+    accentHex: liquidTint.hex,
+    liquidTintName: liquidTint.name,
+    liquidTintHex: liquidTint.hex,
     persona,
     temperature:
       persona === "feminine"
@@ -226,6 +463,7 @@ const scentProfiles: ScentProfile[] = catalogProductSeeds.map((product) => {
         : persona === "masculine"
           ? "a midnight tailoring table with charcoal cloth, cool glass, and a clean line of gold light"
           : "a quiet morning window scene with soft stone, clean glass, and calm close-range light",
+    productIdentityCue: getProductIdentityCue(product.slug),
   };
 });
 
@@ -239,11 +477,15 @@ const allScentsProfile: ScentProfile = {
   mood: ["Radiant", "Clean", "Intimate", "Elevated"],
   sizeMl: 50,
   accentHex: "#CA9E5B",
+  liquidTintName: "TARA Collection Tints",
+  liquidTintHex: "#CA9E5B",
   persona: "neutral",
   temperature: "balanced, radiant, clean, and quietly luxurious",
   texture: "polished stone, warm gold light, clean glass, and a refined trio arrangement",
   signatureScene:
     "a premium trio composition where Aureya, Zephyr, and Maris stand together in one elegant frame with clear separation and equal hero presence",
+  productIdentityCue:
+    "Aureya must stay transparent Blush Pink (#F6C6D0) with a polished gold cap, Zephyr must stay transparent Ice Air Blue (#DFF4FF) with a dark reflective gunmetal cap, and Maris must stay transparent Deep Ocean Teal (#2F5F5B) with a cool silver cap. Never swap, flatten, merge, or reinterpret these bottle tints.",
 };
 
 export const scentOptions: CreativeOption[] = [
@@ -344,6 +586,56 @@ export const objectiveOptions: CreativeOption<CreativeObjective>[] = [
 ];
 
 export const presetOptions: CreativeOption<CreativePreset>[] = [
+  {
+    value: "after-rain-silence",
+    label: "After rain silence",
+    description: "Post-water, damp skin, lowered gaze, cool green restraint, and quiet memory.",
+  },
+  {
+    value: "golden-distance",
+    label: "Golden distance",
+    description: "Golden-hour warmth, soft distant gaze, neutral bikini styling, and quiet luxury.",
+  },
+  {
+    value: "skin-memory",
+    label: "Skin memory",
+    description: "Close collarbone, hands, skin-light interaction, and product as a private witness.",
+  },
+  {
+    value: "quiet-threshold",
+    label: "Quiet threshold",
+    description: "A poised transition moment with negative space, restrained emotion, and product clarity.",
+  },
+  {
+    value: "first-light-afterglow",
+    label: "First light afterglow",
+    description: "Morning window hush, fresh skin, soft linen, and a clean private after-water pause.",
+  },
+  {
+    value: "steam-veil",
+    label: "Steam veil",
+    description: "Post-shower haze, softened glass, damp hair, and intimate warmth without splash drama.",
+  },
+  {
+    value: "dusk-skin-veil",
+    label: "Dusk skin veil",
+    description: "Twilight warmth against teal-gray shadow, skin glow, and a reflective evening mood.",
+  },
+  {
+    value: "mirror-pause",
+    label: "Mirror pause",
+    description: "Angled reflection, no direct eye contact, natural skin, and product as a quiet witness.",
+  },
+  {
+    value: "midnight-balcony",
+    label: "Midnight balcony",
+    description: "Humid after-dark air, abstract city glow, restrained fabric, and one precise bottle highlight.",
+  },
+  {
+    value: "remembered-room",
+    label: "Remembered room",
+    description: "A product-led trace of someone just gone, warm-cool silence, and emotional negative space.",
+  },
   {
     value: "nocturne-vanity",
     label: "Nocturne vanity",
@@ -449,6 +741,146 @@ export const workflowOptions: CreativeOption<CreativeWorkflow>[] = [
 ];
 
 const presetProfiles: Record<CreativePreset, PresetProfile> = {
+  "after-rain-silence": {
+    label: "After rain silence",
+    environment:
+      "a minimalist post-water scene near a soft window or abstract deep green-gray backdrop, no props, no scenery dominance, one perfume bottle held close to skin",
+    lighting:
+      "soft diffused daylight like after rain, cool green undertone balanced with natural skin warmth, gentle wet-skin highlights and subtle glass reflections",
+    camera:
+      "vertical high-end fragrance editorial, 85mm portrait lens, close-to-mid shot focused on shoulders, collarbone, neck, hands, and readable bottle",
+    styling:
+      "adult Malaysian Chinese or Southeast Asian model when people appear, natural beauty, slightly damp hair, fine water droplets, neutral ivory, beige, or muted green bikini or off-shoulder wet fabric, no accessories",
+    motion:
+      "hold on lowered gaze and still breath, light moves softly across damp skin and glass, bottle remains stable near collarbone or neck",
+    sound: "soft rain hush, breath, faint fabric movement, quiet room tone",
+  },
+  "golden-distance": {
+    label: "Golden distance",
+    environment:
+      "an extremely minimal golden-hour backdrop with soft blurred beach-tone, pale sky, champagne, or neutral light gradients, no visible objects or furniture, one perfume bottle in hand",
+    lighting:
+      "warm natural golden-hour sunlight with smooth gradients, soft highlights on radiant skin, and subtle glow reflecting off glass and metallic cap",
+    camera:
+      "vertical luxury fragrance campaign photography, 70mm to 85mm editorial lens, mid shot from thigh to head or upper body with bottle readable but not oversized",
+    styling:
+      "adult Malaysian Indian model when people appear, radiant natural skin, slightly tousled hair, simple elegant ivory, champagne, or soft blush bikini, no patterns, no jewelry",
+    motion:
+      "subject stands or sits naturally, hand loosely holds bottle near collarbone, shoulder, waist, or thigh, gaze soft and slightly distant away from camera",
+    sound: "warm breeze, muted shoreline air without visible beach cliches, soft cinematic hush",
+  },
+  "skin-memory": {
+    label: "Skin memory",
+    environment:
+      "a near-abstract neutral or green-gray minimal space where the scent feels like a memory held against skin, no props, no furniture, no scenery",
+    lighting:
+      "soft side daylight with muted greens, soft neutrals, and gentle warmth on skin, luminous but never glossy",
+    camera:
+      "intimate vertical editorial close-up, 85mm shallow depth of field, frame shoulders, neck, collarbone, hands, and the full readable bottle",
+    styling:
+      "modern Malaysian adult model with natural beauty, clean skin, no heavy makeup, relaxed fingers, neutral off-shoulder fabric or simple bikini in ivory, beige, muted green, champagne, or soft blush",
+    motion:
+      "hand holds the bottle close to the sternum, neck, or collarbone like a private object, eyes closed or lowered, posture relaxed and grounded",
+    sound: "quiet breath, barely audible fabric, soft glass touch",
+  },
+  "quiet-threshold": {
+    label: "Quiet threshold",
+    environment:
+      "a minimal neutral architectural threshold, window edge, or soft green-gray wall where the model appears paused between leaving and staying, no props",
+    lighting:
+      "gentle directional daylight with a calm gradient, restrained contrast, and realistic reflections that keep the bottle premium and legible",
+    camera:
+      "cinematic vertical mid shot, balanced negative space, subject slightly angled away, product readable inside the middle third of frame",
+    styling:
+      "modern Malaysian adult model with natural grooming, understated neutral wardrobe, relaxed confident posture, no patterns, no flashy colors, no heavy makeup",
+    motion:
+      "head slightly turned downward or away, one hand holds bottle near shoulder or waist, expression thoughtful and composed rather than posed",
+    sound: "soft interior air, distant city hush, restrained emotional pause",
+  },
+  "first-light-afterglow": {
+    label: "First light afterglow",
+    environment:
+      "a very minimal first-light interior near a pale window, softened stone, linen, or cotton texture, no furniture dominance, no props, one perfume bottle close to fresh skin",
+    lighting:
+      "clean morning daylight diffused through haze, pale champagne warmth balanced with cool shadow, soft skin highlights and subtle transparent glass reflections",
+    camera:
+      "vertical editorial fragrance photography, 70mm to 85mm portrait lens, intimate upper-body crop with shoulders, neck, hands, and full readable bottle",
+    styling:
+      "modern Malaysian adult model with fresh natural skin, slightly damp or sleep-soft hair, no heavy makeup, neutral ivory, beige, white, or pale champagne fabric, no patterns",
+    motion:
+      "subject breathes quietly near the window, hand holds the bottle loosely near collarbone, wrist, or sternum, gaze lowered or eyes closed",
+    sound: "soft morning room tone, distant rain runoff, linen movement, calm breath",
+  },
+  "steam-veil": {
+    label: "Steam veil",
+    environment:
+      "a minimal post-shower atmosphere with fogged glass, soft neutral wall, or abstract steam haze, no bathroom clutter, no visible props, one perfume bottle held close",
+    lighting:
+      "soft warm-cool diffused light through steam, gentle skin sheen, controlled haze, realistic glass edges, no hard flash or wet-splash drama",
+    camera:
+      "vertical skin-close cinematic still, shallow depth of field, focus on damp hair, shoulder, hand, and full readable bottle",
+    styling:
+      "modern Malaysian adult model with damp hair falling naturally, clean skin, fine condensation, neutral wet fabric or simple ivory, beige, or muted green wardrobe, no accessories",
+    motion:
+      "hand lifts the bottle through softened steam near neck or shoulder, posture relaxed, expression calm and inward, no direct eye contact",
+    sound: "soft steam hush, quiet breath, barely audible glass touch",
+  },
+  "dusk-skin-veil": {
+    label: "Dusk skin veil",
+    environment:
+      "an abstract twilight setting with one champagne-warm side and one deep teal-gray side, no scenery dominance, no props, one perfume bottle against skin",
+    lighting:
+      "dusk light with warm gold edge highlights and cool green-gray falloff, smooth gradients, soft luminous skin, premium but subtle glass reflections",
+    camera:
+      "vertical luxury fragrance campaign still, 85mm lens, mid-to-close crop balancing skin, profile, hand, and the full readable bottle",
+    styling:
+      "modern Malaysian adult model, natural beauty, lightly tousled hair, neutral ivory, champagne, muted green, or soft blush fabric, no heavy makeup, no flashy color",
+    motion:
+      "body turns slightly away from the warmer light, hand rests with bottle near waist, thigh, neck, or collarbone, gaze distant and not camera-facing",
+    sound: "quiet evening air, soft fabric, low cinematic room tone",
+  },
+  "mirror-pause": {
+    label: "Mirror pause",
+    environment:
+      "a minimal angled mirror or reflective wall suggestion with softened edges, no vanity clutter, no visible props beyond the perfume bottle",
+    lighting:
+      "gentle diffused daylight or warm interior glow with mirror bloom, clean skin tones, subdued metal and glass highlights",
+    camera:
+      "vertical editorial portrait-product still, angled reflection, partial face or shoulder line, full readable bottle kept in the main plane without label distortion",
+    styling:
+      "modern Malaysian adult model with natural grooming, no direct eye contact, neutral fabric, no jewelry emphasis, no influencer selfie posture",
+    motion:
+      "model looks past or below the reflection while one hand holds the bottle near jawline, collarbone, or shoulder, calm and self-contained",
+    sound: "quiet room tone, breath against glass, soft hand movement",
+  },
+  "midnight-balcony": {
+    label: "Midnight balcony",
+    environment:
+      "a humid Malaysian after-dark balcony, window edge, or abstract night threshold with deep teal, charcoal, and amber blur, no skyline dominance and no extra props",
+    lighting:
+      "low nocturnal ambient light with one precise warm edge highlight across skin, cap, and bottle shoulder, realistic glass reflection, no neon club mood",
+    camera:
+      "vertical cinematic fragrance still, 70mm to 85mm lens, mid shot or close upper-body crop, bottle readable inside a dark quiet frame",
+    styling:
+      "modern Malaysian adult model, damp or wind-soft hair, black, ivory, champagne, or muted green simple fabric, natural skin, no heavy makeup",
+    motion:
+      "subject stands or sits near the edge of darkness, turned away from camera, hand rests with bottle near wrist, thigh, waist, or collarbone",
+    sound: "humid night air, distant city hush, slow breath, soft fabric",
+  },
+  "remembered-room": {
+    label: "Remembered room",
+    environment:
+      "a nearly empty private room after a moment has passed, warm-cool light, one softened surface, negative space, no props, and the perfume bottle as the emotional witness",
+    lighting:
+      "subtle mixed daylight and amber afterglow, low contrast, clean shadows, gentle glass caustics, restrained premium highlights",
+    camera:
+      "vertical high-end product-led editorial, shallow depth of field, partial-body or product-close framing with the full bottle visible and label crisp",
+    styling:
+      "if a model appears, show only natural Malaysian adult skin, hands, shoulder, neck, or soft profile with neutral fabric and no exaggerated pose",
+    motion:
+      "the bottle remains still while a hand, shoulder, or fabric edge suggests someone just left or paused nearby, mood quiet and memorable",
+    sound: "soft empty-room tone, fabric settling, distant rain or city hush",
+  },
   "nocturne-vanity": {
     label: "Nocturne vanity",
     environment:
@@ -678,6 +1110,29 @@ function findOption<T extends string>(options: CreativeOption<T>[], value: strin
   return options.find((option) => option.value === value)?.value ?? fallback;
 }
 
+function normalizeVariationIndex(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(value));
+}
+
+export function getCreativeVariationCue(
+  preset: CreativePreset,
+  variationIndex: number | undefined = 0,
+) {
+  const offset = creativePresetOffsets[preset] ?? 0;
+  const normalizedIndex = normalizeVariationIndex(variationIndex);
+  const fallback = creativeVariationCues[0];
+
+  if (!fallback) {
+    throw new Error("Creative variation cues are not configured.");
+  }
+
+  return creativeVariationCues[(normalizedIndex + offset) % creativeVariationCues.length] ?? fallback;
+}
+
 function defaultAspectPreset(
   format: CreativeFormat,
   channel: CreativeChannel,
@@ -732,13 +1187,14 @@ export function normalizeCreativeRequest(input: Partial<CreativeRequest>): Creat
     format,
     channel,
     objective: findOption(objectiveOptions, input.objective ?? "", "launch-drop"),
-    preset: findOption(presetOptions, input.preset ?? "", "nocturne-vanity"),
+    preset: findOption(presetOptions, input.preset ?? "", "after-rain-silence"),
     aspectPreset: findOption(
       aspectOptions,
       input.aspectPreset ?? "",
       defaultAspectPreset(format, channel),
     ),
     upscaleMode: findOption(upscaleOptions, input.upscaleMode ?? "", "enhanced"),
+    variationIndex: normalizeVariationIndex(input.variationIndex),
     audienceNote: input.audienceNote?.trim().slice(0, 180),
     customBrief: input.customBrief?.trim().slice(0, 360),
   };
@@ -824,11 +1280,13 @@ function buildSuggestedCreativeDirection(
   scent: ScentProfile,
   preset: PresetProfile,
   aspect: AspectProfile,
+  variation: CreativeVariationCue,
 ) {
   const customBrief = request.customBrief ? ` Honor this added direction: ${request.customBrief}.` : "";
   const groupingInstruction = buildProductGroupingInstruction(request);
+  const freshness = ` Freshness cue - ${variation.label}: ${variation.storyBeat}. ${variation.compositionShift}. ${variation.materialShift}. ${variation.antiRepeatRule}.`;
 
-  return `Stage ${scent.name} inside ${preset.environment}, light it with ${preset.lighting}, and keep the world grounded in ${scent.signatureScene}. ${aspect.cropGuidance} Let the frame lean into ${scent.texture} while preserving a premium Malaysian point of view.${groupingInstruction ? ` ${groupingInstruction}` : ""}${customBrief}`;
+  return `Stage ${scent.name} inside ${preset.environment}, light it with ${preset.lighting}, and keep the world grounded in ${scent.signatureScene}. ${aspect.cropGuidance} Let the frame lean into ${scent.texture} while preserving a premium Malaysian point of view.${groupingInstruction ? ` ${groupingInstruction}` : ""}${customBrief}${freshness}`;
 }
 
 function buildShotList(
@@ -836,6 +1294,7 @@ function buildShotList(
   scent: ScentProfile,
   preset: PresetProfile,
   format: FormatProfile,
+  variation: CreativeVariationCue,
 ) {
   const groupingInstruction = buildProductGroupingInstruction(request);
 
@@ -851,6 +1310,7 @@ function buildShotList(
             ? "modern Malaysian tailoring details"
             : "quiet modern Malaysian daily ritual details"
       }.`,
+      `Freshness frame: ${variation.label}. ${variation.compositionShift}.`,
       "CTA frame: reserve the 50mL Eau de Parfum, keep text minimal and poster-safe.",
     ];
   }
@@ -860,6 +1320,7 @@ function buildShotList(
       `${groupingInstruction ? "Arrange the three bottles together" : "Bottle centered"} with ${preset.environment}.`,
       "Leave upper negative space for scent name and lower space for price/preorder CTA.",
       "Include a subtle tester strip cue so shoppers understand they can sample it.",
+      `Avoid-repeat cue: ${variation.label}. ${variation.antiRepeatRule}.`,
       "Keep the Malaysian pop-up counter premium and clean, with no discount or crowded market cues.",
     ];
   }
@@ -869,6 +1330,7 @@ function buildShotList(
       `Opening: ${isAllScentsSlug(request.scentSlug) ? "Aureya, Zephyr, and Maris held together in one balanced hero frame" : `${scent.name} bottle held steady`} in ${preset.environment}.`,
       `Movement: ${preset.motion}.`,
       `Sensory insert: ${scent.notes.slice(0, 3).join(", ")} appear through Malaysian-relevant light, texture, or restrained ingredient details.`,
+      `Fresh variation: ${variation.label}. ${variation.storyBeat}.`,
       "End frame: bottle upright, label readable, warm preorder cue, no hard-sell graphics.",
     ];
   }
@@ -877,6 +1339,7 @@ function buildShotList(
     `Hero composition: ${format.composition}${groupingInstruction ? ` ${groupingInstruction}` : ""}.`,
     `Scene: ${preset.environment}.`,
     `Light: ${preset.lighting}.`,
+    `Freshness cue: ${variation.label}. ${variation.compositionShift}.`,
     "Final check: label readable, bottle accurate, reflections realistic.",
   ];
 }
@@ -891,6 +1354,7 @@ function buildImagePrompt(
   suggestedAudience: string,
   suggestedNuance: string,
   suggestedCreativeDirection: string,
+  variation: CreativeVariationCue,
 ) {
   const audience = `Target audience: ${suggestedAudience}.`;
   const nuance = `Nuance: ${suggestedNuance}.`;
@@ -912,6 +1376,7 @@ function buildImagePrompt(
     groupingInstruction,
     singleFrameRule,
     `Brand world: ${brandRules.join("; ")}.`,
+    `Emotional storytelling rules: ${emotionalStorytellingRules.join("; ")}.`,
     `Malaysia market rules: ${malaysiaMarketRules.join("; ")}.`,
     `Scent mood: ${scent.mood.join(", ")}. Notes to imply visually: ${scent.notes.join(", ")}.`,
     `Scene: ${preset.environment}.`,
@@ -919,7 +1384,10 @@ function buildImagePrompt(
     `Camera: ${preset.camera}.`,
     `Composition: ${format.composition}. Aspect ratio ${aspect.aspectRatio} for ${aspect.label}. ${aspect.cropGuidance}`,
     `Styling: ${preset.styling}. Texture language: ${scent.texture}.`,
+    `Freshness and anti-repetition cue: ${variation.label}. ${variation.storyBeat}. ${variation.compositionShift}. ${variation.materialShift}. ${variation.antiRepeatRule}.`,
     `Upscale target: ${upscale.label}. ${upscale.note}`,
+    `Transparent liquid tint: ${scent.liquidTintName} (${scent.liquidTintHex}).`,
+    `Product identity cue: ${scent.productIdentityCue}.`,
     `Product rules: ${productPreservationRules.join("; ")}.`,
     "Photorealistic, high-end commercial fragrance photography, physically accurate shadows, realistic glass caustics, premium retouching, crisp focal point.",
   ]
@@ -937,6 +1405,10 @@ function midjourneyStylizeFor(preset: CreativePreset) {
     return 140;
   }
 
+  if (emotionalPromptPresets.has(preset)) {
+    return 90;
+  }
+
   return 100;
 }
 
@@ -948,6 +1420,7 @@ function buildMidjourneyPrimaryPrompt(
   suggestedAudience: string,
   suggestedNuance: string,
   suggestedCreativeDirection: string,
+  variation: CreativeVariationCue,
 ) {
   const groupingInstruction = buildProductGroupingInstruction(request);
   const singleFrameRule =
@@ -969,10 +1442,17 @@ function buildMidjourneyPrimaryPrompt(
     preset.environment,
     preset.lighting,
     preset.camera,
+    `${variation.label} freshness cue`,
+    variation.storyBeat,
+    variation.compositionShift,
+    variation.materialShift,
+    variation.antiRepeatRule,
     `targeted to ${suggestedAudience.toLowerCase()}`,
     suggestedNuance,
     suggestedCreativeDirection,
+    scent.productIdentityCue,
     "premium Malaysian setting and audience cues",
+    "emotion-led still image with implied story, mixed emotion, intimate body language, restrained gaze, and quiet luxury",
     "product remains photoreal and identical to the reference bottle",
     "label crisp, centered, readable",
     "realistic glass, realistic reflections, premium retouching, quiet luxury",
@@ -1001,6 +1481,7 @@ function buildMidjourneyDiscordCommand(
     suggestedAudience,
     suggestedNuance,
     suggestedCreativeDirection,
+    getCreativeVariationCue(request.preset, request.variationIndex),
   );
 
   return [
@@ -1094,6 +1575,7 @@ function buildVideoPrompt(
   preset: PresetProfile,
   aspect: AspectProfile,
   suggestedCreativeDirection: string,
+  variation: CreativeVariationCue,
 ) {
   return [
     `Animate the approved TARA ${scent.name} hero still into a ${aspect.aspectRatio} premium fragrance clip for ${aspect.label}.`,
@@ -1101,6 +1583,7 @@ function buildVideoPrompt(
     `Do not redesign, recolor, relabel, crop away, duplicate, or morph the product.`,
     `Malaysia market rules: ${malaysiaMarketRules.join("; ")}.`,
     `Creative direction: ${suggestedCreativeDirection}.`,
+    `Freshness cue: ${variation.label}. ${variation.storyBeat}. ${variation.compositionShift}.`,
     `Motion: ${preset.motion}.`,
     `The action unfolds slowly: first hold the hero composition, then introduce a subtle light pass, then end on a stable readable bottle frame.`,
     `Use ${scent.temperature} atmosphere with ${scent.texture}.`,
@@ -1162,6 +1645,12 @@ function buildNegativePrompt() {
     "multi-panel composition",
     "cluttered props",
     "neon club lighting",
+    "dramatic water splash",
+    "beach cliche",
+    "heavy makeup",
+    "direct eye contact when the brief asks for a distant or lowered gaze",
+    "exaggerated sensual pose",
+    "flashy colors",
     "medical claims",
     "celebrity likeness",
     "hands with distorted fingers",
@@ -1175,11 +1664,17 @@ function buildNegativePrompt() {
   ].join(", ");
 }
 
-function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
+function buildModelStack(
+  request: CreativeRequest,
+  upscale: UpscaleProfile,
+  variation: CreativeVariationCue,
+) {
   if (request.workflow === "openai-render") {
     return [
       `Generate the strategy in TARA first, then render directly inside the POS with ${isAllScentsSlug(request.scentSlug) ? "all three saved product photos plus any uploaded content reference" : "the saved product photo plus any uploaded content reference"}.`,
       "Use Malaysian-relevant scenes, subjects, retail environments, and cultural context by default.",
+      "Use the 10 emotional storytelling prompt modes for campaign stills that need mixed emotion, intimate product handling, and less literal product advertising.",
+      `This request's freshness cue is ${variation.label}; change composition, gesture, light, or material language before repeating an earlier output.`,
       "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
       "Run 4 variations, reject anything with changed product shape, warped label text, duplicated bottles, foreign settings, or unrealistic glass.",
       "Use the strongest still as the first frame for image-to-video instead of starting video from text only.",
@@ -1192,6 +1687,8 @@ function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
       "Generate the TARA brief and Midjourney prompt pack first so the scent strategy and audience nuance are locked before rendering elsewhere.",
       `Use ${isAllScentsSlug(request.scentSlug) ? "the three saved POS product photos as the Midjourney product reference set" : "the saved POS product photo as the Midjourney Omni Reference"}, and add an uploaded content photo only when you want extra mood or composition guidance.`,
       "Keep Malaysian-relevant retail, lifestyle, architecture, and model-casting cues visible in every pass.",
+      "For emotional campaign work, make the still feel like a private moment with a clear before-or-after story, not a showroom demo.",
+      `Use the ${variation.label} freshness cue so each handoff starts from a distinct shot idea instead of repeating the previous prompt.`,
       "Run a small variation set first, reject anything with label drift or product redesign, then refine the best pass rather than rewriting from zero.",
       `Upscale setting: ${upscale.label}. ${upscale.note}`,
     ];
@@ -1201,6 +1698,8 @@ function buildModelStack(request: CreativeRequest, upscale: UpscaleProfile) {
     "Use TARA to lock the scent strategy, audience nuance, and product rules before you render anything.",
     "Render a quick proof in TARA when helpful, then use the Midjourney prompt pack to widen exploration while preserving the same product identity.",
     `Use ${isAllScentsSlug(request.scentSlug) ? "all three saved POS product photos as the product-accuracy anchor set" : "the saved POS product photo as the product-accuracy anchor"} and any uploaded content photo as optional creative direction.`,
+    "When the content mode is emotional, keep the product secondary to mood but still readable, and let skin, light, hands, and gaze carry the story.",
+    `Rotate away from similar results with the ${variation.label} cue: ${variation.antiRepeatRule}.`,
     "If people appear, use local Malaysian adult models with respectful Malay, Chinese, and Indian representation.",
     "Approve only frames that keep the bottle, label, reflections, and Malaysian context believable at full resolution.",
     `Upscale setting: ${upscale.label}. ${upscale.note}`,
@@ -1214,6 +1713,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
   const format = formatProfiles[request.format];
   const aspect = aspectProfiles[request.aspectPreset];
   const upscale = upscaleProfiles[request.upscaleMode];
+  const variation = getCreativeVariationCue(request.preset, request.variationIndex);
   const suggestedAudience = buildSuggestedAudience(request, scent);
   const suggestedNuance = buildSuggestedNuance(request, scent, format, aspect);
   const suggestedCreativeDirection = buildSuggestedCreativeDirection(
@@ -1221,8 +1721,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
     scent,
     preset,
     aspect,
+    variation,
   );
-  const shotList = buildShotList(request, scent, preset, format);
+  const shotList = buildShotList(request, scent, preset, format, variation);
   const midjourneyPrimaryPrompt = buildMidjourneyPrimaryPrompt(
     request,
     scent,
@@ -1231,6 +1732,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
     suggestedAudience,
     suggestedNuance,
     suggestedCreativeDirection,
+    variation,
   );
   const midjourneyDiscordCommand = buildMidjourneyDiscordCommand(
     request,
@@ -1251,6 +1753,8 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       notes: scent.notes,
       mood: scent.mood,
       accentHex: scent.accentHex,
+      liquidTintName: scent.liquidTintName,
+      liquidTintHex: scent.liquidTintHex,
     },
     strategy: {
       angle: objectiveAngles[request.objective],
@@ -1262,8 +1766,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       aspectRatio: aspect.aspectRatio,
       upscaleLabel: upscale.label,
       workflowLabel: workflowLabels[request.workflow],
+      freshness: `${variation.label}: ${variation.storyBeat}`,
     },
-    modelStack: buildModelStack(request, upscale),
+    modelStack: buildModelStack(request, upscale, variation),
     shotList,
     imagePrompt: buildImagePrompt(
       request,
@@ -1275,8 +1780,9 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       suggestedAudience,
       suggestedNuance,
       suggestedCreativeDirection,
+      variation,
     ),
-    videoPrompt: buildVideoPrompt(scent, preset, aspect, suggestedCreativeDirection),
+    videoPrompt: buildVideoPrompt(scent, preset, aspect, suggestedCreativeDirection, variation),
     midjourney: {
       primaryPrompt: midjourneyPrimaryPrompt,
       discordCommand: midjourneyDiscordCommand,
@@ -1309,6 +1815,7 @@ export function buildCreativeBrief(input: Partial<CreativeRequest>): CreativeBri
       `Preferred workflow: ${workflowLabels[request.workflow]}. ${workflowDescriptions[request.workflow]}`,
       `Preferred aspect ratio: ${aspect.label} (${aspect.aspectRatio}) on a ${aspect.size} canvas.`,
       `Upscale plan: ${upscale.label}. ${upscale.note}`,
+      `Fresh-request variation: ${variation.label}. ${variation.antiRepeatRule}`,
       `Primary visual materials: ${sentenceJoin([scent.texture, preset.environment])}.`,
       isAllScentsSlug(request.scentSlug)
         ? "Use Aureya, Zephyr, and Maris together in one image, with balanced spacing and no bottle duplication."

@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
-import { buildCreativeBrief, normalizeCreativeRequest } from "@/lib/creative-model";
+import {
+  buildCreativeBrief,
+  normalizeCreativeRequest,
+  type CreativeRequest,
+} from "@/lib/creative-model";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const creativeRequest = normalizeCreativeRequest(body);
+    const body = (await request.json()) as Record<string, unknown>;
+    const requestedVariationIndex = body.variationIndex;
+    const creativeRequest = normalizeCreativeRequest(
+      {
+        ...body,
+        variationIndex:
+          typeof requestedVariationIndex === "number" && Number.isFinite(requestedVariationIndex)
+            ? requestedVariationIndex
+            : Date.now(),
+      } as Partial<CreativeRequest>,
+    );
     const brief = buildCreativeBrief(creativeRequest);
 
     return NextResponse.json(brief);

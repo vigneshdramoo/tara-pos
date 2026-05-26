@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "binary"
 }
 
@@ -27,6 +27,23 @@ enum StaffRole {
   CASHIER
 }
 
+enum QuizLeadSource {
+  POPUP_BOOTH
+  WEBSITE
+  QUIZ
+  INSTAGRAM
+  WHATSAPP
+  OTHER
+}
+
+enum PurchaseIntent {
+  BUY_TODAY
+  BUY_LATER
+  DISCOVERY_PACK
+  JUST_EXPLORING
+  GIFTING
+}
+
 model Product {
   id                 String              @id @default(cuid())
   slug               String              @unique
@@ -49,14 +66,15 @@ model Product {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  email     String?  @unique
-  phone     String?  @unique
+  email     String?    @unique
+  phone     String?    @unique
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   orders    Order[]
+  quizLeads QuizLead[]
 }
 
 model Order {
@@ -65,26 +83,33 @@ model Order {
   subtotalCents      Int
   taxCents           Int
   totalCents         Int
+  commissionCents    Int                 @default(0)
   paymentMethod      PaymentMethod
   notes              String?
   customerId         String?
+  salespersonId      String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  salesperson        StaffUser?          @relation("SalespersonOrders", fields: [salespersonId], references: [id], onDelete: SetNull)
   items              OrderItem[]
   inventoryMovements InventoryMovement[]
+
+  @@index([salespersonId])
 }
 
 model OrderItem {
-  id              String   @id @default(cuid())
-  orderId         String
-  productId       String
-  quantity        Int
-  unitPriceCents  Int
-  totalPriceCents Int
-  createdAt       DateTime @default(now())
-  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product  @relation(fields: [productId], references: [id])
+  id                String   @id @default(cuid())
+  orderId           String
+  productId         String
+  quantity          Int
+  unitPriceCents    Int
+  totalPriceCents   Int
+  commissionRateBps Int      @default(0)
+  commissionCents   Int      @default(0)
+  createdAt         DateTime @default(now())
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
@@ -116,4 +141,35 @@ model StaffUser {
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  ordersSold   Order[]   @relation("SalespersonOrders")
+}
+
+model QuizLead {
+  id                  String         @id @default(cuid())
+  leadNumber          String         @unique
+  name                String?
+  email               String?
+  phone               String?
+  ageRange            String?
+  genderIdentity      String?
+  city                String?
+  eventName           String?
+  source              QuizLeadSource @default(POPUP_BOOTH)
+  resultScent         String
+  secondaryScent      String?
+  purchaseIntent      PurchaseIntent @default(JUST_EXPLORING)
+  marketingConsent    Boolean        @default(false)
+  answers             Json?
+  scores              Json?
+  notes               String?
+  convertedCustomerId String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  convertedCustomer   Customer?      @relation(fields: [convertedCustomerId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([resultScent])
+  @@index([source])
+  @@index([purchaseIntent])
+  @@index([convertedCustomerId])
 }

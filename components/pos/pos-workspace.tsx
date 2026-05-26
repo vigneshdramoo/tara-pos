@@ -1,9 +1,11 @@
 "use client";
 
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
-import { Search } from "lucide-react";
+import { Search, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { calculateLineCommission } from "@/lib/commissions";
 import { CART_STORAGE_KEY, SALES_TAX_RATE } from "@/lib/constants";
+import { formatCurrency } from "@/lib/format";
 import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CartPanel } from "@/components/pos/cart-panel";
@@ -93,6 +95,17 @@ export function PosWorkspace({
   const subtotalCents = cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
   const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
   const totalCents = subtotalCents + taxCents;
+  const commissionCents = cart.reduce(
+    (sum, item) =>
+      sum +
+      calculateLineCommission({
+        sizeMl: item.sizeMl,
+        unitPriceCents: item.priceCents,
+        quantity: item.quantity,
+      }).commissionCents,
+    0,
+  );
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   function addProduct(product: ProductCardData) {
     setFeedback(null);
@@ -168,6 +181,8 @@ export function PosWorkspace({
 
       const result = (await response.json()) as {
         orderNumber?: string;
+        commissionCents?: number;
+        salespersonName?: string | null;
         message?: string;
       };
 
@@ -180,7 +195,9 @@ export function PosWorkspace({
       setCustomer(initialCustomer);
       setFeedback({
         type: "success",
-        message: `Sale ${result.orderNumber} captured successfully.`,
+        message: `Sale ${result.orderNumber} captured for ${
+          result.salespersonName ?? "the floor"
+        }. Commission: ${formatCurrency(result.commissionCents ?? 0)}.`,
       });
 
       startRefreshTransition(() => {
@@ -200,14 +217,14 @@ export function PosWorkspace({
   return (
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_420px]">
       <div className="grid gap-4">
-        <div className="tara-surface flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="tara-surface sticky top-2 z-20 flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-5 xl:static">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search fragrance, note, or collection"
-              className="touch-target w-full rounded-[24px] border border-[var(--line)] bg-white/90 pl-12 pr-4 text-stone-900 outline-none transition focus:border-stone-950"
+              className="touch-target w-full rounded-[20px] border border-[var(--line)] bg-white/90 pl-12 pr-4 text-sm text-stone-900 outline-none transition focus:border-stone-950 md:rounded-[24px] md:text-base"
             />
           </div>
           <div className="scrollbar-hidden flex items-center gap-2 overflow-x-auto">
@@ -217,7 +234,7 @@ export function PosWorkspace({
                 type="button"
                 onClick={() => setActiveCollection(collection)}
                 className={cn(
-                  "touch-target rounded-2xl px-4 text-sm font-semibold whitespace-nowrap transition",
+                  "touch-target rounded-2xl px-3 text-xs font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
                   activeCollection === collection
                     ? "bg-stone-950 text-stone-50"
                     : "bg-white text-stone-700",
@@ -227,9 +244,34 @@ export function PosWorkspace({
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById("checkout-panel")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
+            className="tara-panel-dark touch-target flex items-center justify-between gap-3 rounded-2xl px-4 text-left xl:hidden"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <ShoppingBag className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+              <span className="min-w-0">
+                <span className="block text-xs uppercase tracking-[0.2em] text-[rgba(202,158,91,0.9)]">
+                  Basket
+                </span>
+                <span className="block truncate text-sm font-semibold">
+                  {cartItemCount ? `${cartItemCount} item${cartItemCount === 1 ? "" : "s"}` : "Ready to start"}
+                </span>
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-semibold">
+              {totalCents ? `RM ${(totalCents / 100).toFixed(2)}` : "Checkout"}
+            </span>
+          </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:gap-4 2xl:grid-cols-3">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} onAdd={addProduct} />
           ))}
@@ -245,6 +287,7 @@ export function PosWorkspace({
         subtotalCents={subtotalCents}
         taxCents={taxCents}
         totalCents={totalCents}
+        commissionCents={commissionCents}
         submitting={submitting}
         refreshing={refreshing}
         feedback={feedback}

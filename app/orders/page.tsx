@@ -33,6 +33,9 @@ export default async function OrdersPage() {
                     {order.orderNumber}
                   </h3>
                   <p className="mt-1 text-sm text-stone-600">{order.customerName}</p>
+                  <p className="mt-1 text-sm text-stone-500">
+                    Sold by {order.salespersonName ?? "unassigned"}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   <Pill tone="accent">{order.paymentMethod}</Pill>
@@ -56,6 +59,9 @@ export default async function OrdersPage() {
                           <p className="text-sm text-stone-600">
                             Qty {item.quantity} · {formatCurrency(item.totalPriceCents)}
                           </p>
+                          <p className="text-xs text-stone-500">
+                            {formatCurrency(item.commissionCents)} commission
+                          </p>
                         </div>
                         <p className="text-sm text-stone-500">
                           {formatCompactDate(order.createdAt)}
@@ -75,6 +81,10 @@ export default async function OrdersPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-stone-300">Tax</span>
                       <span>{formatCurrency(order.taxCents)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-stone-300">Commission</span>
+                      <span>{formatCurrency(order.commissionCents)}</span>
                     </div>
                     <div className="flex items-center justify-between border-t border-white/10 pt-3 text-base font-semibold">
                       <span>Total</span>

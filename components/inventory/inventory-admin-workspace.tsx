@@ -45,7 +45,7 @@ function createBlankProductForm(): ProductFormState {
     notes: "",
     mood: "",
     sizeMl: "50",
-    price: "159.00",
+    price: "169.00",
     reorderLevel: "12",
     accentHex: "#CA9E5B",
     active: true,

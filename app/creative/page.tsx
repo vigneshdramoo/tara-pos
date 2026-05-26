@@ -6,13 +6,13 @@ export const dynamic = "force-dynamic";
 
 export default function CreativePage() {
   const initialRequest = normalizeCreativeRequest({
-    scentSlug: "aureya",
+    scentSlug: "maris",
     workflow: "hybrid-precision",
-    format: "product-image",
-    channel: "instagram-feed",
+    format: "story-reel",
+    channel: "instagram-story",
     objective: "launch-drop",
-    preset: "nocturne-vanity",
-    aspectPreset: "instagram-portrait",
+    preset: "after-rain-silence",
+    aspectPreset: "instagram-story",
     upscaleMode: "enhanced",
   });
   const initialBrief = buildCreativeBrief(initialRequest);
@@ -22,10 +22,10 @@ export default function CreativePage() {
       <PageIntro
         eyebrow="Creative studio"
         title="TARA content model"
-        description="Upload a creative reference, fall back to the saved POS product photo when nothing is uploaded, choose the right aspect ratio and upscale level, and generate TARA-ready prompts for direct rendering, Midjourney precision handoff, or Tomedes SMART prompt refinement."
+        description="Build fresh emotional storytelling fragrance visuals from saved POS bottle references, optional mood uploads, 10 campaign prompt modes, aspect presets, and upscale-aware prompt packs for direct rendering, Midjourney precision handoff, or Tomedes SMART refinement."
         actions={
           <div className="tara-button-primary rounded-[24px] px-5 py-4 text-sm font-medium">
-            ChatGPT strategy, Tomedes SMART refinement, product-safe output
+            10 emotional prompt modes, fresh-request variation, product-safe output
           </div>
         }
       />

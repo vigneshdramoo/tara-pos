@@ -5,6 +5,7 @@ import {
   ALL_SCENTS_SLUG,
   buildCreativeBrief,
   getAspectProfile,
+  getCreativeVariationCue,
   getUpscaleProfile,
   normalizeCreativeRequest,
   type CreativeRequest,
@@ -48,7 +49,7 @@ type VariationPack = {
   energy: string;
 };
 
-const variationPacksByPreset: Record<CreativeRequest["preset"], VariationPack[]> = {
+const variationPacksByPreset: Partial<Record<CreativeRequest["preset"], VariationPack[]>> = {
   "after-rain-silence": [
     {
       label: "window rain hush",
@@ -139,6 +140,144 @@ const variationPacksByPreset: Record<CreativeRequest["preset"], VariationPack[]>
       framing: "Balance skin, face, hands, and product with shallow depth of field and smooth background falloff.",
       styling: "Keep expression distant but soft, posture confident, and bottle held loosely rather than presented.",
       energy: "Feel confident without performance, luxury without noise.",
+    },
+  ],
+  "first-light-afterglow": [
+    {
+      label: "pale window breath",
+      scene: "Place the model near a pale morning window with the room reduced to linen, soft stone, and clean haze, no furniture or prop dominance.",
+      framing: "Use a vertical close-to-mid crop on shoulder, neck, relaxed hand, and full readable bottle near collarbone or sternum.",
+      styling: "Use fresh skin, sleep-soft or slightly damp hair, ivory or pale champagne fabric, no patterns, no accessories, and no heavy makeup.",
+      energy: "Feel newly awake, private, and calm, with first light doing more storytelling than pose.",
+    },
+    {
+      label: "linen afterglow",
+      scene: "Make the frame cleaner and paler, with soft cotton or linen texture implied only as a background plane.",
+      framing: "Hold the bottle in the middle third with breathing room above the cap and a lowered gaze softened by depth of field.",
+      styling: "Keep skin natural and luminous, wardrobe white, beige, or champagne, and every object outside the product absent.",
+      energy: "Feel fresh, elegant, and emotionally quiet rather than styled like a bedroom scene.",
+    },
+    {
+      label: "morning hand detail",
+      scene: "Focus on the first gesture of picking up the perfume after water or sleep, keeping the environment abstract and minimal.",
+      framing: "Crop around hand, wrist, collarbone, and bottle with the face partial or gently out of focus.",
+      styling: "Use clean nails, relaxed fingers, soft daylight, pale fabric, and realistic glass transparency.",
+      energy: "Feel close, honest, and premium, not commercial-demo direct.",
+    },
+  ],
+  "steam-veil": [
+    {
+      label: "fogged glass hush",
+      scene: "Use a fogged-glass or steam-softened plane as a minimal background, with no bathroom clutter and no visible water splash.",
+      framing: "Keep the full bottle sharp and readable while skin, damp hair, and background dissolve into shallow haze.",
+      styling: "Use neutral wet fabric, natural skin, fine condensation, relaxed posture, and no accessories.",
+      energy: "Feel intimate and warm but restrained, like a post-shower pause.",
+    },
+    {
+      label: "haze around shoulder",
+      scene: "Let steam veil the edge of the shoulder and hair while the bottle catches a subtle controlled highlight.",
+      framing: "Use a tight vertical upper-body composition with bottle near neck or shoulder, never cropped.",
+      styling: "Keep makeup invisible, droplets minimal, fabric ivory or muted green, and reflections physically believable.",
+      energy: "Feel sensory and skin-close without becoming glossy or dramatic.",
+    },
+    {
+      label: "soft condensation",
+      scene: "Shift the moisture language to fine condensation and diffused warmth rather than visible dripping water.",
+      framing: "Frame the hand lifting the bottle through haze with generous negative space and a no-direct-eye-contact expression.",
+      styling: "Use damp hair falling naturally, neutral tones, clean skin, and no set dressing.",
+      energy: "Feel quiet, private, and editorial.",
+    },
+  ],
+  "dusk-skin-veil": [
+    {
+      label: "champagne teal split",
+      scene: "Create an abstract dusk field where one side is champagne warm and the other falls into deep teal-gray shadow, no props or scenery.",
+      framing: "Use a mid-to-close crop balancing skin profile, hand, and readable bottle near waist, thigh, neck, or collarbone.",
+      styling: "Use neutral fabric, natural tousled hair, soft skin glow, and no direct eye contact.",
+      energy: "Feel reflective, magnetic, and evening-led without looking like nightlife.",
+    },
+    {
+      label: "last light turn-away",
+      scene: "Turn the body slightly away from the warm edge light so the scene feels remembered rather than presented.",
+      framing: "Place the bottle off-center and let the color gradient create emotional space around it.",
+      styling: "Use ivory, champagne, blush, or muted green fabric, no jewelry, no heavy makeup, and realistic glass highlights.",
+      energy: "Feel warm, sensual, and quiet, never exaggerated.",
+    },
+    {
+      label: "teal-gray afterglow",
+      scene: "Let the background become darker and cooler while a small gold highlight catches skin and cap or glass shoulder.",
+      framing: "Use shallow depth of field, upper-body focus, and product at natural scale, not oversized.",
+      styling: "Keep the scene object-free and let skin, fabric, and liquid tint carry the palette.",
+      energy: "Feel cinematic, subdued, and premium.",
+    },
+  ],
+  "mirror-pause": [
+    {
+      label: "angled reflection",
+      scene: "Use an angled mirror or reflective wall suggestion with softened edges and no vanity clutter.",
+      framing: "Show partial face or shoulder line, one hand, and the full readable bottle in the main plane so the label stays unwarped.",
+      styling: "Use natural skin, neutral fabric, no jewelry emphasis, and gaze below or away from the reflection.",
+      energy: "Feel self-contained, intimate, and editorial, not like a selfie.",
+    },
+    {
+      label: "mirror bloom",
+      scene: "Let diffused mirror bloom soften the background while the product remains crisp and accurate.",
+      framing: "Place the reflection on one side and the bottle in the opposite middle third for visual tension.",
+      styling: "Use soft grooming, damp or loosely falling hair, no patterns, and no visible props.",
+      energy: "Feel quiet, private, and slightly melancholic.",
+    },
+    {
+      label: "not looking back",
+      scene: "Make the story about the model refusing direct eye contact, looking past the mirror or downward.",
+      framing: "Use a close vertical portrait-product crop with collarbone, jawline, hand, and full bottle.",
+      styling: "Keep makeup nearly invisible, palette neutral, and the reflection clean rather than decorative.",
+      energy: "Feel restrained and emotionally magnetic.",
+    },
+  ],
+  "midnight-balcony": [
+    {
+      label: "humid night edge",
+      scene: "Place the model at an abstract night window or balcony edge with deep teal, charcoal, and amber blur, no skyline dominance.",
+      framing: "Use a vertical mid shot or upper-body crop with the bottle held near wrist, thigh, waist, or collarbone.",
+      styling: "Use black, ivory, champagne, or muted green simple fabric, damp or wind-soft hair, and natural skin.",
+      energy: "Feel after-dark, intimate, airy, and restrained rather than club-like.",
+    },
+    {
+      label: "single amber line",
+      scene: "Let one warm edge light define skin, cap, and bottle shoulder against a dark quiet background.",
+      framing: "Keep negative space around the subject and avoid a centered packshot composition.",
+      styling: "Use no props, no neon, no nightlife cliches, and realistic low-light glass reflections.",
+      energy: "Feel confident, humid, and cinematic.",
+    },
+    {
+      label: "turned from city",
+      scene: "Suggest Malaysian night air through softness and distance without showing landmarks or busy city detail.",
+      framing: "Angle the subject away from camera, bottle clear in the middle third, face softened or partly out of frame.",
+      styling: "Keep wardrobe minimal and neutral, skin gently sheened, and product at natural scale.",
+      energy: "Feel private, nocturnal, and premium.",
+    },
+  ],
+  "remembered-room": [
+    {
+      label: "quiet witness",
+      scene: "Make the bottle feel like the trace left after a private moment, inside a nearly empty room with warm-cool light and no props.",
+      framing: "Use product-led or partial-body vertical framing with generous negative space and the bottle fully visible.",
+      styling: "If a model appears, limit the human cue to hand, shoulder, neck, or soft profile in neutral fabric.",
+      energy: "Feel emotionally present, still, and memorable.",
+    },
+    {
+      label: "fabric settling",
+      scene: "Let one soft fabric plane settle behind or beside the product without turning it into a styled prop scene.",
+      framing: "Use a close but uncropped bottle view with shallow focus and a changed focal distance from prior attempts.",
+      styling: "Use warm-cool mixed light, clean shadow, and restrained texture with no extra objects.",
+      energy: "Feel hushed, premium, and almost cinematic-still-life.",
+    },
+    {
+      label: "empty room afterglow",
+      scene: "Shift the frame emptier, with the bottle as the main emotional anchor and only a partial human trace if needed.",
+      framing: "Place the bottle slightly off-center with a large quiet field of shadow or soft neutral wall.",
+      styling: "Keep reflections realistic, label readable, product untouched, and colors muted.",
+      energy: "Feel like radiance remembered, subtle and lingering.",
     },
   ],
   "nocturne-vanity": [
@@ -288,6 +427,30 @@ const variationPacksByPreset: Record<CreativeRequest["preset"], VariationPack[]>
   ],
 };
 
+const fallbackVariationPacks: VariationPack[] = [
+  {
+    label: "fresh angle shift",
+    scene: "Keep the same TARA product rules but rebuild the scene with a new light direction, cleaner negative space, and no repeated set arrangement.",
+    framing: "Change the camera height, product placement, and crop from the previous attempt while keeping the bottle fully visible.",
+    styling: "Use fewer objects, more refined material language, and a distinct palette balance from the last render.",
+    energy: "Feel new, premium, and intentional rather than a minor remix.",
+  },
+  {
+    label: "new gesture and light",
+    scene: "If a person appears, change the gesture and body angle; if product-only, change the surface, horizon line, and shadow mass.",
+    framing: "Move from centered product logic to off-center editorial balance or from close crop to a wider breathing frame.",
+    styling: "Keep TARA colors and product identity exact, but vary fabric, reflection, and background gradient language.",
+    energy: "Feel materially different while staying inside the brand world.",
+  },
+  {
+    label: "quiet reset",
+    scene: "Strip the composition down and let a single emotional cue, surface, or light event drive the image.",
+    framing: "Use shallow depth of field and a fresh focal distance, never a duplicated pose, table setup, or bottle arrangement.",
+    styling: "Remove visual noise and use skin, glass, shadow, or one texture as the main storytelling device.",
+    energy: "Feel refined, memorable, and not similar to the previous output.",
+  },
+];
+
 function getImageMimeType(filePath: string) {
   const extension = path.extname(filePath).toLowerCase();
 
@@ -366,8 +529,10 @@ function getUploadedReference(input: UploadedReferenceInput | null | undefined):
 
 function referenceLabelFor(productReferences: ReferenceImage[], uploadedReference: ReferenceImage | null) {
   if (productReferences.length && uploadedReference) {
-    return productReferences.length > 1
-      ? "Saved POS product photos for all 3 scents + uploaded content photo"
+    return productReferences.length > 3
+      ? "Saved POS product photos for all 3 scents + trio lineup reference + uploaded content photo"
+      : productReferences.length > 1
+        ? "Saved POS product photos for all 3 scents + uploaded content photo"
       : "Saved POS product photo + uploaded content photo";
   }
 
@@ -376,7 +541,9 @@ function referenceLabelFor(productReferences: ReferenceImage[], uploadedReferenc
   }
 
   if (productReferences.length) {
-    return productReferences[0]?.label ?? "Saved POS product photo";
+    return productReferences.length > 3
+      ? "Saved POS product photos for all 3 scents + trio lineup reference"
+      : (productReferences[0]?.label ?? "Saved POS product photo");
   }
 
   return "Prompt only";
@@ -392,10 +559,15 @@ function shouldForceSingleFrame(request: CreativeRequest) {
 }
 
 function getVariationPack(request: CreativeRequest, variationIndex: number) {
-  const packs = variationPacksByPreset[request.preset];
+  const packs = variationPacksByPreset[request.preset] ?? fallbackVariationPacks;
   const normalizedIndex = Number.isFinite(variationIndex) ? Math.max(0, variationIndex) : 0;
+  const fallback = fallbackVariationPacks[0];
 
-  return packs[normalizedIndex % packs.length];
+  if (!fallback) {
+    throw new Error("Creative image variation packs are not configured.");
+  }
+
+  return packs[normalizedIndex % packs.length] ?? fallback;
 }
 
 export async function POST(request: Request) {
@@ -411,10 +583,22 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as CreativeImageRouteBody;
-    const creativeRequest = normalizeCreativeRequest(body);
+    const requestedVariationIndex = body.variationIndex;
+    const variationIndex =
+      typeof requestedVariationIndex === "number" && Number.isFinite(requestedVariationIndex)
+        ? Math.max(0, Math.trunc(requestedVariationIndex))
+        : Date.now();
+    const renderAttemptNumber =
+      typeof requestedVariationIndex === "number" && Number.isFinite(requestedVariationIndex)
+        ? variationIndex + 1
+        : 1;
+    const creativeRequest = normalizeCreativeRequest({
+      ...body,
+      variationIndex,
+    });
     const brief = buildCreativeBrief(creativeRequest);
-    const variationIndex = Math.max(0, Math.trunc(body.variationIndex ?? 0));
     const variationPack = getVariationPack(creativeRequest, variationIndex);
+    const freshnessCue = getCreativeVariationCue(creativeRequest.preset, variationIndex);
 
     if (creativeRequest.workflow === "midjourney-handoff") {
       return NextResponse.json(
@@ -440,25 +624,32 @@ export async function POST(request: Request) {
       : null;
 
     const prompt = [
-      `Fresh creative direction for render attempt ${variationIndex + 1}: ${variationPack.label}.`,
-      productReferences.length > 1
+      `Fresh creative direction for render attempt ${renderAttemptNumber}: ${variationPack.label}.`,
+      productReferences.length > 3
+        ? "Use the first three reference images as the exact TARA product identity references for Aureya, Zephyr, and Maris. Use the fourth reference image as the trio lineup composition reference. Preserve each bottle precisely and include all three together in one balanced composition."
+        : productReferences.length > 1
         ? "Use the first three reference images as the exact TARA product identity references for Aureya, Zephyr, and Maris. Preserve each bottle precisely and include all three together in one balanced composition."
         : productReferences[0]
           ? "Use the first reference image as the exact TARA product identity reference and preserve it precisely."
         : "No saved POS product image is available, so rely on the remaining references and the prompt for product styling.",
       uploadedReference
         ? productReferences.length
-          ? productReferences.length > 1
+          ? productReferences.length > 3
+            ? "Use the uploaded content reference as extra direction for scene, framing, creator styling, props, or lighting while using the saved trio lineup reference to guide the overall three-bottle composition without changing any product identity."
+            : productReferences.length > 1
             ? "Use the uploaded content reference as extra direction for scene, framing, creator styling, props, or lighting without changing any of the three product identities."
             : "Use the second reference image as extra content direction for scene, framing, creator styling, props, or lighting without changing the product identity."
           : "Use the uploaded content photo as the main visual reference while keeping the product premium and believable."
-        : productReferences.length > 1
+        : productReferences.length > 3
+          ? "No uploaded content reference was provided, so continue with the saved POS product photos for Aureya, Zephyr, and Maris plus the saved trio lineup composition reference."
+          : productReferences.length > 1
           ? "No uploaded content reference was provided, so continue with the saved POS product photos for Aureya, Zephyr, and Maris."
           : "No uploaded content reference was provided, so continue with the saved POS product photo when available.",
       productReferences.length > 1
         ? "The generated content may change the scene, lighting, model, pose, and environment, but Aureya, Zephyr, and Maris must each remain visually identical to their TARA reference image and appear only once."
         : "The generated content may change the scene, lighting, model, pose, and environment, but the actual product must remain visually identical to the TARA reference whenever a POS product photo is present.",
       "Make this output materially different from previous generations under the same preset while staying on-brand and product-accurate.",
+      `Anti-repetition cue: ${freshnessCue.label}. ${freshnessCue.storyBeat}. ${freshnessCue.compositionShift}. ${freshnessCue.materialShift}. ${freshnessCue.antiRepeatRule}.`,
       variationPack.scene,
       variationPack.framing,
       variationPack.styling,

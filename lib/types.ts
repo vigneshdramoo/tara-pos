@@ -1,5 +1,11 @@
 import type { StaffRole } from "@/lib/staff";
-import type { InventoryMovementType, PaymentMethod } from "@prisma/client";
+import type { StaffCommissionProgress } from "@/lib/commissions";
+import type {
+  InventoryMovementType,
+  PaymentMethod,
+  PurchaseIntent,
+  QuizLeadSource,
+} from "@prisma/client";
 
 export type ProductCardData = {
   id: string;
@@ -80,8 +86,10 @@ export type RecentOrderInsight = {
   id: string;
   orderNumber: string;
   customerName: string;
+  salespersonName: string | null;
   paymentMethod: PaymentMethod;
   totalCents: number;
+  commissionCents: number;
   createdAt: string;
   itemCount: number;
 };
@@ -124,13 +132,16 @@ export type OrderHistoryItem = {
   totalCents: number;
   subtotalCents: number;
   taxCents: number;
+  commissionCents: number;
   createdAt: string;
   customerName: string;
+  salespersonName: string | null;
   notes: string | null;
   itemSummary: Array<{
     productName: string;
     quantity: number;
     totalPriceCents: number;
+    commissionCents: number;
   }>;
 };
 
@@ -177,9 +188,37 @@ export type StaffUserInsight = {
   active: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  commissionProgress: StaffCommissionProgress;
 };
 
 export type StaffUsersData = {
   staffUsers: StaffUserInsight[];
+  databaseIssue?: string;
+};
+
+export type QuizLeadInsight = {
+  id: string;
+  leadNumber: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  ageRange: string | null;
+  genderIdentity: string | null;
+  city: string | null;
+  eventName: string | null;
+  source: QuizLeadSource;
+  resultScent: string;
+  secondaryScent: string | null;
+  purchaseIntent: PurchaseIntent;
+  marketingConsent: boolean;
+  notes: string | null;
+  convertedCustomerId: string | null;
+  convertedCustomerName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuizLeadsData = {
+  leads: QuizLeadInsight[];
   databaseIssue?: string;
 };

@@ -1,4 +1,5 @@
 import { PaymentMethod } from "@prisma/client";
+import { buildStaffCommissionProgress } from "@/lib/commissions";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
@@ -12,6 +13,7 @@ import type {
   OrdersData,
   PosData,
   ProductCardData,
+  QuizLeadsData,
   RecentOrderInsight,
   StaffUsersData,
   TopProductInsight,
@@ -172,6 +174,11 @@ export async function getDashboardData(): Promise<DashboardData> {
                 name: true,
               },
             },
+            salesperson: {
+              select: {
+                name: true,
+              },
+            },
             items: {
               select: {
                 quantity: true,
@@ -214,6 +221,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     const topProductMap = new Map(topProductRecords.map((product) => [product.id, product]));
 
     const todaySalesCents = todayOrders.reduce((sum, order) => sum + order.totalCents, 0);
+    const todayCommissionCents = todayOrders.reduce(
+      (sum, order) => sum + order.commissionCents,
+      0,
+    );
     const todayUnits = todayOrders.reduce(
       (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
       0,
@@ -276,8 +287,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       id: order.id,
       orderNumber: order.orderNumber,
       customerName: order.customer?.name ?? "Walk-in guest",
+      salespersonName: order.salesperson?.name ?? null,
       paymentMethod: order.paymentMethod,
       totalCents: order.totalCents,
+      commissionCents: order.commissionCents,
       createdAt: order.createdAt.toISOString(),
       itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
     }));
@@ -287,6 +300,11 @@ export async function getDashboardData(): Promise<DashboardData> {
         label: "Daily sales",
         value: formatCurrency(todaySalesCents),
         detail: `${todayOrders.length} orders today`,
+      },
+      {
+        label: "Daily commission",
+        value: formatCurrency(todayCommissionCents),
+        detail: "Salesperson earnings captured today",
       },
       {
         label: "Average order",
@@ -406,6 +424,54 @@ export async function getCustomersData(): Promise<CustomersData> {
   }
 }
 
+export async function getQuizLeadsData(): Promise<QuizLeadsData> {
+  try {
+    const prisma = requirePrisma();
+    const leads = await prisma.quizLead.findMany({
+      take: 250,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        convertedCustomer: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      leads: leads.map((lead) => ({
+        id: lead.id,
+        leadNumber: lead.leadNumber,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        ageRange: lead.ageRange,
+        genderIdentity: lead.genderIdentity,
+        city: lead.city,
+        eventName: lead.eventName,
+        source: lead.source,
+        resultScent: lead.resultScent,
+        secondaryScent: lead.secondaryScent,
+        purchaseIntent: lead.purchaseIntent,
+        marketingConsent: lead.marketingConsent,
+        notes: lead.notes,
+        convertedCustomerId: lead.convertedCustomerId,
+        convertedCustomerName: lead.convertedCustomer?.name ?? null,
+        createdAt: lead.createdAt.toISOString(),
+        updatedAt: lead.updatedAt.toISOString(),
+      })),
+    };
+  } catch (error) {
+    return {
+      leads: [],
+      databaseIssue: logDatabaseFallback("quiz-leads", error),
+    };
+  }
+}
+
 export async function getOrdersData(): Promise<OrdersData> {
   try {
     const prisma = requirePrisma();
@@ -416,6 +482,11 @@ export async function getOrdersData(): Promise<OrdersData> {
       },
       include: {
         customer: {
+          select: {
+            name: true,
+          },
+        },
+        salesperson: {
           select: {
             name: true,
           },
@@ -440,13 +511,16 @@ export async function getOrdersData(): Promise<OrdersData> {
         totalCents: order.totalCents,
         subtotalCents: order.subtotalCents,
         taxCents: order.taxCents,
+        commissionCents: order.commissionCents,
         createdAt: order.createdAt.toISOString(),
         customerName: order.customer?.name ?? "Walk-in guest",
+        salespersonName: order.salesperson?.name ?? null,
         notes: order.notes,
         itemSummary: order.items.map((item) => ({
           productName: item.product.name,
           quantity: item.quantity,
           totalPriceCents: item.totalPriceCents,
+          commissionCents: item.commissionCents,
         })),
       })),
     };
@@ -491,6 +565,26 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
     const prisma = requirePrisma();
     const staffUsers = await prisma.staffUser.findMany({
       orderBy: [{ name: "asc" }],
+      include: {
+        ordersSold: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
+            items: {
+              select: {
+                quantity: true,
+                commissionCents: true,
+                product: {
+                  select: {
+                    sizeMl: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     const roleOrder = {
       MANAGER: 0,
@@ -509,6 +603,7 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
           active: staffUser.active,
           lastLoginAt: staffUser.lastLoginAt?.toISOString() ?? null,
           createdAt: staffUser.createdAt.toISOString(),
+          commissionProgress: buildStaffCommissionProgress(staffUser.ordersSold),
         }))
         .sort(
           (left, right) =>
@@ -520,6 +615,40 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
       staffUsers: [],
       databaseIssue: logDatabaseFallback("staff", error),
     };
+  }
+}
+
+export async function getStaffCommissionProgress(staffId: string) {
+  try {
+    const prisma = requirePrisma();
+    const staffUser = await prisma.staffUser.findUnique({
+      where: { id: staffId },
+      include: {
+        ordersSold: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
+            items: {
+              select: {
+                quantity: true,
+                commissionCents: true,
+                product: {
+                  select: {
+                    sizeMl: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return staffUser ? buildStaffCommissionProgress(staffUser.ordersSold) : null;
+  } catch (error) {
+    logDatabaseFallback("staff-commission", error);
+    return null;
   }
 }
 

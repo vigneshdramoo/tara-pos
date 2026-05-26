@@ -15,6 +15,7 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/products") ||
     pathname === "/find-your-light" ||
     pathname.startsWith("/find-your-light/") ||
+    pathname === "/api/quiz-leads" ||
     pathname === "/favicon.ico" ||
     pathname === "/manifest.webmanifest" ||
     pathname === "/sw.js"

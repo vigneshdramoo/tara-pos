@@ -35,7 +35,7 @@ export function AppShell({ children, session }: AppShellProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-[1720px] gap-6 px-4 pb-6 pt-4 lg:px-6">
+      <div className="mx-auto flex w-full max-w-[1720px] gap-6 px-3 pb-4 pt-3 sm:px-4 sm:pb-6 sm:pt-4 lg:px-6">
         <aside className="hidden lg:flex lg:w-[280px] lg:flex-col">
           <div className="tara-surface sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col p-6">
             <div className="mb-8">
@@ -90,7 +90,7 @@ export function AppShell({ children, session }: AppShellProps) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <div className="flex items-center gap-3 lg:hidden">
+          <div className="flex items-center gap-2 sm:gap-3 lg:hidden">
             <div className="min-w-0 flex-1">
               <SidebarNav mobile role={session?.role ?? null} />
             </div>
@@ -98,7 +98,7 @@ export function AppShell({ children, session }: AppShellProps) {
               <form action="/api/auth/logout" method="post">
                 <button
                   type="submit"
-                  className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium"
+                  className="tara-button-secondary touch-target inline-flex items-center justify-center gap-2 rounded-2xl px-3 text-sm font-medium sm:px-4"
                 >
                   <LogOut className="h-4 w-4" strokeWidth={1.8} />
                   Exit
@@ -106,7 +106,7 @@ export function AppShell({ children, session }: AppShellProps) {
               </form>
             ) : null}
           </div>
-          <div className="tara-surface flex items-center justify-between rounded-[24px] px-4 py-3 lg:hidden">
+          <div className="tara-surface flex items-center justify-between rounded-[20px] px-4 py-3 lg:hidden">
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--brand-gold)]">
                 {roleLabel}
@@ -117,7 +117,7 @@ export function AppShell({ children, session }: AppShellProps) {
             </div>
             <p className="truncate text-right text-xs text-[var(--muted)]">{sessionSubtitle}</p>
           </div>
-          <main className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col gap-6">
+          <main className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col gap-4 lg:gap-6">
             {children}
           </main>
         </div>

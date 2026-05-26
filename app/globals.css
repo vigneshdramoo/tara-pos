@@ -45,6 +45,7 @@ body {
   font-family: var(--font-manrope), sans-serif;
   min-height: 100vh;
   background: transparent;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -210,4 +211,16 @@ textarea::placeholder {
 .tara-message-user {
   background: linear-gradient(135deg, var(--brand-purple), var(--brand-midnight));
   color: var(--brand-ivory);
+}
+
+@media (max-width: 640px) {
+  .tara-surface,
+  .tara-surface-strong {
+    border-radius: 22px;
+    box-shadow: 0 18px 52px rgba(18, 22, 34, 0.1);
+  }
+
+  .touch-target {
+    min-height: 3.25rem;
+  }
 }

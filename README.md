@@ -18,7 +18,7 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - Order history with item-level breakdown
 - Manager-only staff directory with role-aware access
 - Local AI assistant page for sales summaries, restock prompts, and Tomedes SMART handoff packs
-- Creative studio with uploaded reference photos, POS product-photo fallback, aspect presets, upscale-aware image generation prompts, Midjourney handoff packs, and Tomedes SMART prompt-refinement briefs
+- Creative studio with uploaded reference photos, POS product-photo fallback, 10 emotional storytelling campaign prompt modes, fresh-request variation to avoid same-looking outputs, aspect presets, upscale-aware image generation prompts, Midjourney handoff packs, and Tomedes SMART prompt-refinement briefs
 
 ## Online deployment profile
 
@@ -41,11 +41,12 @@ OPENAI_IMAGE_MODEL="gpt-image-1.5"
 SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
 SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
+SEED_SYAZ_PASSWORD="set-syaz-bootstrap-password"
 ```
 
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
-The seeded staff usernames are `daniel`, `shireen`, and `cashier`.
-If you do not override the seed passwords, all three accounts default to `TARA2026`.
+The seeded staff usernames are `daniel`, `shireen`, `cashier`, and `syaz`.
+If you do not override the seed passwords, all four accounts default to `TARA2026`.
 `OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
 If you use Midjourney, the Creative Studio can still generate the full strategy, prompt pack, aspect guidance, and reference instructions without that key.
 
@@ -83,7 +84,7 @@ To replace the old demo catalog in an existing database with the live TARA perfu
 pnpm catalog:sync
 ```
 
-This keeps past orders intact, deactivates the legacy demo perfumes, and loads the 8 TARA scents at RM159 for 50 mL with stock set to 50 each.
+This keeps past orders intact, deactivates the legacy demo perfumes, and loads the 8 TARA scents at RM169 for 50 mL and RM45 for 8 mL with stock set to 50 each.
 
 If you only need to add or refresh staff accounts without touching products, orders, or customers, use:
 
