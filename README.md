@@ -42,11 +42,12 @@ SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
 SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
 SEED_SYAZ_PASSWORD="set-syaz-bootstrap-password"
+SEED_JERMAINE_PASSWORD="set-jermaines-bootstrap-password"
 ```
 
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
-The seeded staff usernames are `daniel`, `shireen`, `cashier`, and `syaz`.
-If you do not override the seed passwords, all four accounts default to `TARA2026`.
+The seeded staff usernames are `daniel`, `shireen`, `cashier`, `syaz`, and `jermaine`.
+If you do not override the seed passwords, all five accounts default to `TARA2026`.
 `OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
 If you use Midjourney, the Creative Studio can still generate the full strategy, prompt pack, aspect guidance, and reference instructions without that key.
 
