@@ -110,8 +110,8 @@ export async function POST(request: Request) {
       throw new CheckoutError("Add at least one product before checkout.", 400);
     }
 
-    if (!Object.values(PaymentMethod).includes(body.paymentMethod)) {
-      throw new CheckoutError("Choose a valid payment method.", 400);
+    if (body.paymentMethod !== PaymentMethod.TRANSFER) {
+      throw new CheckoutError("DuitNow QR is the only checkout payment method right now.", 400);
     }
 
     const requestedQuantitiesByProductId = new Map<string, number>();
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
           taxCents,
           totalCents,
           commissionCents,
-          paymentMethod: body.paymentMethod,
+          paymentMethod: PaymentMethod.TRANSFER,
           notes: normalizeValue(body.notes),
           customerId: customer?.id,
           salespersonId: salesperson?.id,
@@ -274,8 +274,6 @@ export async function POST(request: Request) {
       return {
         orderNumber: order.orderNumber,
         totalCents: order.totalCents,
-        commissionCents: order.commissionCents,
-        salespersonName: session?.name ?? null,
       };
     });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   EIGHT_ML_EDP_BUNDLE_OFFER,
   type CheckoutLinePricing,
@@ -12,12 +13,9 @@ type CartLine = ProductCardData & {
   quantity: number;
 };
 
-const paymentOptions: Array<CheckoutPayload["paymentMethod"]> = ["CARD", "CASH", "TRANSFER"];
-
 type CartPanelProps = {
   cart: CartLine[];
   recentCustomers: RecentCustomerOption[];
-  paymentMethod: CheckoutPayload["paymentMethod"];
   notes: string;
   customer: NonNullable<CheckoutPayload["customer"]>;
   subtotalCents: number;
@@ -25,7 +23,6 @@ type CartPanelProps = {
   discountCents: number;
   taxCents: number;
   totalCents: number;
-  commissionCents: number;
   cartLinePricing: CheckoutLinePricing[];
   eightMlBundleCount: number;
   eightMlEligibleUnits: number;
@@ -33,7 +30,6 @@ type CartPanelProps = {
   submitting: boolean;
   refreshing: boolean;
   feedback: { type: "success" | "error"; message: string } | null;
-  onPaymentMethodChange: (value: CheckoutPayload["paymentMethod"]) => void;
   onNotesChange: (value: string) => void;
   onCustomerFieldChange: (
     field: keyof NonNullable<CheckoutPayload["customer"]>,
@@ -49,7 +45,6 @@ type CartPanelProps = {
 export function CartPanel({
   cart,
   recentCustomers,
-  paymentMethod,
   notes,
   customer,
   subtotalCents,
@@ -57,7 +52,6 @@ export function CartPanel({
   discountCents,
   taxCents,
   totalCents,
-  commissionCents,
   cartLinePricing,
   eightMlBundleCount,
   eightMlEligibleUnits,
@@ -65,7 +59,6 @@ export function CartPanel({
   submitting,
   refreshing,
   feedback,
-  onPaymentMethodChange,
   onNotesChange,
   onCustomerFieldChange,
   onHydrateCustomer,
@@ -229,23 +222,26 @@ export function CartPanel({
         </div>
 
         <div className="tara-card-soft rounded-[22px] p-4 md:rounded-[24px]">
-          <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Payment method</p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {paymentOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => onPaymentMethodChange(option)}
-                className={cn(
-                  "touch-target rounded-2xl border px-3 text-sm font-semibold transition",
-                  paymentMethod === option
-                    ? "tara-panel-dark border-transparent"
-                    : "tara-button-secondary",
-                )}
-              >
-                {option}
-              </button>
-            ))}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">
+                Payment
+              </p>
+              <h4 className="mt-2 text-lg font-semibold text-foreground">DuitNow QR</h4>
+            </div>
+            <span className="rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+              QR only
+            </span>
+          </div>
+          <div className="mt-4 rounded-[20px] border border-[var(--line)] bg-white p-2">
+            <Image
+              src="/payments/tara-duitnow-qr.png"
+              alt="TARA Scents DuitNow QR code"
+              width={1071}
+              height={1664}
+              className="mx-auto h-auto max-h-[520px] w-full max-w-[340px] object-contain"
+              priority
+            />
           </div>
         </div>
 
@@ -304,10 +300,6 @@ export function CartPanel({
               <span>{formatCurrency(taxCents)}</span>
             </div>
           ) : null}
-          <div className="flex items-center justify-between">
-            <span className="text-[rgba(247,243,235,0.72)]">Salesperson commission</span>
-            <span>{formatCurrency(commissionCents)}</span>
-          </div>
           <div className="flex items-center justify-between border-t border-white/10 pt-3 text-lg font-semibold">
             <span>Total</span>
             <span>{formatCurrency(totalCents)}</span>

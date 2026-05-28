@@ -4,9 +4,7 @@ import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { calculateCheckoutPricing } from "@/lib/checkout-pricing";
-import { calculateLineCommissionFromTotal } from "@/lib/commissions";
 import { CART_STORAGE_KEY, SALES_TAX_RATE } from "@/lib/constants";
-import { formatCurrency } from "@/lib/format";
 import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CartPanel } from "@/components/pos/cart-panel";
@@ -34,7 +32,6 @@ export function PosWorkspace({
   const [query, setQuery] = useState("");
   const [activeCollection, setActiveCollection] = useState("All");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<CheckoutPayload["paymentMethod"]>("CARD");
   const [customer, setCustomer] = useState(initialCustomer);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -104,18 +101,6 @@ export function PosWorkspace({
   const subtotalCents = checkoutPricing.subtotalCents;
   const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
   const totalCents = subtotalCents + taxCents;
-  const cartLinePricingMap = new Map(
-    checkoutPricing.lines.map((linePricing) => [linePricing.productId, linePricing]),
-  );
-  const commissionCents = cart.reduce(
-    (sum, item) =>
-      sum +
-      calculateLineCommissionFromTotal({
-        sizeMl: item.sizeMl,
-        totalPriceCents: cartLinePricingMap.get(item.id)?.totalPriceCents ?? 0,
-      }).commissionCents,
-    0,
-  );
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   function addProduct(product: ProductCardData) {
@@ -177,7 +162,7 @@ export function PosWorkspace({
           productId: item.id,
           quantity: item.quantity,
         })),
-        paymentMethod,
+        paymentMethod: "TRANSFER",
         notes,
         customer,
       };
@@ -192,8 +177,6 @@ export function PosWorkspace({
 
       const result = (await response.json()) as {
         orderNumber?: string;
-        commissionCents?: number;
-        salespersonName?: string | null;
         message?: string;
       };
 
@@ -206,9 +189,7 @@ export function PosWorkspace({
       setCustomer(initialCustomer);
       setFeedback({
         type: "success",
-        message: `Sale ${result.orderNumber} captured for ${
-          result.salespersonName ?? "the floor"
-        }. Commission: ${formatCurrency(result.commissionCents ?? 0)}.`,
+        message: `Sale ${result.orderNumber} captured. Confirm DuitNow payment before handing over the order.`,
       });
 
       startRefreshTransition(() => {
@@ -292,7 +273,6 @@ export function PosWorkspace({
       <CartPanel
         cart={cart}
         recentCustomers={recentCustomers}
-        paymentMethod={paymentMethod}
         notes={notes}
         customer={customer}
         subtotalCents={subtotalCents}
@@ -300,7 +280,6 @@ export function PosWorkspace({
         discountCents={checkoutPricing.discountCents}
         taxCents={taxCents}
         totalCents={totalCents}
-        commissionCents={commissionCents}
         cartLinePricing={checkoutPricing.lines}
         eightMlBundleCount={checkoutPricing.eightMlBundleCount}
         eightMlEligibleUnits={checkoutPricing.eightMlEligibleUnits}
@@ -308,7 +287,6 @@ export function PosWorkspace({
         submitting={submitting}
         refreshing={refreshing}
         feedback={feedback}
-        onPaymentMethodChange={setPaymentMethod}
         onNotesChange={setNotes}
         onCustomerFieldChange={(field, value) =>
           setCustomer((current) => ({
