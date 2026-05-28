@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  EIGHT_ML_EDP_BUNDLE_OFFER,
+  type CheckoutLinePricing,
+} from "@/lib/checkout-pricing";
 import { formatCurrency } from "@/lib/format";
 import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -17,9 +21,15 @@ type CartPanelProps = {
   notes: string;
   customer: NonNullable<CheckoutPayload["customer"]>;
   subtotalCents: number;
+  listSubtotalCents: number;
+  discountCents: number;
   taxCents: number;
   totalCents: number;
   commissionCents: number;
+  cartLinePricing: CheckoutLinePricing[];
+  eightMlBundleCount: number;
+  eightMlEligibleUnits: number;
+  eightMlUnitsUntilNextBundle: number;
   submitting: boolean;
   refreshing: boolean;
   feedback: { type: "success" | "error"; message: string } | null;
@@ -43,9 +53,15 @@ export function CartPanel({
   notes,
   customer,
   subtotalCents,
+  listSubtotalCents,
+  discountCents,
   taxCents,
   totalCents,
   commissionCents,
+  cartLinePricing,
+  eightMlBundleCount,
+  eightMlEligibleUnits,
+  eightMlUnitsUntilNextBundle,
   submitting,
   refreshing,
   feedback,
@@ -59,6 +75,10 @@ export function CartPanel({
   onCheckout,
 }: CartPanelProps) {
   const disabled = cart.length === 0 || submitting || refreshing;
+  const linePricingByProductId = new Map(
+    cartLinePricing.map((linePricing) => [linePricing.productId, linePricing]),
+  );
+  const showNextBundleHint = eightMlEligibleUnits > 0 && eightMlUnitsUntilNextBundle > 0;
 
   return (
     <aside
@@ -80,53 +100,69 @@ export function CartPanel({
       <div className="space-y-4 xl:scrollbar-hidden xl:flex-1 xl:overflow-y-auto xl:pr-1">
         <div className="space-y-3">
           {cart.length ? (
-            cart.map((item) => (
-              <div
-                key={item.id}
-                className="tara-card-soft rounded-[24px] p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground">{item.name}</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {item.collection} · {formatCurrency(item.priceCents)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onRemove(item.id)}
-                    className="tara-chip-default shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]"
-                  >
-                    Remove
-                  </button>
-                </div>
+            cart.map((item) => {
+              const linePricing = linePricingByProductId.get(item.id);
+              const lineTotalCents =
+                linePricing?.totalPriceCents ?? item.quantity * item.priceCents;
+              const lineDiscountCents = linePricing?.discountCents ?? 0;
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onDecrease(item.id)}
-                      className="tara-button-secondary touch-target h-12 w-12 rounded-2xl text-xl"
-                    >
-                      –
-                    </button>
-                    <div className="tara-panel-dark flex h-12 min-w-14 items-center justify-center rounded-2xl px-4 text-sm font-semibold">
-                      {item.quantity}
+              return (
+                <div key={item.id} className="tara-card-soft rounded-[24px] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground">{item.name}</p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">
+                        {item.collection} · {formatCurrency(item.priceCents)}
+                      </p>
+                      {linePricing?.bundleUnits ? (
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-gold)]">
+                          {linePricing.bundleUnits} in {EIGHT_ML_EDP_BUNDLE_OFFER.label} offer
+                        </p>
+                      ) : null}
                     </div>
                     <button
                       type="button"
-                      onClick={() => onIncrease(item.id)}
-                      className="tara-button-secondary touch-target h-12 w-12 rounded-2xl text-xl"
+                      onClick={() => onRemove(item.id)}
+                      className="tara-chip-default shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]"
                     >
-                      +
+                      Remove
                     </button>
                   </div>
-                  <p className="text-lg font-semibold text-foreground">
-                    {formatCurrency(item.quantity * item.priceCents)}
-                  </p>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onDecrease(item.id)}
+                        className="tara-button-secondary touch-target h-12 w-12 rounded-2xl text-xl"
+                      >
+                        –
+                      </button>
+                      <div className="tara-panel-dark flex h-12 min-w-14 items-center justify-center rounded-2xl px-4 text-sm font-semibold">
+                        {item.quantity}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onIncrease(item.id)}
+                        className="tara-button-secondary touch-target h-12 w-12 rounded-2xl text-xl"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      {lineDiscountCents > 0 ? (
+                        <p className="text-sm text-[rgba(75,48,106,0.58)] line-through">
+                          {formatCurrency(linePricing?.listTotalCents ?? 0)}
+                        </p>
+                      ) : null}
+                      <p className="text-lg font-semibold text-foreground">
+                        {formatCurrency(lineTotalCents)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="rounded-[24px] border border-dashed border-[var(--line)] bg-[rgba(255,251,246,0.62)] px-5 py-8 text-center text-sm leading-7 text-[var(--muted)]">
               Tap any fragrance card to start a basket.
@@ -227,6 +263,37 @@ export function CartPanel({
 
       <div className="tara-panel-dark rounded-[22px] p-4 md:rounded-[24px] md:p-5 xl:shrink-0">
         <div className="space-y-3 text-sm">
+          {eightMlBundleCount > 0 ? (
+            <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[rgba(247,243,235,0.72)]">
+                  {EIGHT_ML_EDP_BUNDLE_OFFER.label} offer
+                </span>
+                <span className="font-semibold">
+                  {eightMlBundleCount} x {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}
+                </span>
+              </div>
+            </div>
+          ) : null}
+          {showNextBundleHint ? (
+            <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3 text-[rgba(247,243,235,0.72)]">
+              Add {eightMlUnitsUntilNextBundle} more 8mL EDP to unlock{" "}
+              {EIGHT_ML_EDP_BUNDLE_OFFER.label} for{" "}
+              {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}.
+            </div>
+          ) : null}
+          {discountCents > 0 ? (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-[rgba(247,243,235,0.72)]">Before offer</span>
+                <span>{formatCurrency(listSubtotalCents)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[rgba(247,243,235,0.72)]">Offer savings</span>
+                <span>-{formatCurrency(discountCents)}</span>
+              </div>
+            </>
+          ) : null}
           <div className="flex items-center justify-between">
             <span className="text-[rgba(247,243,235,0.72)]">Subtotal</span>
             <span>{formatCurrency(subtotalCents)}</span>

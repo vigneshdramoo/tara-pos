@@ -97,6 +97,16 @@ export function calculateLineCommission(input: {
   unitPriceCents: number;
   quantity: number;
 }): CommissionLineResult {
+  return calculateLineCommissionFromTotal({
+    sizeMl: input.sizeMl,
+    totalPriceCents: input.unitPriceCents * input.quantity,
+  });
+}
+
+export function calculateLineCommissionFromTotal(input: {
+  sizeMl: number;
+  totalPriceCents: number;
+}): CommissionLineResult {
   const target = getCommissionTargetForSize(input.sizeMl);
 
   if (!target) {
@@ -110,10 +120,7 @@ export function calculateLineCommission(input: {
   return {
     targetKey: target.key,
     commissionRateBps: target.commissionRateBps,
-    commissionCents: roundCommissionCents(
-      input.unitPriceCents * input.quantity,
-      target.commissionRateBps,
-    ),
+    commissionCents: roundCommissionCents(input.totalPriceCents, target.commissionRateBps),
   };
 }
 

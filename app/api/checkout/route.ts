@@ -12,7 +12,8 @@ import {
   isProtectionEnabled,
   verifySessionToken,
 } from "@/lib/auth";
-import { calculateLineCommission } from "@/lib/commissions";
+import { calculateCheckoutPricing } from "@/lib/checkout-pricing";
+import { calculateLineCommissionFromTotal } from "@/lib/commissions";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import type { CheckoutPayload } from "@/lib/types";
@@ -113,7 +114,24 @@ export async function POST(request: Request) {
       throw new CheckoutError("Choose a valid payment method.", 400);
     }
 
-    const uniqueProductIds = [...new Set(body.items.map((item) => item.productId))];
+    const requestedQuantitiesByProductId = new Map<string, number>();
+
+    body.items.forEach((item) => {
+      if (!item.productId) {
+        throw new CheckoutError("Cart contains an unknown product.", 400);
+      }
+
+      if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+        throw new CheckoutError("Each cart line needs a quantity of at least 1.", 400);
+      }
+
+      requestedQuantitiesByProductId.set(
+        item.productId,
+        (requestedQuantitiesByProductId.get(item.productId) ?? 0) + item.quantity,
+      );
+    });
+
+    const uniqueProductIds = [...requestedQuantitiesByProductId.keys()];
     const products = await prisma.product.findMany({
       where: {
         id: {
@@ -128,17 +146,15 @@ export async function POST(request: Request) {
     }
 
     const productMap = new Map(products.map((product) => [product.id, product]));
-    const normalizedItems = body.items.map((item) => {
-      if (!Number.isInteger(item.quantity) || item.quantity < 1) {
-        throw new CheckoutError("Each cart line needs a quantity of at least 1.", 400);
-      }
-
-      const product = productMap.get(item.productId);
+    const requestedItems = uniqueProductIds.map((productId) => {
+      const product = productMap.get(productId);
       if (!product) {
         throw new CheckoutError("Cart contains an unknown product.", 400);
       }
 
-      if (item.quantity > product.stock) {
+      const quantity = requestedQuantitiesByProductId.get(productId) ?? 0;
+
+      if (quantity > product.stock) {
         throw new CheckoutError(
           `${product.name} only has ${product.stock} units left in stock.`,
           400,
@@ -147,12 +163,33 @@ export async function POST(request: Request) {
 
       return {
         product,
+        quantity,
+      };
+    });
+    const checkoutPricing = calculateCheckoutPricing(
+      requestedItems.map((item) => ({
+        productId: item.product.id,
+        sizeMl: item.product.sizeMl,
+        priceCents: item.product.priceCents,
         quantity: item.quantity,
-        totalPriceCents: product.priceCents * item.quantity,
-        commission: calculateLineCommission({
-          sizeMl: product.sizeMl,
-          unitPriceCents: product.priceCents,
-          quantity: item.quantity,
+      })),
+    );
+    const pricingByProductId = new Map(
+      checkoutPricing.lines.map((linePricing) => [linePricing.productId, linePricing]),
+    );
+    const normalizedItems = requestedItems.map((item) => {
+      const linePricing = pricingByProductId.get(item.product.id);
+      if (!linePricing) {
+        throw new CheckoutError("Checkout pricing failed. Please try again.", 500);
+      }
+
+      return {
+        ...item,
+        totalPriceCents: linePricing.totalPriceCents,
+        effectiveUnitPriceCents: linePricing.effectiveUnitPriceCents,
+        commission: calculateLineCommissionFromTotal({
+          sizeMl: item.product.sizeMl,
+          totalPriceCents: linePricing.totalPriceCents,
         }),
       };
     });
@@ -198,7 +235,7 @@ export async function POST(request: Request) {
             create: normalizedItems.map((item) => ({
               productId: item.product.id,
               quantity: item.quantity,
-              unitPriceCents: item.product.priceCents,
+              unitPriceCents: item.effectiveUnitPriceCents,
               totalPriceCents: item.totalPriceCents,
               commissionRateBps: item.commission.commissionRateBps,
               commissionCents: item.commission.commissionCents,

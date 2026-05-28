@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import Image from "next/image";
+import { EIGHT_ML_EDP_BUNDLE_OFFER } from "@/lib/checkout-pricing";
 import { formatCurrency } from "@/lib/format";
 import type { ProductCardData } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ export function ProductCard({
   onAdd: (product: ProductCardData) => void;
 }) {
   const soldOut = product.stock <= 0;
+  const isEightMlEdp = product.sizeMl === 8;
 
   return (
     <article className="tara-surface-strong flex flex-col gap-4 p-4 sm:gap-5 sm:p-5">
@@ -61,6 +63,11 @@ export function ProductCard({
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatCurrency(product.priceCents)}
           </p>
+          {isEightMlEdp ? (
+            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-gold)]">
+              3 for {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}
+            </p>
+          ) : null}
           <p
             className={cn(
               "mt-2 text-sm font-medium",

@@ -3,7 +3,8 @@
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { calculateLineCommission } from "@/lib/commissions";
+import { calculateCheckoutPricing } from "@/lib/checkout-pricing";
+import { calculateLineCommissionFromTotal } from "@/lib/commissions";
 import { CART_STORAGE_KEY, SALES_TAX_RATE } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
@@ -92,16 +93,26 @@ export function PosWorkspace({
     return matchesCollection && matchesQuery;
   });
 
-  const subtotalCents = cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+  const checkoutPricing = calculateCheckoutPricing(
+    cart.map((item) => ({
+      productId: item.id,
+      sizeMl: item.sizeMl,
+      priceCents: item.priceCents,
+      quantity: item.quantity,
+    })),
+  );
+  const subtotalCents = checkoutPricing.subtotalCents;
   const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
   const totalCents = subtotalCents + taxCents;
+  const cartLinePricingMap = new Map(
+    checkoutPricing.lines.map((linePricing) => [linePricing.productId, linePricing]),
+  );
   const commissionCents = cart.reduce(
     (sum, item) =>
       sum +
-      calculateLineCommission({
+      calculateLineCommissionFromTotal({
         sizeMl: item.sizeMl,
-        unitPriceCents: item.priceCents,
-        quantity: item.quantity,
+        totalPriceCents: cartLinePricingMap.get(item.id)?.totalPriceCents ?? 0,
       }).commissionCents,
     0,
   );
@@ -285,9 +296,15 @@ export function PosWorkspace({
         notes={notes}
         customer={customer}
         subtotalCents={subtotalCents}
+        listSubtotalCents={checkoutPricing.listSubtotalCents}
+        discountCents={checkoutPricing.discountCents}
         taxCents={taxCents}
         totalCents={totalCents}
         commissionCents={commissionCents}
+        cartLinePricing={checkoutPricing.lines}
+        eightMlBundleCount={checkoutPricing.eightMlBundleCount}
+        eightMlEligibleUnits={checkoutPricing.eightMlEligibleUnits}
+        eightMlUnitsUntilNextBundle={checkoutPricing.eightMlUnitsUntilNextBundle}
         submitting={submitting}
         refreshing={refreshing}
         feedback={feedback}
