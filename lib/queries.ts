@@ -1,6 +1,5 @@
 import { PaymentMethod } from "@prisma/client";
 import { buildStaffCommissionProgress } from "@/lib/commissions";
-import { SALES_TAX_RATE } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
@@ -98,7 +97,7 @@ function emptyDashboardData(databaseIssue?: string): DashboardData {
     {
       label: "Inventory value",
       value: formatCurrency(0),
-      detail: `${formatCurrency(0)} tax pace today`,
+      detail: "No checkout tax applied",
     },
   ];
 
@@ -321,7 +320,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       {
         label: "Inventory value",
         value: formatCurrency(inventoryValueCents),
-        detail: `${formatCurrency(Math.round(todaySalesCents * SALES_TAX_RATE))} tax pace today`,
+        detail: "No checkout tax applied",
       },
     ];
 

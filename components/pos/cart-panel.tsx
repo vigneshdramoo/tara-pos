@@ -298,10 +298,12 @@ export function CartPanel({
             <span className="text-[rgba(247,243,235,0.72)]">Subtotal</span>
             <span>{formatCurrency(subtotalCents)}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[rgba(247,243,235,0.72)]">Tax</span>
-            <span>{formatCurrency(taxCents)}</span>
-          </div>
+          {taxCents > 0 ? (
+            <div className="flex items-center justify-between">
+              <span className="text-[rgba(247,243,235,0.72)]">Tax</span>
+              <span>{formatCurrency(taxCents)}</span>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between">
             <span className="text-[rgba(247,243,235,0.72)]">Salesperson commission</span>
             <span>{formatCurrency(commissionCents)}</span>

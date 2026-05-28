@@ -78,10 +78,12 @@ export default async function OrdersPage() {
                       <span className="text-stone-300">Subtotal</span>
                       <span>{formatCurrency(order.subtotalCents)}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-stone-300">Tax</span>
-                      <span>{formatCurrency(order.taxCents)}</span>
-                    </div>
+                    {order.taxCents > 0 ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-stone-300">Tax</span>
+                        <span>{formatCurrency(order.taxCents)}</span>
+                      </div>
+                    ) : null}
                     <div className="flex items-center justify-between">
                       <span className="text-stone-300">Commission</span>
                       <span>{formatCurrency(order.commissionCents)}</span>
