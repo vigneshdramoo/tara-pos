@@ -1,15 +1,14 @@
-const PRODUCT_REFERENCE_VERSION = "20260503";
 const ALL_SCENTS_REFERENCE_VERSION = "20260503";
 
 const productImageMap: Record<string, string> = {
-  aureya: `/products/aureya-reference-${PRODUCT_REFERENCE_VERSION}.png`,
-  "aureya-10ml": `/products/aureya-reference-${PRODUCT_REFERENCE_VERSION}.png`,
-  zephyr: "/products/zephyr-reference-20260503-2.jpg",
-  "zephyr-10ml": "/products/zephyr-reference-20260503-2.jpg",
-  maris: `/products/maris-reference-${PRODUCT_REFERENCE_VERSION}.png`,
-  "maris-10ml": `/products/maris-reference-${PRODUCT_REFERENCE_VERSION}.png`,
-  eliora: "/products/eliora-reference-20260514.png",
-  "eliora-10ml": "/products/eliora-reference-20260514.png",
+  aureya: "/products/aureya-50ml.jpg",
+  "aureya-10ml": "/products/aureya-8ml.png",
+  zephyr: "/products/zephyr-50ml.jpg",
+  "zephyr-10ml": "/products/zephyr-8ml.png",
+  maris: "/products/maris-50ml.jpg",
+  "maris-10ml": "/products/maris-8ml.png",
+  eliora: "/products/eliora-50ml.jpg",
+  "eliora-10ml": "/products/eliora-8ml.png",
 };
 
 const allScentsReferenceUrls = [
