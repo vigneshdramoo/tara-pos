@@ -12,7 +12,12 @@ import {
   isProtectionEnabled,
   verifySessionToken,
 } from "@/lib/auth";
-import { calculateCheckoutPricing } from "@/lib/checkout-pricing";
+import {
+  calculateCheckoutPricing,
+  getCheckoutPromotionOption,
+  isCheckoutPromotionId,
+  type CheckoutPromotionId,
+} from "@/lib/checkout-pricing";
 import { calculateLineCommissionFromTotal } from "@/lib/commissions";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
@@ -41,6 +46,51 @@ function generateOrderNumber() {
 
 function normalizeValue(value?: string) {
   return value?.trim() || undefined;
+}
+
+function buildPromotionOrderNote(
+  promotionId: CheckoutPromotionId,
+  checkoutPricing: ReturnType<typeof calculateCheckoutPricing>,
+  rawNotes?: string,
+) {
+  const normalizedNotes = normalizeValue(rawNotes);
+  const noteParts = normalizedNotes ? [normalizedNotes] : [];
+
+  if (promotionId === "NONE") {
+    return normalizedNotes;
+  }
+
+  const promotion = getCheckoutPromotionOption(promotionId);
+  const promotionSummary = [`Promotion: ${promotion.label}`];
+
+  if (promotionId === "EIGHT_ML_BUNDLE" && checkoutPricing.eightMlBundleCount > 0) {
+    promotionSummary.push(
+      `${checkoutPricing.eightMlBundleCount} x ${promotion.label} applied`,
+    );
+  }
+
+  if (promotionId === "FOLLOW_TAG_UNLOCK") {
+    promotionSummary.push("Booth-only unlock price verified on floor");
+  }
+
+  if (promotionId === "SUNWAY_STUDENT") {
+    promotionSummary.push(
+      `Student offer on ${checkoutPricing.eligibleFiftyMlUnits} x 50mL`,
+    );
+    promotionSummary.push(
+      `Free 8mL claimed ${checkoutPricing.freeGiftClaimedUnits}/${checkoutPricing.freeGiftEligibleUnits}`,
+    );
+
+    if (checkoutPricing.freeGiftUnitsRemaining > 0) {
+      promotionSummary.push(
+        `${checkoutPricing.freeGiftUnitsRemaining} travel gift unit(s) not added to cart`,
+      );
+    }
+  }
+
+  noteParts.push(promotionSummary.join(" · "));
+
+  return noteParts.join("\n\n");
 }
 
 async function getCheckoutSession() {
@@ -114,6 +164,11 @@ export async function POST(request: Request) {
       throw new CheckoutError("DuitNow QR is the only checkout payment method right now.", 400);
     }
 
+    const promotionId = body.promotionId ?? "NONE";
+    if (!isCheckoutPromotionId(promotionId)) {
+      throw new CheckoutError("Choose a valid promotion before checkout.", 400);
+    }
+
     const requestedQuantitiesByProductId = new Map<string, number>();
 
     body.items.forEach((item) => {
@@ -173,6 +228,7 @@ export async function POST(request: Request) {
         priceCents: item.product.priceCents,
         quantity: item.quantity,
       })),
+      promotionId,
     );
     const pricingByProductId = new Map(
       checkoutPricing.lines.map((linePricing) => [linePricing.productId, linePricing]),
@@ -228,7 +284,7 @@ export async function POST(request: Request) {
           totalCents,
           commissionCents,
           paymentMethod: PaymentMethod.TRANSFER,
-          notes: normalizeValue(body.notes),
+          notes: buildPromotionOrderNote(promotionId, checkoutPricing, body.notes),
           customerId: customer?.id,
           salespersonId: salesperson?.id,
           items: {

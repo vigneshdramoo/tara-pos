@@ -3,8 +3,16 @@
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { calculateCheckoutPricing } from "@/lib/checkout-pricing";
-import { CART_STORAGE_KEY, SALES_TAX_RATE } from "@/lib/constants";
+import {
+  calculateCheckoutPricing,
+  isCheckoutPromotionId,
+  type CheckoutPromotionId,
+} from "@/lib/checkout-pricing";
+import {
+  CART_STORAGE_KEY,
+  CHECKOUT_PROMOTION_STORAGE_KEY,
+  SALES_TAX_RATE,
+} from "@/lib/constants";
 import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CartPanel } from "@/components/pos/cart-panel";
@@ -32,6 +40,7 @@ export function PosWorkspace({
   const [query, setQuery] = useState("");
   const [activeCollection, setActiveCollection] = useState("All");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [promotionId, setPromotionId] = useState<CheckoutPromotionId>("NONE");
   const [customer, setCustomer] = useState(initialCustomer);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -81,6 +90,22 @@ export function PosWorkspace({
     );
   }, [cart]);
 
+  useEffect(() => {
+    const rawPromotionId = window.localStorage.getItem(CHECKOUT_PROMOTION_STORAGE_KEY);
+
+    if (isCheckoutPromotionId(rawPromotionId)) {
+      const frame = window.requestAnimationFrame(() => {
+        setPromotionId(rawPromotionId);
+      });
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(CHECKOUT_PROMOTION_STORAGE_KEY, promotionId);
+  }, [promotionId]);
+
   const collections = ["All", ...new Set(products.map((product) => product.collection))];
   const filteredProducts = products.filter((product) => {
     const matchesCollection = activeCollection === "All" || product.collection === activeCollection;
@@ -97,6 +122,7 @@ export function PosWorkspace({
       priceCents: item.priceCents,
       quantity: item.quantity,
     })),
+    promotionId,
   );
   const subtotalCents = checkoutPricing.subtotalCents;
   const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
@@ -163,6 +189,7 @@ export function PosWorkspace({
           quantity: item.quantity,
         })),
         paymentMethod: "TRANSFER",
+        promotionId,
         notes,
         customer,
       };
@@ -280,10 +307,18 @@ export function PosWorkspace({
         discountCents={checkoutPricing.discountCents}
         taxCents={taxCents}
         totalCents={totalCents}
+        promotionId={promotionId}
+        promotionLabel={checkoutPricing.promotionLabel}
+        promotionDescription={checkoutPricing.promotionDescription}
         cartLinePricing={checkoutPricing.lines}
         eightMlBundleCount={checkoutPricing.eightMlBundleCount}
         eightMlEligibleUnits={checkoutPricing.eightMlEligibleUnits}
         eightMlUnitsUntilNextBundle={checkoutPricing.eightMlUnitsUntilNextBundle}
+        freeGiftEligibleUnits={checkoutPricing.freeGiftEligibleUnits}
+        freeGiftClaimedUnits={checkoutPricing.freeGiftClaimedUnits}
+        freeGiftUnitsRemaining={checkoutPricing.freeGiftUnitsRemaining}
+        offerHeadline={checkoutPricing.offerHeadline}
+        offerCallout={checkoutPricing.offerCallout}
         submitting={submitting}
         refreshing={refreshing}
         feedback={feedback}
@@ -298,6 +333,7 @@ export function PosWorkspace({
         onIncrease={(productId) => changeQuantity(productId, "up")}
         onDecrease={(productId) => changeQuantity(productId, "down")}
         onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))}
+        onPromotionChange={setPromotionId}
         onCheckout={handleCheckout}
       />
     </section>

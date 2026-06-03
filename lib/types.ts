@@ -1,3 +1,4 @@
+import type { CheckoutPromotionId } from "@/lib/checkout-pricing";
 import type { StaffRole } from "@/lib/staff";
 import type { StaffCommissionProgress } from "@/lib/commissions";
 import type {
@@ -41,6 +42,7 @@ export type CartItemInput = {
 export type CheckoutPayload = {
   items: CartItemInput[];
   paymentMethod: PaymentMethod;
+  promotionId?: CheckoutPromotionId;
   notes?: string;
   customer?: {
     name?: string;
