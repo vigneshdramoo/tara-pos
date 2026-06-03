@@ -57,7 +57,22 @@ function buildPromotionOrderNote(
   const noteParts = normalizedNotes ? [normalizedNotes] : [];
 
   if (promotionId === "NONE") {
-    return normalizedNotes;
+    if (checkoutPricing.freeGiftEligibleUnits > 0) {
+      const defaultGiftSummary = [
+        `Complimentary 8mL gift on ${checkoutPricing.eligibleFiftyMlUnits} x 50mL`,
+        `Free 8mL claimed ${checkoutPricing.freeGiftClaimedUnits}/${checkoutPricing.freeGiftEligibleUnits}`,
+      ];
+
+      if (checkoutPricing.freeGiftUnitsRemaining > 0) {
+        defaultGiftSummary.push(
+          `${checkoutPricing.freeGiftUnitsRemaining} complimentary gift unit(s) not added to cart`,
+        );
+      }
+
+      noteParts.push(defaultGiftSummary.join(" · "));
+    }
+
+    return noteParts.length ? noteParts.join("\n\n") : undefined;
   }
 
   const promotion = getCheckoutPromotionOption(promotionId);

@@ -39,9 +39,9 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     id: "NONE",
     label: "Regular pricing",
     kicker: "Standard",
-    description: "Use the shelf price with no temporary event offer.",
-    requirements: "No additional promo conditions.",
-    preview: "50mL at regular price, 8mL at regular price",
+    description: "Use the shelf price, with a complimentary 8mL travel size on each 50mL bottle.",
+    requirements: "Add the 8mL gift to the basket so inventory is captured correctly.",
+    preview: "50mL at regular price + free 8mL travel size",
   },
   {
     id: "EIGHT_ML_BUNDLE",
@@ -148,25 +148,84 @@ function finalizeLines(lines: LineAccumulator[]) {
 }
 
 function calculateStandardPricing(items: CheckoutPricingItem[], promotionId: CheckoutPromotionId) {
-  const lines = finalizeLines(
-    items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      listTotalCents: item.priceCents * item.quantity,
-      totalPriceCents: item.priceCents * item.quantity,
-      discountCents: 0,
-      bundleUnits: 0,
-      regularUnits: item.quantity,
-      discountedUnits: 0,
-      freeUnits: 0,
-      promotionLabel: null,
-      promotionDetail: null,
-    })),
+  const eligibleFiftyMlUnits = items.reduce(
+    (sum, item) => sum + (isFiftyMlEdpEligible(item) ? item.quantity : 0),
+    0,
   );
+  let remainingFreeGiftUnits = eligibleFiftyMlUnits;
+
+  const lines = finalizeLines(
+    items.map((item) => {
+      const listTotalCents = item.priceCents * item.quantity;
+
+      if (isEightMlEdpBundleEligible(item)) {
+        const freeUnits = Math.min(item.quantity, remainingFreeGiftUnits);
+        remainingFreeGiftUnits -= freeUnits;
+        const paidUnits = item.quantity - freeUnits;
+        const totalPriceCents = paidUnits * item.priceCents;
+
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          listTotalCents,
+          totalPriceCents,
+          discountCents: listTotalCents - totalPriceCents,
+          bundleUnits: 0,
+          regularUnits: paidUnits,
+          discountedUnits: 0,
+          freeUnits,
+          promotionLabel: freeUnits ? "Complimentary travel size" : null,
+          promotionDetail: freeUnits
+            ? `${freeUnits} free 8mL travel size${freeUnits === 1 ? "" : "s"}`
+            : null,
+        };
+      }
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        listTotalCents,
+        totalPriceCents: listTotalCents,
+        discountCents: 0,
+        bundleUnits: 0,
+        regularUnits: item.quantity,
+        discountedUnits: 0,
+        freeUnits: 0,
+        promotionLabel: null,
+        promotionDetail: isFiftyMlEdpEligible(item)
+          ? `${item.quantity} complimentary 8mL gift${item.quantity === 1 ? "" : "s"} eligible`
+          : null,
+      };
+    }),
+  );
+
+  const freeGiftClaimedUnits = Math.min(
+    eligibleFiftyMlUnits,
+    items.reduce((sum, item) => sum + (isEightMlEdpBundleEligible(item) ? item.quantity : 0), 0),
+  );
+  const freeGiftUnitsRemaining = eligibleFiftyMlUnits - freeGiftClaimedUnits;
 
   return buildPricingSummary({
     promotionId,
     lines,
+    eligibleFiftyMlUnits,
+    freeGiftEligibleUnits: eligibleFiftyMlUnits,
+    freeGiftClaimedUnits,
+    freeGiftUnitsRemaining,
+    offerHeadline:
+      eligibleFiftyMlUnits > 0
+        ? `${eligibleFiftyMlUnits} complimentary 8mL gift${eligibleFiftyMlUnits === 1 ? "" : "s"} unlocked`
+        : null,
+    offerCallout:
+      freeGiftUnitsRemaining > 0
+        ? `Add ${freeGiftUnitsRemaining} more 8mL travel size${
+            freeGiftUnitsRemaining === 1 ? "" : "s"
+          } to the basket so the complimentary gift is captured in inventory.`
+        : eligibleFiftyMlUnits > 0
+          ? `${freeGiftClaimedUnits} complimentary 8mL travel size${
+              freeGiftClaimedUnits === 1 ? "" : "s"
+            } already added to this order.`
+          : null,
   });
 }
 

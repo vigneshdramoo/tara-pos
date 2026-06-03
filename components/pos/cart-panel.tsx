@@ -368,22 +368,27 @@ export function CartPanel({
               {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}.
             </div>
           ) : null}
-          {promotionId === "SUNWAY_STUDENT" && freeGiftEligibleUnits > 0 ? (
+          {freeGiftEligibleUnits > 0 ? (
             <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[rgba(247,243,235,0.72)]">Student travel gifts</span>
+                <span className="text-[rgba(247,243,235,0.72)]">
+                  {promotionId === "SUNWAY_STUDENT"
+                    ? "Student travel gifts"
+                    : "Complimentary travel gifts"}
+                </span>
                 <span className="font-semibold">
                   {freeGiftClaimedUnits}/{freeGiftEligibleUnits} claimed
                 </span>
               </div>
               {freeGiftUnitsRemaining > 0 ? (
                 <p className="mt-2 text-xs leading-6 text-[rgba(247,243,235,0.72)]">
-                  Add {freeGiftUnitsRemaining} x 8mL travel size to the basket so the free gift is
-                  captured in inventory.
+                  Add {freeGiftUnitsRemaining} x 8mL travel size to the basket so the{" "}
+                  {promotionId === "SUNWAY_STUDENT" ? "free student gift" : "complimentary gift"}{" "}
+                  is captured in inventory.
                 </p>
               ) : (
                 <p className="mt-2 text-xs leading-6 text-[rgba(247,243,235,0.72)]">
-                  Every eligible student freebie is already in the basket and priced correctly.
+                  Every eligible {promotionId === "SUNWAY_STUDENT" ? "student freebie" : "complimentary travel gift"} is already in the basket and priced correctly.
                 </p>
               )}
             </div>
