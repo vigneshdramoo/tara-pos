@@ -22,6 +22,8 @@ type CartLine = ProductCardData & {
   quantity: number;
 };
 
+const DEFAULT_PROMOTION_ID: CheckoutPromotionId = "FOLLOW_TAG_UNLOCK";
+
 const initialCustomer = {
   name: "",
   email: "",
@@ -40,7 +42,7 @@ export function PosWorkspace({
   const [query, setQuery] = useState("");
   const [activeCollection, setActiveCollection] = useState("All");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [promotionId, setPromotionId] = useState<CheckoutPromotionId>("NONE");
+  const [promotionId, setPromotionId] = useState<CheckoutPromotionId>(DEFAULT_PROMOTION_ID);
   const [customer, setCustomer] = useState(initialCustomer);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +102,12 @@ export function PosWorkspace({
 
       return () => window.cancelAnimationFrame(frame);
     }
+
+    const frame = window.requestAnimationFrame(() => {
+      setPromotionId(DEFAULT_PROMOTION_ID);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
