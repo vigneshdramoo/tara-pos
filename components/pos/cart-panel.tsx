@@ -341,11 +341,13 @@ export function CartPanel({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Email</label>
+              <label className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">
+                Social handle
+              </label>
               <input
                 value={customer.email ?? ""}
                 onChange={(event) => onCustomerFieldChange("email", event.target.value)}
-                placeholder="name@example.com"
+                placeholder="@instagram or @tiktok"
                 className="tara-input mt-2 touch-target w-full rounded-2xl px-4 outline-none transition"
               />
             </div>

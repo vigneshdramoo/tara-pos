@@ -53,7 +53,7 @@ export default async function CustomersPage() {
                 <div>
                   <h3 className="text-xl font-semibold text-stone-950">{customer.name}</h3>
                   <p className="mt-1 text-sm text-stone-600">
-                    {customer.email ?? "No email captured"}
+                    {customer.email ? `Social handle · ${customer.email}` : "No social handle captured"}
                   </p>
                   <p className="text-sm text-stone-600">{customer.phone ?? "No phone captured"}</p>
                 </div>
