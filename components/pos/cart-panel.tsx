@@ -17,6 +17,7 @@ type CartLine = ProductCardData & {
 
 type CartPanelProps = {
   cart: CartLine[];
+  travelGiftOptions: ProductCardData[];
   recentCustomers: RecentCustomerOption[];
   notes: string;
   customer: NonNullable<CheckoutPayload["customer"]>;
@@ -49,12 +50,14 @@ type CartPanelProps = {
   onIncrease: (productId: string) => void;
   onDecrease: (productId: string) => void;
   onRemove: (productId: string) => void;
+  onAddTravelGift: (product: ProductCardData) => void;
   onPromotionChange: (promotionId: CheckoutPromotionId) => void;
   onCheckout: () => void;
 };
 
 export function CartPanel({
   cart,
+  travelGiftOptions,
   recentCustomers,
   notes,
   customer,
@@ -84,6 +87,7 @@ export function CartPanel({
   onIncrease,
   onDecrease,
   onRemove,
+  onAddTravelGift,
   onPromotionChange,
   onCheckout,
 }: CartPanelProps) {
@@ -91,6 +95,7 @@ export function CartPanel({
   const linePricingByProductId = new Map(
     cartLinePricing.map((linePricing) => [linePricing.productId, linePricing]),
   );
+  const cartQuantityByProductId = new Map(cart.map((item) => [item.id, item.quantity]));
   const showNextBundleHint =
     promotionId === "EIGHT_ML_BUNDLE" &&
     eightMlEligibleUnits > 0 &&
@@ -257,6 +262,72 @@ export function CartPanel({
             ))}
           </div>
         </div>
+
+        {freeGiftUnitsRemaining > 0 ? (
+          <div className="tara-card-soft rounded-[22px] p-4 md:rounded-[24px]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">
+                  Travel size choice
+                </p>
+                <h4 className="mt-2 text-lg font-semibold text-foreground">
+                  Pick the complimentary 8mL variant
+                </h4>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  Add {freeGiftUnitsRemaining} more 8mL travel size
+                  {freeGiftUnitsRemaining === 1 ? "" : "s"} from the customer&apos;s preferred scent.
+                </p>
+              </div>
+              <span className="rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+                Choice needed
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {travelGiftOptions.map((product) => {
+                const quantityInCart = cartQuantityByProductId.get(product.id) ?? 0;
+                const soldOut = quantityInCart >= product.stock;
+
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => onAddTravelGift(product)}
+                    disabled={soldOut}
+                    className={cn(
+                      "rounded-[20px] border px-4 py-3 text-left transition",
+                      soldOut
+                        ? "cursor-not-allowed border-[var(--line)] bg-[rgba(255,251,246,0.72)] opacity-60"
+                        : "border-[var(--line)] bg-white/80 hover:border-[rgba(202,158,91,0.42)] hover:bg-white",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{product.name}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--brand-gold)]">
+                          {product.collection} · 8mL travel size
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]",
+                          soldOut
+                            ? "bg-[rgba(247,243,235,0.92)] text-[var(--muted-strong)]"
+                            : "bg-[rgba(26,51,74,0.08)] text-[var(--brand-midnight)]",
+                        )}
+                      >
+                        {soldOut ? "Maxed" : "Add gift"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                      {product.stock - quantityInCart} available on hand
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         <div className="tara-card-soft grid gap-3 rounded-[22px] p-4 md:rounded-[24px]">
           <div>

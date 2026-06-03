@@ -115,6 +115,7 @@ export function PosWorkspace({
   }, [promotionId]);
 
   const collections = ["All", ...new Set(products.map((product) => product.collection))];
+  const travelGiftOptions = products.filter((product) => product.sizeMl === 8);
   const filteredProducts = products.filter((product) => {
     const matchesCollection = activeCollection === "All" || product.collection === activeCollection;
     const haystack = `${product.name} ${product.collection} ${product.notes} ${product.mood}`.toLowerCase();
@@ -307,6 +308,7 @@ export function PosWorkspace({
 
       <CartPanel
         cart={cart}
+        travelGiftOptions={travelGiftOptions}
         recentCustomers={recentCustomers}
         notes={notes}
         customer={customer}
@@ -341,6 +343,7 @@ export function PosWorkspace({
         onIncrease={(productId) => changeQuantity(productId, "up")}
         onDecrease={(productId) => changeQuantity(productId, "down")}
         onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))}
+        onAddTravelGift={addProduct}
         onPromotionChange={setPromotionId}
         onCheckout={handleCheckout}
       />
