@@ -24,6 +24,7 @@ export function AppShell({ children, session }: AppShellProps) {
   const pathname = usePathname();
   const isLoginRoute = pathname === "/login";
   const isFragranceQuizRoute = pathname.startsWith("/find-your-light");
+  const environmentLabel = process.env.NEXT_PUBLIC_APP_ENV_LABEL?.trim() || null;
   const roleLabel = session ? getRoleLabel(session.role) : "Local preview";
   const sessionSubtitle = session
     ? `${roleLabel} · @${session.username}`
@@ -39,7 +40,14 @@ export function AppShell({ children, session }: AppShellProps) {
         <aside className="hidden lg:flex lg:w-[280px] lg:flex-col">
           <div className="tara-surface sticky top-4 flex min-h-[calc(100vh-2rem)] flex-col p-6">
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.38em] text-[var(--brand-gold)]">TARA</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs uppercase tracking-[0.38em] text-[var(--brand-gold)]">TARA</p>
+                {environmentLabel ? (
+                  <span className="rounded-full border border-[rgba(202,158,91,0.18)] bg-[rgba(202,158,91,0.10)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-midnight)]">
+                    {environmentLabel}
+                  </span>
+                ) : null}
+              </div>
               <h1 className="mt-3 font-display text-5xl leading-none text-foreground">
                 Atelier POS
               </h1>

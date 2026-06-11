@@ -1,6 +1,11 @@
 import type { Metadata, Route } from "next";
 import { LoginForm } from "@/components/auth/login-form";
 import { isAuthConfigured, sanitizeNextPath } from "@/lib/auth";
+import {
+  getAppEnvironmentLabel,
+  getStagingDemoCredentials,
+  isStagingDemoEnabled,
+} from "@/lib/deployment";
 
 export const metadata: Metadata = {
   title: "Staff Sign-In",
@@ -15,6 +20,9 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const authConfigured = isAuthConfigured();
   const nextPath = sanitizeNextPath((await searchParams).next) as Route;
+  const environmentLabel = getAppEnvironmentLabel();
+  const stagingDemoEnabled = isStagingDemoEnabled();
+  const demoCredentials = getStagingDemoCredentials();
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
@@ -59,7 +67,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         <div className="flex items-center">
           <div className="w-full">
-            <p className="text-xs uppercase tracking-[0.34em] text-[var(--brand-gold)]">Private Entry</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.34em] text-[var(--brand-gold)]">Private Entry</p>
+              {environmentLabel ? (
+                <span className="rounded-full border border-[rgba(202,158,91,0.24)] bg-[rgba(202,158,91,0.10)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-midnight)]">
+                  {environmentLabel}
+                </span>
+              ) : null}
+            </div>
             <h2 className="mt-3 font-display text-4xl text-foreground">Enter the selling floor</h2>
             <p className="mt-3 max-w-md text-base leading-7 text-[var(--muted)]">
               Use a staff username or email with the account password to unlock the boutique
@@ -68,6 +83,48 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="mt-6">
               <LoginForm authConfigured={authConfigured} nextPath={nextPath} />
             </div>
+            {stagingDemoEnabled && demoCredentials.length ? (
+              <div className="mt-4 rounded-[28px] border border-[rgba(202,158,91,0.18)] bg-[rgba(255,251,246,0.72)] p-5 shadow-[0_20px_60px_rgba(18,22,34,0.06)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.28em] text-[var(--brand-gold)]">
+                      Demo Credentials
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold text-foreground">
+                      Staging access for reviews and walkthroughs
+                    </h3>
+                  </div>
+                  <span className="rounded-full border border-[rgba(202,158,91,0.2)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+                    Staging only
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  {demoCredentials.map((credential) => (
+                    <div
+                      key={credential.username}
+                      className="rounded-[20px] border border-[var(--line)] bg-white/80 px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{credential.name}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--brand-gold)]">
+                            {credential.role.replaceAll("_", " ")}
+                          </p>
+                        </div>
+                        <div className="text-right text-sm text-[var(--muted-strong)]">
+                          <p>
+                            Username: <span className="font-semibold text-foreground">{credential.username}</span>
+                          </p>
+                          <p className="mt-1">
+                            Password: <span className="font-semibold text-foreground">{credential.password}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

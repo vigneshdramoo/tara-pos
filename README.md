@@ -50,6 +50,37 @@ The seeded staff usernames are `daniel`, `shireen`, `cashier`, `syaz`, and `jerm
 If you do not override the seed passwords, all five accounts default to `TARA2026`.
 `OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
 If you use Midjourney, the Creative Studio can still generate the full strategy, prompt pack, aspect guidance, and reference instructions without that key.
+For staging, you can also enable a demo login hint with `NEXT_PUBLIC_ENABLE_STAGING_DEMO="true"` and label the UI with `NEXT_PUBLIC_APP_ENV_LABEL="Staging"`.
+
+## Staging environment
+
+Use a separate hosted Postgres database for staging. Start from [.env.staging.example](/Users/vigneshramoo/Documents/TARA/tara-pos/.env.staging.example) and set:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/tara_pos_staging?schema=public&sslmode=require"
+NEXT_PUBLIC_APP_URL="https://staging-pos.example.com"
+NEXT_PUBLIC_APP_ENV_LABEL="Staging"
+NEXT_PUBLIC_ENABLE_STAGING_DEMO="true"
+POS_SESSION_SECRET="replace-with-a-long-random-secret"
+STAGING_DEMO_PASSWORD="TARADEMO2026"
+```
+
+Then bootstrap the staging demo accounts:
+
+```bash
+pnpm db:deploy
+pnpm db:seed
+pnpm staff:bootstrap:staging-demo
+```
+
+This creates three staging-only demo users:
+
+- `demo-manager`
+- `demo-sales`
+- `demo-cashier`
+
+By default they all use `TARADEMO2026`, unless you override `STAGING_DEMO_PASSWORD` or the per-user staging password env vars.
+When `NEXT_PUBLIC_ENABLE_STAGING_DEMO="true"`, the login page will show these demo credentials so reviewers can sign in quickly.
 
 ## Development setup
 
@@ -174,6 +205,7 @@ pnpm db:push
 pnpm db:seed
 pnpm catalog:sync
 pnpm staff:bootstrap
+pnpm staff:bootstrap:staging-demo
 pnpm db:studio
 ```
 

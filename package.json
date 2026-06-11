@@ -13,6 +13,7 @@
     "db:seed": "prisma db seed",
     "catalog:sync": "tsx prisma/sync-catalog.ts",
     "staff:bootstrap": "tsx prisma/bootstrap-staff.ts",
+    "staff:bootstrap:staging-demo": "tsx prisma/bootstrap-staging-demo.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
