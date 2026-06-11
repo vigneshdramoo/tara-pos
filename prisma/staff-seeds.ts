@@ -48,6 +48,14 @@ export const staffSeeds: StaffSeed[] = [
     passwordEnvKey: "SEED_JERMAINE_PASSWORD",
     defaultPassword: "TARA2026",
   },
+  {
+    name: "Sofea",
+    username: "sofea",
+    email: "sofea@tara.local",
+    role: "CASHIER",
+    passwordEnvKey: "SEED_SOFEA_PASSWORD",
+    defaultPassword: "TARA2026",
+  },
 ];
 
 export function getBootstrapPassword(seed: StaffSeed) {
