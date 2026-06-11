@@ -1,21 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import Image from "next/image";
-import { EIGHT_ML_EDP_BUNDLE_OFFER } from "@/lib/checkout-pricing";
 import { formatCurrency } from "@/lib/format";
-import type { ProductCardData } from "@/lib/types";
+import type { ProductCardData, ProductFamilyCardData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({
   product,
   onAdd,
 }: {
-  product: ProductCardData;
+  product: ProductFamilyCardData;
   onAdd: (product: ProductCardData) => void;
 }) {
-  const soldOut = product.stock <= 0;
-  const isEightMlEdp = product.sizeMl === 8;
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  const selectedOption =
+    product.options.find((option) => option.product.id === selectedProductId) ?? product.options[0];
+
+  if (!selectedOption) {
+    return null;
+  }
+
+  const selectedProduct = selectedOption.product;
+  const soldOut = selectedProduct.stock <= 0;
+  const selectedFormatLabel =
+    selectedOption.label === "Travel Pack"
+      ? `Travel Pack · ${selectedProduct.sizeMl}mL`
+      : `${selectedProduct.sizeMl}mL bottle`;
 
   return (
     <article className="tara-surface-strong flex flex-col gap-4 p-4 sm:gap-5 sm:p-5">
@@ -25,20 +38,13 @@ export function ProductCard({
           background: `linear-gradient(145deg, ${product.accentHex}, var(--brand-midnight) 78%)`,
         }}
       >
-        <div className="absolute right-3 top-3 max-w-[58%] truncate rounded-full border border-white/20 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-white/80 sm:right-4 sm:top-4 sm:max-w-none sm:px-3 sm:text-[11px] sm:tracking-[0.22em]">
-          {product.collection}
-        </div>
-        <p className="text-xs uppercase tracking-[0.22em] text-white/70">{product.sku}</p>
-        <h3 className="mt-3 font-display text-3xl leading-none sm:mt-4 sm:text-4xl">
+        <h3 className="font-display text-3xl leading-none sm:text-4xl">
           {product.name}
         </h3>
-        <p className="mt-3 max-w-[18rem] text-sm leading-6 text-white/80 sm:mt-4">
-          {product.description}
-        </p>
-        {product.imageUrl ? (
+        {(selectedProduct.imageUrl ?? product.imageUrl) ? (
           <div className="relative mt-4 aspect-[5/4] overflow-hidden rounded-[20px] border border-white/15 bg-white/8 shadow-[0_30px_90px_rgba(10,10,10,0.28)] sm:mt-5 sm:aspect-[4/5] sm:rounded-[24px]">
             <Image
-              src={product.imageUrl}
+              src={selectedProduct.imageUrl ?? product.imageUrl ?? ""}
               alt={`${product.name} fragrance bottle`}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1536px) 50vw, 33vw"
@@ -50,36 +56,57 @@ export function ProductCard({
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Notes</p>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{product.notes}</p>
-        <p className="mt-2 text-sm text-[var(--muted)]">{product.mood}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-[var(--brand-gold)]">Choose format</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {product.options.map((option) => {
+            const optionProduct = option.product;
+            const active = optionProduct.id === selectedProduct.id;
+            const optionSoldOut = optionProduct.stock <= 0;
+
+            return (
+              <button
+                key={optionProduct.id}
+                type="button"
+                onClick={() => setSelectedProductId(optionProduct.id)}
+                className={cn(
+                  "touch-target rounded-[20px] border px-4 py-3 text-left transition",
+                  active
+                    ? "border-[var(--brand-gold)] bg-[rgba(202,158,91,0.12)] shadow-[0_12px_30px_rgba(202,158,91,0.12)]"
+                    : "border-[var(--line)] bg-white/70 hover:border-[rgba(202,158,91,0.42)]",
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold text-foreground">{option.label}</span>
+                  <span className="text-sm font-semibold text-[var(--brand-midnight)]">
+                    {formatCurrency(optionProduct.priceCents)}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+                  {optionSoldOut ? "Sold out" : `${optionProduct.stock} on hand`}
+                </p>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-auto flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted-strong)]">
-            {product.sizeMl} ml bottle
-          </p>
           <p className="mt-2 text-2xl font-semibold text-foreground">
-            {formatCurrency(product.priceCents)}
+            {formatCurrency(selectedProduct.priceCents)}
           </p>
-          {isEightMlEdp ? (
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-gold)]">
-              3 for {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}
-            </p>
-          ) : null}
           <p
             className={cn(
               "mt-2 text-sm font-medium",
               soldOut ? "text-[var(--brand-amber)]" : "text-[var(--muted)]",
             )}
           >
-            {soldOut ? "Sold out" : `${product.stock} on hand`}
+            {soldOut ? "Sold out" : `${selectedFormatLabel} · ${selectedProduct.stock} on hand`}
           </p>
         </div>
         <button
           type="button"
-          onClick={() => onAdd(product)}
+          onClick={() => onAdd(selectedProduct)}
           disabled={soldOut}
           className={cn(
             "touch-target inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition sm:w-auto",

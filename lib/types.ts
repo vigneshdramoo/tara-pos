@@ -25,6 +25,24 @@ export type ProductCardData = {
   imageUrl: string | null;
 };
 
+export type ProductVariantOption = {
+  label: string;
+  product: ProductCardData;
+};
+
+export type ProductFamilyCardData = {
+  id: string;
+  slug: string;
+  name: string;
+  collection: string;
+  description: string;
+  notes: string;
+  mood: string;
+  accentHex: string;
+  imageUrl: string | null;
+  options: ProductVariantOption[];
+};
+
 export type RecentCustomerOption = {
   id: string;
   name: string;

@@ -128,14 +128,22 @@ export function CartPanel({
               const lineTotalCents =
                 linePricing?.totalPriceCents ?? item.quantity * item.priceCents;
               const lineDiscountCents = linePricing?.discountCents ?? 0;
+              const projectedRemainingStock = Math.max(item.stock - item.quantity, 0);
+              const unitLabel = item.sizeMl === 8 ? "Travel Pack · 8mL" : `${item.sizeMl}mL`;
 
               return (
                 <div key={item.id} className="tara-card-soft rounded-[24px] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground">{item.name}</p>
-                      <p className="mt-1 text-sm text-[var(--muted)]">
-                        {item.collection} · {formatCurrency(item.priceCents)}
+                      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                        {unitLabel} · {item.sku}
+                      </p>
+                      <p className="text-sm leading-6 text-[var(--muted)]">
+                        {projectedRemainingStock} remaining after checkout
+                      </p>
+                      <p className="text-sm text-[var(--muted)]">
+                        {formatCurrency(item.priceCents)} each
                       </p>
                       {linePricing?.promotionDetail ? (
                         <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-gold)]">

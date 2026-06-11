@@ -45,14 +45,6 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     preview: "50mL at regular price + free 8mL travel size",
   },
   {
-    id: "EIGHT_ML_BUNDLE",
-    label: EIGHT_ML_EDP_BUNDLE_OFFER.label,
-    kicker: "Travel bundle",
-    description: "Great for discovery sets and gifting bundles.",
-    requirements: "Applies when the cart has 3 or more 8mL EDP units.",
-    preview: `3 x 8mL for RM ${(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents / 100).toFixed(0)}`,
-  },
-  {
     id: "HUUHA_TRAVEL_BUNDLE",
     label: "Huuha Land 3 x travel size",
     kicker: "Huuha event",
@@ -131,9 +123,17 @@ export function isCheckoutPromotionId(value: string | undefined | null): value i
   return CHECKOUT_PROMOTION_IDS.some((id) => id === value);
 }
 
+export function normalizeCheckoutPromotionId(
+  promotionId: CheckoutPromotionId,
+): CheckoutPromotionId {
+  return promotionId === "EIGHT_ML_BUNDLE" ? "HUUHA_TRAVEL_BUNDLE" : promotionId;
+}
+
 export function getCheckoutPromotionOption(promotionId: CheckoutPromotionId) {
+  const normalizedPromotionId = normalizeCheckoutPromotionId(promotionId);
+
   return (
-    CHECKOUT_PROMOTION_OPTIONS.find((option) => option.id === promotionId) ??
+    CHECKOUT_PROMOTION_OPTIONS.find((option) => option.id === normalizedPromotionId) ??
     CHECKOUT_PROMOTION_OPTIONS[0]
   );
 }
@@ -502,9 +502,9 @@ export function calculateCheckoutPricing(
   items: CheckoutPricingItem[],
   promotionId: CheckoutPromotionId = "NONE",
 ): CheckoutPricing {
-  switch (promotionId) {
-    case "EIGHT_ML_BUNDLE":
-      return calculateEightMlBundlePricing(items, "EIGHT_ML_BUNDLE");
+  const normalizedPromotionId = normalizeCheckoutPromotionId(promotionId);
+
+  switch (normalizedPromotionId) {
     case "HUUHA_TRAVEL_BUNDLE":
       return calculateEightMlBundlePricing(items, "HUUHA_TRAVEL_BUNDLE");
     case "FOLLOW_TAG_UNLOCK":

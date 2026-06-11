@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   calculateCheckoutPricing,
   isCheckoutPromotionId,
+  normalizeCheckoutPromotionId,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import {
@@ -13,7 +14,12 @@ import {
   CHECKOUT_PROMOTION_STORAGE_KEY,
   SALES_TAX_RATE,
 } from "@/lib/constants";
-import type { CheckoutPayload, ProductCardData, RecentCustomerOption } from "@/lib/types";
+import type {
+  CheckoutPayload,
+  ProductCardData,
+  ProductFamilyCardData,
+  RecentCustomerOption,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ProductCard } from "@/components/pos/product-card";
@@ -30,6 +36,59 @@ const initialCustomer = {
   phone: "",
   notes: "",
 };
+
+function getProductFamilyKey(product: ProductCardData) {
+  return product.slug.replace(/-(10ml|8ml)$/i, "");
+}
+
+function getProductVariantLabel(product: ProductCardData) {
+  if (product.sizeMl === 50) return "50mL";
+  if (product.sizeMl === 8) return "Travel Pack";
+  return `${product.sizeMl}mL`;
+}
+
+function buildProductFamilies(products: ProductCardData[]): ProductFamilyCardData[] {
+  const families = new Map<string, ProductCardData[]>();
+
+  products.forEach((product) => {
+    const familyKey = getProductFamilyKey(product);
+    const siblings = families.get(familyKey) ?? [];
+    siblings.push(product);
+    families.set(familyKey, siblings);
+  });
+
+  return [...families.entries()].map(([familyKey, variants]) => {
+    const sortedVariants = [...variants].sort((left, right) => {
+      if (left.sizeMl === right.sizeMl) {
+        return left.name.localeCompare(right.name);
+      }
+
+      if (left.sizeMl === 50) return -1;
+      if (right.sizeMl === 50) return 1;
+      if (left.sizeMl === 8) return -1;
+      if (right.sizeMl === 8) return 1;
+
+      return left.sizeMl - right.sizeMl;
+    });
+    const hero = sortedVariants[0];
+
+    return {
+      id: familyKey,
+      slug: familyKey,
+      name: hero.name.replace(/\s+8mL$/i, ""),
+      collection: hero.collection,
+      description: hero.description,
+      notes: hero.notes,
+      mood: hero.mood,
+      accentHex: hero.accentHex,
+      imageUrl: hero.imageUrl,
+      options: sortedVariants.map((variant) => ({
+        label: getProductVariantLabel(variant),
+        product: variant,
+      })),
+    };
+  });
+}
 
 export function PosWorkspace({
   products,
@@ -51,6 +110,7 @@ export function PosWorkspace({
   );
   const [refreshing, startRefreshTransition] = useTransition();
   const deferredQuery = useDeferredValue(query);
+  const productFamilies = buildProductFamilies(products);
 
   useEffect(() => {
     const raw = window.localStorage.getItem(CART_STORAGE_KEY);
@@ -97,7 +157,7 @@ export function PosWorkspace({
 
     if (isCheckoutPromotionId(rawPromotionId)) {
       const frame = window.requestAnimationFrame(() => {
-        setPromotionId(rawPromotionId);
+        setPromotionId(normalizeCheckoutPromotionId(rawPromotionId));
       });
 
       return () => window.cancelAnimationFrame(frame);
@@ -114,11 +174,25 @@ export function PosWorkspace({
     window.localStorage.setItem(CHECKOUT_PROMOTION_STORAGE_KEY, promotionId);
   }, [promotionId]);
 
-  const collections = ["All", ...new Set(products.map((product) => product.collection))];
+  const collections = ["All", ...new Set(productFamilies.map((product) => product.collection))];
   const travelGiftOptions = products.filter((product) => product.sizeMl === 8);
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = productFamilies.filter((product) => {
     const matchesCollection = activeCollection === "All" || product.collection === activeCollection;
-    const haystack = `${product.name} ${product.collection} ${product.notes} ${product.mood}`.toLowerCase();
+    const haystack = [
+      product.name,
+      product.collection,
+      product.description,
+      product.notes,
+      product.mood,
+      ...product.options.flatMap((option) => [
+        option.label,
+        option.product.name,
+        option.product.sku,
+        `${option.product.sizeMl}ml`,
+      ]),
+    ]
+      .join(" ")
+      .toLowerCase();
     const matchesQuery = haystack.includes(deferredQuery.trim().toLowerCase());
 
     return matchesCollection && matchesQuery;

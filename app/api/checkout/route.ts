@@ -16,6 +16,7 @@ import {
   calculateCheckoutPricing,
   getCheckoutPromotionOption,
   isCheckoutPromotionId,
+  normalizeCheckoutPromotionId,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import { calculateLineCommissionFromTotal } from "@/lib/commissions";
@@ -73,12 +74,6 @@ function buildPromotionOrderNote(
 
   const promotion = getCheckoutPromotionOption(promotionId);
   const promotionSummary = [`Promotion: ${promotion.label}`];
-
-  if (promotionId === "EIGHT_ML_BUNDLE" && checkoutPricing.eightMlBundleCount > 0) {
-    promotionSummary.push(
-      `${checkoutPricing.eightMlBundleCount} x ${promotion.label} applied`,
-    );
-  }
 
   if (promotionId === "HUUHA_TRAVEL_BUNDLE" && checkoutPricing.eightMlBundleCount > 0) {
     promotionSummary.push(
@@ -181,10 +176,11 @@ export async function POST(request: Request) {
       throw new CheckoutError("DuitNow QR is the only checkout payment method right now.", 400);
     }
 
-    const promotionId = body.promotionId ?? "NONE";
-    if (!isCheckoutPromotionId(promotionId)) {
+    const requestedPromotionId = body.promotionId ?? "NONE";
+    if (!isCheckoutPromotionId(requestedPromotionId)) {
       throw new CheckoutError("Choose a valid promotion before checkout.", 400);
     }
+    const promotionId = normalizeCheckoutPromotionId(requestedPromotionId);
 
     const requestedQuantitiesByProductId = new Map<string, number>();
 
