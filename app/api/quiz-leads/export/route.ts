@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { formatFullDateTime } from "@/lib/format";
 import { getLeadSourceLabel, getPurchaseIntentLabel, getScentMatchLabel } from "@/lib/lead-options";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
+import { getMalaysiaDateKey } from "@/lib/time";
 
 function escapeCsv(value: unknown) {
   const text = String(value ?? "");
@@ -44,7 +46,7 @@ export async function GET() {
 
     const rows = leads.map((lead) => [
       lead.leadNumber,
-      lead.createdAt.toISOString(),
+      formatFullDateTime(lead.createdAt),
       lead.name,
       lead.email,
       lead.phone,
@@ -68,9 +70,7 @@ export async function GET() {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="tara-quiz-leads-${new Date()
-          .toISOString()
-          .slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="tara-quiz-leads-${getMalaysiaDateKey()}.csv"`,
       },
     });
   } catch (error) {

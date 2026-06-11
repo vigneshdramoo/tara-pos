@@ -12,13 +12,14 @@ export const BOOTH_UNLOCK_OFFER = {
 } as const;
 
 export const SUNWAY_STUDENT_OFFER = {
-  label: "Sunway Lakeside student",
+  label: "Student discount",
   fiftyMlDiscountRate: 0.2,
 } as const;
 
 export const CHECKOUT_PROMOTION_IDS = [
   "NONE",
   "EIGHT_ML_BUNDLE",
+  "HUUHA_TRAVEL_BUNDLE",
   "FOLLOW_TAG_UNLOCK",
   "SUNWAY_STUDENT",
 ] as const;
@@ -52,6 +53,14 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     preview: `3 x 8mL for RM ${(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents / 100).toFixed(0)}`,
   },
   {
+    id: "HUUHA_TRAVEL_BUNDLE",
+    label: "Huuha Land 3 x travel size",
+    kicker: "Huuha event",
+    description: "Use the Huuha Land event bundle for discovery-driven walk-ins and gifting.",
+    requirements: "KL Sidewalk @ Huuha Land, 12-14 June 2026.",
+    preview: `3 x travel size for RM ${(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents / 100).toFixed(0)}`,
+  },
+  {
     id: "FOLLOW_TAG_UNLOCK",
     label: "Booth 66 Follow.Tag.Unlock",
     kicker: "Booth-only",
@@ -61,10 +70,10 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
   },
   {
     id: "SUNWAY_STUDENT",
-    label: "Sunway Lakeside student",
+    label: SUNWAY_STUDENT_OFFER.label,
     kicker: "Student offer",
     description: "Apply the student appreciation price on full-size bottles.",
-    requirements: "20% off each 50mL and 1 free 8mL travel size per 50mL purchased.",
+    requirements: "Verify student status. 20% off each 50mL and 1 free 8mL travel size per 50mL purchased.",
     preview: "50mL at 20% off + free 8mL travel size",
   },
 ];
@@ -229,7 +238,11 @@ function calculateStandardPricing(items: CheckoutPricingItem[], promotionId: Che
   });
 }
 
-function calculateEightMlBundlePricing(items: CheckoutPricingItem[]) {
+function calculateEightMlBundlePricing(
+  items: CheckoutPricingItem[],
+  promotionId: Extract<CheckoutPromotionId, "EIGHT_ML_BUNDLE" | "HUUHA_TRAVEL_BUNDLE">,
+) {
+  const promotion = getCheckoutPromotionOption(promotionId);
   const eightMlEligibleUnits = items.reduce(
     (sum, item) => sum + (isEightMlEdpBundleEligible(item) ? item.quantity : 0),
     0,
@@ -263,7 +276,7 @@ function calculateEightMlBundlePricing(items: CheckoutPricingItem[]) {
         regularUnits,
         discountedUnits: bundleUnits,
         freeUnits: 0,
-        promotionLabel: bundleUnits ? EIGHT_ML_EDP_BUNDLE_OFFER.label : null,
+        promotionLabel: bundleUnits ? promotion.label : null,
         promotionDetail: bundleUnits
           ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in the RM99 travel bundle`
           : null,
@@ -274,7 +287,7 @@ function calculateEightMlBundlePricing(items: CheckoutPricingItem[]) {
   const eightMlRemainder = eightMlEligibleUnits % EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize;
 
   return buildPricingSummary({
-    promotionId: "EIGHT_ML_BUNDLE",
+    promotionId,
     lines,
     eightMlBundleCount,
     eightMlEligibleUnits,
@@ -283,13 +296,13 @@ function calculateEightMlBundlePricing(items: CheckoutPricingItem[]) {
       : 0,
     offerHeadline:
       eightMlBundleCount > 0
-        ? `${eightMlBundleCount} ${EIGHT_ML_EDP_BUNDLE_OFFER.label} offer${eightMlBundleCount === 1 ? "" : "s"} applied`
+        ? `${eightMlBundleCount} ${promotion.label} offer${eightMlBundleCount === 1 ? "" : "s"} applied`
         : null,
     offerCallout:
       eightMlEligibleUnits > 0 && eightMlRemainder
         ? `Add ${
             EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlRemainder
-          } more 8mL EDP to unlock another RM99 bundle.`
+          } more 8mL travel size${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlRemainder === 1 ? "" : "s"} to unlock another RM99 bundle.`
         : null,
   });
 }
@@ -429,10 +442,10 @@ function calculateSunwayStudentPricing(items: CheckoutPricingItem[]) {
             freeGiftUnitsRemaining === 1 ? "" : "s"
           } to claim the free student gift.`
         : eligibleFiftyMlUnits > 0
-          ? `${freeGiftClaimedUnits} free 8mL travel size${
-              freeGiftClaimedUnits === 1 ? "" : "s"
-            } claimed in this cart.`
-          : "Add a 50mL bottle to unlock the student offer.",
+        ? `${freeGiftClaimedUnits} free 8mL travel size${
+            freeGiftClaimedUnits === 1 ? "" : "s"
+          } claimed in this cart.`
+          : "Add a 50mL bottle to unlock the student discount.",
   });
 }
 
@@ -491,7 +504,9 @@ export function calculateCheckoutPricing(
 ): CheckoutPricing {
   switch (promotionId) {
     case "EIGHT_ML_BUNDLE":
-      return calculateEightMlBundlePricing(items);
+      return calculateEightMlBundlePricing(items, "EIGHT_ML_BUNDLE");
+    case "HUUHA_TRAVEL_BUNDLE":
+      return calculateEightMlBundlePricing(items, "HUUHA_TRAVEL_BUNDLE");
     case "FOLLOW_TAG_UNLOCK":
       return calculateBoothUnlockPricing(items);
     case "SUNWAY_STUDENT":

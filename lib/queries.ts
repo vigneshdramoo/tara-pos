@@ -3,6 +3,12 @@ import { buildStaffCommissionProgress } from "@/lib/commissions";
 import { formatCurrency } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
+import {
+  addUtcDays,
+  getMalaysiaDateKey,
+  getMalaysiaDayStart,
+  getMalaysiaWeekdayLabel,
+} from "@/lib/time";
 import type {
   CustomersData,
   DashboardData,
@@ -17,24 +23,6 @@ import type {
   StaffUsersData,
   TopProductInsight,
 } from "@/lib/types";
-
-function atStartOfDay(date = new Date()) {
-  const next = new Date(date);
-  next.setHours(0, 0, 0, 0);
-  return next;
-}
-
-function addDays(date: Date, amount: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + amount);
-  return next;
-}
-
-function localKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
-}
 
 function serializeProduct(product: {
   id: string;
@@ -63,14 +51,14 @@ function recommendedRestock(stock: number, reorderLevel: number) {
 }
 
 function createZeroSalesTrend() {
-  const todayStart = atStartOfDay();
-  const salesTrendStart = addDays(todayStart, -6);
+  const todayStart = getMalaysiaDayStart();
+  const salesTrendStart = addUtcDays(todayStart, -6);
 
   return Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(salesTrendStart, index);
+    const date = addUtcDays(salesTrendStart, index);
 
     return {
-      label: date.toLocaleDateString("en-MY", { weekday: "short" }),
+      label: getMalaysiaWeekdayLabel(date),
       salesCents: 0,
       orders: 0,
     };
@@ -124,10 +112,10 @@ function logDatabaseFallback(scope: string, error: unknown) {
 export async function getDashboardData(): Promise<DashboardData> {
   try {
     const prisma = requirePrisma();
-    const todayStart = atStartOfDay();
-    const tomorrow = addDays(todayStart, 1);
-    const salesTrendStart = addDays(todayStart, -6);
-    const topProductsStart = addDays(todayStart, -29);
+    const todayStart = getMalaysiaDayStart();
+    const tomorrow = addUtcDays(todayStart, 1);
+    const salesTrendStart = addUtcDays(todayStart, -6);
+    const topProductsStart = addUtcDays(todayStart, -29);
 
     const [products, todayOrders, weeklyOrders, recentOrders, groupedTopProducts] =
       await prisma.$transaction([
@@ -245,10 +233,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       }));
 
     const salesTrend = Array.from({ length: 7 }, (_, index) => {
-      const date = addDays(salesTrendStart, index);
+      const date = addUtcDays(salesTrendStart, index);
       return {
-        label: date.toLocaleDateString("en-MY", { weekday: "short" }),
-        key: localKey(date),
+        label: getMalaysiaWeekdayLabel(date),
+        key: getMalaysiaDateKey(date),
         salesCents: 0,
         orders: 0,
       };
@@ -257,7 +245,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     const salesTrendMap = new Map(salesTrend.map((point) => [point.key, point]));
 
     weeklyOrders.forEach((order) => {
-      const key = localKey(order.createdAt);
+      const key = getMalaysiaDateKey(order.createdAt);
       const bucket = salesTrendMap.get(key);
       if (!bucket) return;
       bucket.salesCents += order.totalCents;

@@ -21,6 +21,7 @@ import {
 import { calculateLineCommissionFromTotal } from "@/lib/commissions";
 import { SALES_TAX_RATE } from "@/lib/constants";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
+import { getMalaysiaTimestamp } from "@/lib/time";
 import type { CheckoutPayload } from "@/lib/types";
 
 class CheckoutError extends Error {
@@ -33,12 +34,7 @@ class CheckoutError extends Error {
 }
 
 function generateOrderNumber() {
-  const now = new Date();
-  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
-    now.getDate(),
-  ).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(
-    now.getMinutes(),
-  ).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+  const stamp = getMalaysiaTimestamp();
   const suffix = Math.floor(Math.random() * 90 + 10);
 
   return `TARA-${stamp}-${suffix}`;
@@ -84,13 +80,19 @@ function buildPromotionOrderNote(
     );
   }
 
+  if (promotionId === "HUUHA_TRAVEL_BUNDLE" && checkoutPricing.eightMlBundleCount > 0) {
+    promotionSummary.push(
+      `${checkoutPricing.eightMlBundleCount} x Huuha Land travel bundle applied`,
+    );
+  }
+
   if (promotionId === "FOLLOW_TAG_UNLOCK") {
     promotionSummary.push("Booth-only unlock price verified on floor");
   }
 
   if (promotionId === "SUNWAY_STUDENT") {
     promotionSummary.push(
-      `Student offer on ${checkoutPricing.eligibleFiftyMlUnits} x 50mL`,
+      `Student discount on ${checkoutPricing.eligibleFiftyMlUnits} x 50mL`,
     );
     promotionSummary.push(
       `Free 8mL claimed ${checkoutPricing.freeGiftClaimedUnits}/${checkoutPricing.freeGiftEligibleUnits}`,

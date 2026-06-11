@@ -97,9 +97,11 @@ export function CartPanel({
   );
   const cartQuantityByProductId = new Map(cart.map((item) => [item.id, item.quantity]));
   const showNextBundleHint =
-    promotionId === "EIGHT_ML_BUNDLE" &&
+    (promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE") &&
     eightMlEligibleUnits > 0 &&
     eightMlUnitsUntilNextBundle > 0;
+  const isTravelBundlePromotion =
+    promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE";
 
   return (
     <aside
@@ -426,7 +428,7 @@ export function CartPanel({
             <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[rgba(247,243,235,0.72)]">
-                  {EIGHT_ML_EDP_BUNDLE_OFFER.label} offer
+                  {promotionLabel} offer
                 </span>
                 <span className="font-semibold">
                   {eightMlBundleCount} x {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}
@@ -436,8 +438,9 @@ export function CartPanel({
           ) : null}
           {showNextBundleHint ? (
             <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3 text-[rgba(247,243,235,0.72)]">
-              Add {eightMlUnitsUntilNextBundle} more 8mL EDP to unlock{" "}
-              {EIGHT_ML_EDP_BUNDLE_OFFER.label} for{" "}
+              Add {eightMlUnitsUntilNextBundle} more 8mL travel size
+              {eightMlUnitsUntilNextBundle === 1 ? "" : "s"} to unlock{" "}
+              {promotionLabel} for{" "}
               {formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}.
             </div>
           ) : null}
@@ -464,6 +467,11 @@ export function CartPanel({
                   Every eligible {promotionId === "SUNWAY_STUDENT" ? "student freebie" : "complimentary travel gift"} is already in the basket and priced correctly.
                 </p>
               )}
+            </div>
+          ) : null}
+          {isTravelBundlePromotion && eightMlEligibleUnits === 0 ? (
+            <div className="rounded-[18px] border border-white/10 bg-white/8 px-4 py-3 text-[rgba(247,243,235,0.72)]">
+              Add any 3 travel sizes to activate the RM99 event bundle.
             </div>
           ) : null}
           {discountCents > 0 ? (

@@ -12,6 +12,7 @@ import {
   purchaseIntentOptions,
   scentMatchOptions,
 } from "@/lib/lead-options";
+import { MALAYSIA_TIME_ZONE } from "@/lib/time";
 import type { QuizLeadInsight } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ const initialLeadForm: LeadFormState = {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-MY", {
+    timeZone: MALAYSIA_TIME_ZONE,
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));

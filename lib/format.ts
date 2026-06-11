@@ -1,3 +1,5 @@
+import { MALAYSIA_TIME_ZONE } from "@/lib/time";
+
 const moneyFormatter = new Intl.NumberFormat("en-MY", {
   style: "currency",
   currency: "MYR",
@@ -5,11 +7,13 @@ const moneyFormatter = new Intl.NumberFormat("en-MY", {
 });
 
 const shortDateFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
   day: "numeric",
   month: "short",
 });
 
 const fullDateFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
   day: "numeric",
   month: "short",
   year: "numeric",
@@ -18,6 +22,7 @@ const fullDateFormatter = new Intl.DateTimeFormat("en-MY", {
 });
 
 const weekdayFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
   weekday: "short",
 });
 
