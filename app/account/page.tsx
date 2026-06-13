@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { PageIntro } from "@/components/page-intro";
@@ -8,7 +9,7 @@ import { Surface } from "@/components/ui/surface";
 import { formatFullDateTime } from "@/lib/format";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
 import { getStaffCommissionProgress } from "@/lib/queries";
-import { getRoleLabel } from "@/lib/staff";
+import { canManageStaff, getRoleLabel } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +22,39 @@ export default async function AccountPage() {
   }
 
   const commissionProgress = await getStaffCommissionProgress(session.staffId);
+  const isManager = canManageStaff(session.role);
+  const pageTitle = isManager ? "Manager account settings" : "Personal account settings";
+  const pageDescription = isManager
+    ? "Manage the password tied to your own manager account, keep your payout pace visible, and jump into staff oversight when the boutique floor needs support."
+    : "Manage the password tied to your own TARA staff account while keeping the boutique floor protected and your selling targets visible.";
 
   return (
     <>
       <PageIntro
         eyebrow="Staff account"
-        title="Personal access control"
-        description="Manage the password tied to your own TARA staff account without waiting on an admin, while keeping the boutique floor protected."
-        actions={<Pill tone="accent">{getRoleLabel(session.role)}</Pill>}
+        title={pageTitle}
+        description={pageDescription}
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Pill tone="accent">{getRoleLabel(session.role)}</Pill>
+            {isManager ? (
+              <Link
+                href="/staff"
+                className="tara-button-secondary inline-flex min-h-[44px] items-center justify-center rounded-2xl px-4 text-sm font-medium transition"
+              >
+                Staff credentials
+              </Link>
+            ) : null}
+            <form action="/api/auth/logout" method="post">
+              <button
+                type="submit"
+                className="tara-button-secondary inline-flex min-h-[44px] items-center justify-center rounded-2xl px-4 text-sm font-medium transition"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+        }
       />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -63,9 +89,22 @@ export default async function AccountPage() {
             </div>
 
             <div className="tara-alert-warning rounded-[24px] px-5 py-4 text-sm leading-7">
-              Boutique default password:{" "}
-              <span className="font-semibold text-[var(--brand-onyx)]">TARA2026</span>. Change it
-              after first sign-in so each staff member has a private credential.
+              Password hygiene matters on shared boutique devices. Rotate your own password
+              regularly and avoid handing credentials between staff.{" "}
+              {isManager ? (
+                <>
+                  Use the{" "}
+                  <Link
+                    href="/staff"
+                    className="font-semibold text-[var(--brand-onyx)] underline underline-offset-4"
+                  >
+                    Staff
+                  </Link>{" "}
+                  directory to review who still needs onboarding support.
+                </>
+              ) : (
+                "If you inherit a newly bootstrapped account, update it before your next shift handoff."
+              )}
             </div>
           </Surface>
 

@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/format";
+
 const MALAYSIA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
 
 export const BASIC_DAILY_PAY_CENTS = 7000;
@@ -45,6 +47,7 @@ export type BottleTargetProgress = {
   sevenDayTargetPayoutCents: number;
   sevenDayStreakBonusCents: number;
   sevenDayTargetDaysMet: number;
+  sameWeekdayAverageUnits: number | null;
 };
 
 export type StaffCommissionProgress = {
@@ -55,10 +58,13 @@ export type StaffCommissionProgress = {
   todayTargetBonusCents: number;
   todayPayoutPaceCents: number;
   todayOrderCount: number;
+  todayWeekdayLabel: string;
+  historicalSameWeekdayOrderAverage: number | null;
   sevenDayCommissionCents: number;
   sevenDayOrderCount: number;
   sevenDayStreakBonusCents: number;
   targets: BottleTargetProgress[];
+  nextCoachingMessage: string;
 };
 
 type CommissionProgressItem = {
@@ -151,6 +157,13 @@ function getLastMalaysiaDateKeys(count: number, now: Date) {
   );
 }
 
+function getMalaysiaWeekdayLabel(value: Date | string) {
+  return new Intl.DateTimeFormat("en-MY", {
+    timeZone: "Asia/Kuala_Lumpur",
+    weekday: "long",
+  }).format(asDate(value));
+}
+
 function isSameTarget(item: CommissionProgressItem, key: CommissionTargetKey) {
   return getCommissionTargetForSize(item.product.sizeMl)?.key === key;
 }
@@ -184,12 +197,26 @@ export function buildStaffCommissionProgress(
   now = new Date(),
 ): StaffCommissionProgress {
   const todayKey = getMalaysiaDateKey(now);
+  const todayWeekdayLabel = getMalaysiaWeekdayLabel(now);
   const sevenDayKeys = getLastMalaysiaDateKeys(7, now);
   const sevenDayKeySet = new Set(sevenDayKeys);
   const todayOrders = orders.filter((order) => getMalaysiaDateKey(order.createdAt) === todayKey);
   const sevenDayOrders = orders.filter((order) =>
     sevenDayKeySet.has(getMalaysiaDateKey(order.createdAt)),
   );
+  const historicalSameWeekdayOrders = orders.filter((order) => {
+    const orderKey = getMalaysiaDateKey(order.createdAt);
+
+    return orderKey !== todayKey && getMalaysiaWeekdayLabel(order.createdAt) === todayWeekdayLabel;
+  });
+  const historicalSameWeekdayGroups = new Map<string, CommissionProgressOrder[]>();
+
+  historicalSameWeekdayOrders.forEach((order) => {
+    const orderKey = getMalaysiaDateKey(order.createdAt);
+    const existing = historicalSameWeekdayGroups.get(orderKey) ?? [];
+    existing.push(order);
+    historicalSameWeekdayGroups.set(orderKey, existing);
+  });
 
   const targets = COMMISSION_TARGETS.map((target) => {
     const soldUnits = sumTargetUnits(todayOrders, target.key);
@@ -223,6 +250,17 @@ export function buildStaffCommissionProgress(
         dailyTargetPayoutCents * sevenDayKeys.length + target.sevenDayStreakBonusCents,
       sevenDayStreakBonusCents: target.sevenDayStreakBonusCents,
       sevenDayTargetDaysMet,
+      sameWeekdayAverageUnits:
+        historicalSameWeekdayGroups.size > 0
+          ? Math.round(
+              (Array.from(historicalSameWeekdayGroups.values()).reduce(
+                (sum, dayOrders) => sum + sumTargetUnits(dayOrders, target.key),
+                0,
+              ) /
+                historicalSameWeekdayGroups.size) *
+                10,
+            ) / 10
+          : null,
     } satisfies BottleTargetProgress;
   });
 
@@ -236,6 +274,12 @@ export function buildStaffCommissionProgress(
       sum + (target.sevenDayTargetDaysMet === sevenDayKeys.length ? target.sevenDayStreakBonusCents : 0),
     0,
   );
+  const strongestOpportunityTarget = [...targets]
+    .filter((target) => !target.targetMet)
+    .sort((left, right) => left.remainingUnits - right.remainingUnits)[0];
+  const nextCoachingMessage = strongestOpportunityTarget
+    ? `Sell ${strongestOpportunityTarget.remainingUnits} more ${strongestOpportunityTarget.label} unit${strongestOpportunityTarget.remainingUnits === 1 ? "" : "s"} to unlock today's ${formatCurrency(strongestOpportunityTarget.targetBonusCents)} bonus.`
+    : "Every target bonus is already unlocked today. Keep stacking commission while the floor is moving.";
 
   return {
     totalSalesCents: orders.reduce((sum, order) => sum + order.totalCents, 0),
@@ -245,6 +289,18 @@ export function buildStaffCommissionProgress(
     todayTargetBonusCents,
     todayPayoutPaceCents: BASIC_DAILY_PAY_CENTS + todayCommissionCents + todayTargetBonusCents,
     todayOrderCount: todayOrders.length,
+    todayWeekdayLabel,
+    historicalSameWeekdayOrderAverage:
+      historicalSameWeekdayGroups.size > 0
+        ? Math.round(
+            (Array.from(historicalSameWeekdayGroups.values()).reduce(
+              (sum, dayOrders) => sum + dayOrders.length,
+              0,
+            ) /
+              historicalSameWeekdayGroups.size) *
+              10,
+          ) / 10
+        : null,
     sevenDayCommissionCents: sevenDayOrders.reduce(
       (sum, order) => sum + order.commissionCents,
       0,
@@ -252,5 +308,6 @@ export function buildStaffCommissionProgress(
     sevenDayOrderCount: sevenDayOrders.length,
     sevenDayStreakBonusCents,
     targets,
+    nextCoachingMessage,
   };
 }
