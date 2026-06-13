@@ -1,6 +1,6 @@
 import { PaymentMethod } from "@prisma/client";
 import { buildStaffCommissionProgress } from "@/lib/commissions";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatInteger } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import {
@@ -17,6 +17,7 @@ import type {
   LowStockInsight,
   OrdersData,
   PosData,
+  PromotionInsight,
   ProductCardData,
   QuizLeadsData,
   RecentOrderInsight,
@@ -53,14 +54,161 @@ function recommendedRestock(stock: number, reorderLevel: number) {
 function createZeroSalesTrend() {
   const todayStart = getMalaysiaDayStart();
   const salesTrendStart = addUtcDays(todayStart, -6);
+  const todayKey = getMalaysiaDateKey(todayStart);
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = addUtcDays(salesTrendStart, index);
+    const key = getMalaysiaDateKey(date);
 
     return {
+      key,
       label: getMalaysiaWeekdayLabel(date),
       salesCents: 0,
       orders: 0,
+      isToday: key === todayKey,
+    };
+  });
+}
+
+function describeCurrencyChange(current: number, previous: number) {
+  if (current === 0 && previous === 0) {
+    return { comparison: "No change vs yesterday", tone: "muted" as const };
+  }
+
+  if (previous === 0) {
+    return current > 0
+      ? { comparison: "New lift vs yesterday", tone: "positive" as const }
+      : { comparison: "No trade vs yesterday", tone: "muted" as const };
+  }
+
+  const delta = current - previous;
+
+  if (delta === 0) {
+    return { comparison: "Flat vs yesterday", tone: "default" as const };
+  }
+
+  const percent = Math.round((Math.abs(delta) / previous) * 100);
+
+  return {
+    comparison: `${delta > 0 ? "↑" : "↓"} ${percent}% vs yesterday`,
+    tone: delta > 0 ? ("positive" as const) : ("warning" as const),
+  };
+}
+
+function describeCountChange(current: number, previous: number) {
+  if (current === 0 && previous === 0) {
+    return { comparison: "No change vs yesterday", tone: "muted" as const };
+  }
+
+  if (previous === 0) {
+    return current > 0
+      ? { comparison: "New movement vs yesterday", tone: "positive" as const }
+      : { comparison: "No activity vs yesterday", tone: "muted" as const };
+  }
+
+  const delta = current - previous;
+
+  if (delta === 0) {
+    return { comparison: "Flat vs yesterday", tone: "default" as const };
+  }
+
+  return {
+    comparison: `${delta > 0 ? "+" : "-"}${formatInteger(Math.abs(delta))} vs yesterday`,
+    tone: delta > 0 ? ("positive" as const) : ("warning" as const),
+  };
+}
+
+type PromotionOrderSnapshot = {
+  totalCents: number;
+  notes: string | null;
+  items: Array<{ quantity: number }>;
+};
+
+function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsight[] {
+  return [
+    {
+      id: "HUUHA_TRAVEL_BUNDLE",
+      label: "Huuha Land 3 x travel size",
+      detail: "RM99 event discovery bundle",
+      orders: 0,
+      revenueCents: 0,
+      highlight: "No recent redemptions",
+    },
+    {
+      id: "FOLLOW_TAG_UNLOCK",
+      label: "Follow.Tag.Unlock",
+      detail: "Booth-only QR unlock pricing",
+      orders: 0,
+      revenueCents: 0,
+      highlight: "No recent unlocks",
+    },
+    {
+      id: "SUNWAY_STUDENT",
+      label: "Student discount",
+      detail: "20% off 50mL with travel gift",
+      orders: 0,
+      revenueCents: 0,
+      highlight: "No recent student baskets",
+    },
+  ].map((insight) => {
+    const matchingOrders = orders.filter((order) => {
+      const notes = order.notes ?? "";
+
+      if (insight.id === "HUUHA_TRAVEL_BUNDLE") {
+        return notes.includes("Promotion: Huuha Land 3 x travel size");
+      }
+
+      if (insight.id === "FOLLOW_TAG_UNLOCK") {
+        return notes.includes("Promotion: Booth 66 Follow.Tag.Unlock");
+      }
+
+      return notes.includes("Promotion: Student discount");
+    });
+
+    const revenueCents = matchingOrders.reduce((sum, order) => sum + order.totalCents, 0);
+
+    if (!matchingOrders.length) {
+      return insight;
+    }
+
+    if (insight.id === "HUUHA_TRAVEL_BUNDLE") {
+      const bundleCount = matchingOrders.reduce((sum, order) => {
+        const match = order.notes?.match(/(\d+)\s+x Huuha Land travel bundle applied/i);
+        return sum + Number(match?.[1] ?? 0);
+      }, 0);
+
+      return {
+        ...insight,
+        orders: matchingOrders.length,
+        revenueCents,
+        highlight: `${bundleCount || matchingOrders.length} bundle${bundleCount === 1 ? "" : "s"} moved`,
+      };
+    }
+
+    if (insight.id === "SUNWAY_STUDENT") {
+      const discountedBottleCount = matchingOrders.reduce((sum, order) => {
+        const match = order.notes?.match(/Student discount on (\d+) x 50mL/i);
+        return sum + Number(match?.[1] ?? 0);
+      }, 0);
+
+      return {
+        ...insight,
+        orders: matchingOrders.length,
+        revenueCents,
+        highlight: `${discountedBottleCount || matchingOrders.length} full-size bottle${discountedBottleCount === 1 ? "" : "s"} discounted`,
+      };
+    }
+
+    const unlockedUnits = matchingOrders.reduce(
+      (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+      0,
+    );
+
+    return {
+      ...insight,
+      orders: matchingOrders.length,
+      revenueCents,
+      highlight: `${unlockedUnits} unit${unlockedUnits === 1 ? "" : "s"} sold on unlock pricing`,
     };
   });
 }
@@ -70,22 +218,30 @@ function emptyDashboardData(databaseIssue?: string): DashboardData {
     {
       label: "Daily sales",
       value: formatCurrency(0),
-      detail: "0 orders today",
+      detail: "No completed sales yet today",
+      comparison: "No change vs yesterday",
+      tone: "muted",
+    },
+    {
+      label: "Orders today",
+      value: "0",
+      detail: "Selling floor is still quiet today",
+      comparison: "No change vs yesterday",
+      tone: "muted",
     },
     {
       label: "Average order",
       value: formatCurrency(0),
-      detail: "0 units sold today",
+      detail: "No baskets closed yet",
+      comparison: "No change vs yesterday",
+      tone: "muted",
     },
     {
-      label: "Inventory units",
+      label: "Inventory watch",
       value: "0",
-      detail: "0 low-stock alerts",
-    },
-    {
-      label: "Inventory value",
-      value: formatCurrency(0),
-      detail: "No checkout tax applied",
+      detail: "All core scents are above reorder level",
+      comparison: "0 units on hand",
+      tone: "positive",
     },
   ];
 
@@ -95,6 +251,7 @@ function emptyDashboardData(databaseIssue?: string): DashboardData {
     topProducts: [],
     lowStockProducts: [],
     recentOrders: [],
+    promotionInsights: [],
     databaseIssue,
   };
 }
@@ -113,11 +270,13 @@ export async function getDashboardData(): Promise<DashboardData> {
   try {
     const prisma = requirePrisma();
     const todayStart = getMalaysiaDayStart();
+    const todayKey = getMalaysiaDateKey(todayStart);
     const tomorrow = addUtcDays(todayStart, 1);
+    const yesterdayStart = addUtcDays(todayStart, -1);
     const salesTrendStart = addUtcDays(todayStart, -6);
     const topProductsStart = addUtcDays(todayStart, -29);
 
-    const [products, todayOrders, weeklyOrders, recentOrders, groupedTopProducts] =
+    const [products, todayOrders, weeklyOrders, recentOrders, groupedTopProducts, promotionOrders] =
       await prisma.$transaction([
         prisma.product.findMany({
           where: { active: true },
@@ -147,7 +306,13 @@ export async function getDashboardData(): Promise<DashboardData> {
           select: {
             id: true,
             totalCents: true,
+            commissionCents: true,
             createdAt: true,
+            items: {
+              select: {
+                quantity: true,
+              },
+            },
           },
         }),
         prisma.order.findMany({
@@ -193,6 +358,25 @@ export async function getDashboardData(): Promise<DashboardData> {
           },
           take: 5,
         }),
+        prisma.order.findMany({
+          where: {
+            createdAt: {
+              gte: topProductsStart,
+            },
+            notes: {
+              not: null,
+            },
+          },
+          select: {
+            totalCents: true,
+            notes: true,
+            items: {
+              select: {
+                quantity: true,
+              },
+            },
+          },
+        }),
       ]);
 
     const topProductRecords = groupedTopProducts.length
@@ -207,20 +391,25 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     const topProductMap = new Map(topProductRecords.map((product) => [product.id, product]));
 
-    const todaySalesCents = todayOrders.reduce((sum, order) => sum + order.totalCents, 0);
-    const todayCommissionCents = todayOrders.reduce(
-      (sum, order) => sum + order.commissionCents,
-      0,
+    const yesterdayOrders = weeklyOrders.filter(
+      (order) => order.createdAt >= yesterdayStart && order.createdAt < todayStart,
     );
+    const todaySalesCents = todayOrders.reduce((sum, order) => sum + order.totalCents, 0);
     const todayUnits = todayOrders.reduce(
       (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
       0,
     );
+    const yesterdaySalesCents = yesterdayOrders.reduce((sum, order) => sum + order.totalCents, 0);
+    const todayAverageOrderCents = todayOrders.length
+      ? Math.round(todaySalesCents / todayOrders.length)
+      : 0;
+    const yesterdayAverageOrderCents = yesterdayOrders.length
+      ? Math.round(yesterdaySalesCents / yesterdayOrders.length)
+      : 0;
     const inventoryUnits = products.reduce((sum, product) => sum + product.stock, 0);
-    const inventoryValueCents = products.reduce(
-      (sum, product) => sum + product.stock * product.priceCents,
-      0,
-    );
+    const criticalLowStockCount = products.filter(
+      (product) => product.stock <= Math.max(1, Math.floor(product.reorderLevel / 2)),
+    ).length;
     const lowStockProducts: LowStockInsight[] = products
       .filter((product) => product.stock <= product.reorderLevel)
       .map((product) => ({
@@ -234,11 +423,14 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     const salesTrend = Array.from({ length: 7 }, (_, index) => {
       const date = addUtcDays(salesTrendStart, index);
+      const key = getMalaysiaDateKey(date);
+
       return {
+        key,
         label: getMalaysiaWeekdayLabel(date),
-        key: getMalaysiaDateKey(date),
         salesCents: 0,
         orders: 0,
+        isToday: key === todayKey,
       };
     });
 
@@ -283,45 +475,63 @@ export async function getDashboardData(): Promise<DashboardData> {
     }));
 
     const stats: DashboardStat[] = [
+      (() => {
+        const change = describeCurrencyChange(todaySalesCents, yesterdaySalesCents);
+        return {
+          label: "Daily sales",
+          value: formatCurrency(todaySalesCents),
+          detail: todayOrders.length
+            ? `${todayOrders.length} order${todayOrders.length === 1 ? "" : "s"} closed today`
+            : "No completed sales yet today",
+          comparison: change.comparison,
+          tone: change.tone,
+        } satisfies DashboardStat;
+      })(),
+      (() => {
+        const change = describeCountChange(todayOrders.length, yesterdayOrders.length);
+        return {
+          label: "Orders today",
+          value: formatInteger(todayOrders.length),
+          detail: todayUnits
+            ? `${formatInteger(todayUnits)} unit${todayUnits === 1 ? "" : "s"} moved today`
+            : "Selling floor is still quiet today",
+          comparison: change.comparison,
+          tone: change.tone,
+        } satisfies DashboardStat;
+      })(),
+      (() => {
+        const change = describeCurrencyChange(
+          todayAverageOrderCents,
+          yesterdayAverageOrderCents,
+        );
+        return {
+          label: "Average order",
+          value: formatCurrency(todayAverageOrderCents),
+          detail: todayOrders.length
+            ? `${formatInteger(todayUnits)} units across today’s baskets`
+            : "No baskets closed yet",
+          comparison: change.comparison,
+          tone: change.tone,
+        } satisfies DashboardStat;
+      })(),
       {
-        label: "Daily sales",
-        value: formatCurrency(todaySalesCents),
-        detail: `${todayOrders.length} orders today`,
-      },
-      {
-        label: "Daily commission",
-        value: formatCurrency(todayCommissionCents),
-        detail: "Salesperson earnings captured today",
-      },
-      {
-        label: "Average order",
-        value: formatCurrency(
-          todayOrders.length ? Math.round(todaySalesCents / todayOrders.length) : 0,
-        ),
-        detail: `${todayUnits} units sold today`,
-      },
-      {
-        label: "Inventory units",
-        value: `${inventoryUnits}`,
-        detail: `${lowStockProducts.length} low-stock alerts`,
-      },
-      {
-        label: "Inventory value",
-        value: formatCurrency(inventoryValueCents),
-        detail: "No checkout tax applied",
+        label: "Inventory watch",
+        value: formatInteger(lowStockProducts.length),
+        detail: lowStockProducts.length
+          ? `${criticalLowStockCount} critical scent${criticalLowStockCount === 1 ? "" : "s"} need attention`
+          : "All core scents are above reorder level",
+        comparison: `${formatInteger(inventoryUnits)} units on hand`,
+        tone: lowStockProducts.length ? "warning" : "positive",
       },
     ];
 
     return {
       stats,
-      salesTrend: salesTrend.map((point) => ({
-        label: point.label,
-        salesCents: point.salesCents,
-        orders: point.orders,
-      })),
+      salesTrend,
       topProducts,
       lowStockProducts,
       recentOrders: recentOrderInsights,
+      promotionInsights: buildPromotionInsights(promotionOrders),
     };
   } catch (error) {
     return emptyDashboardData(logDatabaseFallback("dashboard", error));

@@ -32,7 +32,7 @@ const baseNavItems: Array<{
   { href: "/leads", label: "Leads", icon: ClipboardList },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
-  { href: "/assistant", label: "AI Brief", icon: Sparkles },
+  { href: "/assistant", label: "Daily Insights", icon: Sparkles },
   { href: "/creative", label: "Creative", icon: Camera },
   { href: "/account", label: "Account", icon: KeyRound },
 ];

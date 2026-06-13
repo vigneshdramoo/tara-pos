@@ -26,6 +26,12 @@ const weekdayFormatter = new Intl.DateTimeFormat("en-MY", {
   weekday: "short",
 });
 
+const timeFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export function formatCurrency(cents: number) {
   return moneyFormatter.format(cents / 100);
 }
@@ -44,4 +50,8 @@ export function formatFullDateTime(value: string | Date) {
 
 export function formatWeekday(value: string | Date) {
   return weekdayFormatter.format(new Date(value));
+}
+
+export function formatTimeOnly(value: string | Date) {
+  return timeFormatter.format(new Date(value));
 }

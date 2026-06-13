@@ -74,12 +74,16 @@ export type DashboardStat = {
   label: string;
   value: string;
   detail: string;
+  comparison?: string;
+  tone?: "default" | "positive" | "warning" | "muted";
 };
 
 export type SalesTrendPoint = {
+  key: string;
   label: string;
   salesCents: number;
   orders: number;
+  isToday: boolean;
 };
 
 export type TopProductInsight = {
@@ -114,12 +118,22 @@ export type RecentOrderInsight = {
   itemCount: number;
 };
 
+export type PromotionInsight = {
+  id: string;
+  label: string;
+  detail: string;
+  orders: number;
+  revenueCents: number;
+  highlight: string;
+};
+
 export type DashboardData = {
   stats: DashboardStat[];
   salesTrend: SalesTrendPoint[];
   topProducts: TopProductInsight[];
   lowStockProducts: LowStockInsight[];
   recentOrders: RecentOrderInsight[];
+  promotionInsights: PromotionInsight[];
   databaseIssue?: string;
 };
 
