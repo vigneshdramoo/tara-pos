@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth";
 import {
   calculateCheckoutPricing,
+  formatPublicMarketStop04PackageSummary,
   getCheckoutPromotionOption,
   isCheckoutPromotionId,
   normalizeCheckoutPromotionId,
@@ -79,6 +80,16 @@ function buildPromotionOrderNote(
     promotionSummary.push(
       `${checkoutPricing.eightMlBundleCount} x Huuha Land travel bundle applied`,
     );
+  }
+
+  if (promotionId === "PUBLIC_MARKET_STOP04") {
+    promotionSummary.push("Booth 7 Public Market 5.0 strategy");
+    promotionSummary.push(
+      `Stop 04 packages: ${formatPublicMarketStop04PackageSummary(
+        checkoutPricing.publicMarketStop04PackageBreakdown,
+      )}`,
+    );
+    promotionSummary.push(`Stop 04 8mL units in basket: ${checkoutPricing.eightMlEligibleUnits}`);
   }
 
   if (promotionId === "FOLLOW_TAG_UNLOCK") {

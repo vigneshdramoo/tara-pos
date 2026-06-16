@@ -3,6 +3,7 @@ import { PromotionWatch } from "@/components/dashboard/promotion-watch";
 import { RecentOrders } from "@/components/dashboard/recent-orders";
 import { SalesTrend } from "@/components/dashboard/sales-trend";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { Stop04Progress } from "@/components/dashboard/stop04-progress";
 import { TopProducts } from "@/components/dashboard/top-products";
 import { PageIntro } from "@/components/page-intro";
 import { StatusNotice } from "@/components/ui/status-notice";
@@ -36,6 +37,8 @@ export default async function Home() {
           <StatCard key={stat.label} stat={stat} index={index} />
         ))}
       </section>
+
+      <Stop04Progress progress={dashboard.stop04Progress} />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <SalesTrend points={dashboard.salesTrend} />

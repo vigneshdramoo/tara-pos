@@ -4,8 +4,10 @@ import Image from "next/image";
 import {
   CHECKOUT_PROMOTION_OPTIONS,
   EIGHT_ML_EDP_BUNDLE_OFFER,
+  PUBLIC_MARKET_STOP04_OFFER,
   type CheckoutPromotionId,
   type CheckoutLinePricing,
+  type PublicMarketStop04PackageBreakdown,
 } from "@/lib/checkout-pricing";
 import { formatCurrency } from "@/lib/format";
 import { getStockStatus } from "@/lib/stock";
@@ -37,6 +39,7 @@ type CartPanelProps = {
   freeGiftEligibleUnits: number;
   freeGiftClaimedUnits: number;
   freeGiftUnitsRemaining: number;
+  publicMarketStop04PackageBreakdown: PublicMarketStop04PackageBreakdown;
   offerHeadline: string | null;
   offerCallout: string | null;
   submitting: boolean;
@@ -77,6 +80,7 @@ export function CartPanel({
   freeGiftEligibleUnits,
   freeGiftClaimedUnits,
   freeGiftUnitsRemaining,
+  publicMarketStop04PackageBreakdown,
   offerHeadline,
   offerCallout,
   submitting,
@@ -99,6 +103,8 @@ export function CartPanel({
   const cartQuantityByProductId = new Map(cart.map((item) => [item.id, item.quantity]));
   const isTravelBundlePromotion =
     promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE";
+  const isStop04Promotion = promotionId === "PUBLIC_MARKET_STOP04";
+  const showEightMlOfferTracker = isTravelBundlePromotion || isStop04Promotion;
   const travelBundleUnitsInProgress = isTravelBundlePromotion
     ? eightMlEligibleUnits === 0
       ? 0
@@ -108,18 +114,29 @@ export function CartPanel({
     : 0;
   const travelBundleProgressPercent =
     (travelBundleUnitsInProgress / EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize) * 100;
+  const stop04ProgressTarget =
+    eightMlEligibleUnits < 3 ? 3 : eightMlEligibleUnits < 6 ? 6 : eightMlEligibleUnits;
+  const stop04ProgressPercent = stop04ProgressTarget
+    ? (Math.min(eightMlEligibleUnits, stop04ProgressTarget) / stop04ProgressTarget) * 100
+    : 0;
+  const stop04PackageSummary = PUBLIC_MARKET_STOP04_OFFER.packages
+    .map((offerPackage) => ({
+      ...offerPackage,
+      count: publicMarketStop04PackageBreakdown[offerPackage.key],
+    }))
+    .filter((offerPackage) => offerPackage.count > 0);
   const travelBundleHeadline = isTravelBundlePromotion
     ? eightMlBundleCount > 0
       ? `${eightMlBundleCount} bundle${eightMlBundleCount === 1 ? "" : "s"} unlocked`
       : "Build the RM99 travel bundle"
-    : null;
+    : offerHeadline;
   const travelBundleMessage = isTravelBundlePromotion
     ? eightMlEligibleUnits === 0
       ? `Add any ${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize} travel sizes to unlock ${promotionLabel} at ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}.`
       : eightMlUnitsUntilNextBundle === 0
         ? `This set is complete at ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}. Add more travel sizes to start the next bundle.`
-        : `Add ${eightMlUnitsUntilNextBundle} more travel size${eightMlUnitsUntilNextBundle === 1 ? "" : "s"} to unlock the next ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)} bundle.`
-    : null;
+      : `Add ${eightMlUnitsUntilNextBundle} more travel size${eightMlUnitsUntilNextBundle === 1 ? "" : "s"} to unlock the next ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)} bundle.`
+    : offerCallout;
 
   function getStockToneClasses(tone: ReturnType<typeof getStockStatus>["tone"]) {
     switch (tone) {
@@ -249,12 +266,12 @@ export function CartPanel({
           )}
         </div>
 
-        {isTravelBundlePromotion ? (
+        {showEightMlOfferTracker ? (
           <div className="rounded-[24px] border border-[rgba(202,158,91,0.32)] bg-[linear-gradient(135deg,rgba(202,158,91,0.14),rgba(247,243,235,0.92))] p-4 shadow-[0_18px_50px_rgba(202,158,91,0.12)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold tracking-[0.18em] text-[var(--brand-gold)] uppercase">
-                  Travel bundle tracker
+                  {isStop04Promotion ? "Stop 04 tracker" : "Travel bundle tracker"}
                 </p>
                 <h4 className="mt-2 text-lg font-semibold text-foreground">
                   {travelBundleHeadline}
@@ -264,14 +281,23 @@ export function CartPanel({
                 </p>
               </div>
               <span className="rounded-full border border-[rgba(202,158,91,0.28)] bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-midnight)]">
-                {travelBundleUnitsInProgress}/{EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize}
+                {isStop04Promotion
+                  ? `${eightMlEligibleUnits}/${stop04ProgressTarget || 3}`
+                  : `${travelBundleUnitsInProgress}/${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize}`}
               </span>
             </div>
 
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/80">
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,var(--brand-gold),var(--brand-amber))] transition-[width]"
-                style={{ width: `${Math.max(travelBundleProgressPercent, travelBundleProgressPercent > 0 ? 12 : 0)}%` }}
+                style={{
+                  width: `${Math.max(
+                    isStop04Promotion ? stop04ProgressPercent : travelBundleProgressPercent,
+                    (isStop04Promotion ? stop04ProgressPercent : travelBundleProgressPercent) > 0
+                      ? 12
+                      : 0,
+                  )}%`,
+                }}
               />
             </div>
 
@@ -280,8 +306,19 @@ export function CartPanel({
                 Travel sizes in cart: <span className="tabular-nums font-semibold text-foreground">{eightMlEligibleUnits}</span>
               </span>
               <span className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]">
-                RM99 bundles: <span className="tabular-nums font-semibold text-foreground">{eightMlBundleCount}</span>
+                {isStop04Promotion ? "Event packages" : "RM99 bundles"}:{" "}
+                <span className="tabular-nums font-semibold text-foreground">{eightMlBundleCount}</span>
               </span>
+              {isStop04Promotion
+                ? stop04PackageSummary.map((offerPackage) => (
+                    <span
+                      key={offerPackage.key}
+                      className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]"
+                    >
+                      {offerPackage.count} x {offerPackage.label}
+                    </span>
+                  ))
+                : null}
             </div>
           </div>
         ) : null}
@@ -488,6 +525,7 @@ export function CartPanel({
               height={1664}
               className="mx-auto h-auto max-h-[520px] w-full max-w-[340px] object-contain"
               priority
+              unoptimized
             />
           </div>
         </div>

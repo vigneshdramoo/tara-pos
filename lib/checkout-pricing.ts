@@ -11,6 +11,15 @@ export const BOOTH_UNLOCK_OFFER = {
   fiftyMlUnitPriceCents: 15800,
 } as const;
 
+export const PUBLIC_MARKET_STOP04_OFFER = {
+  label: "Stop 04 Public Market Scent Trail",
+  packages: [
+    { key: "threeSet", label: "3-set", units: 3, priceCents: 9900 },
+    { key: "fourSet", label: "4-set", units: 4, priceCents: 12900 },
+    { key: "sixSet", label: "6-set", units: 6, priceCents: 18800 },
+  ],
+} as const;
+
 export const SUNWAY_STUDENT_OFFER = {
   label: "Student discount",
   fiftyMlDiscountRate: 0.2,
@@ -20,6 +29,7 @@ export const CHECKOUT_PROMOTION_IDS = [
   "NONE",
   "EIGHT_ML_BUNDLE",
   "HUUHA_TRAVEL_BUNDLE",
+  "PUBLIC_MARKET_STOP04",
   "FOLLOW_TAG_UNLOCK",
   "SUNWAY_STUDENT",
 ] as const;
@@ -45,12 +55,13 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     preview: "50mL at regular price + free 8mL travel size",
   },
   {
-    id: "HUUHA_TRAVEL_BUNDLE",
-    label: "Huuha Land 3 x travel size",
-    kicker: "Huuha event",
-    description: "Use the Huuha Land event bundle for discovery-driven walk-ins and gifting.",
-    requirements: "KL Sidewalk @ Huuha Land, 12-14 June 2026.",
-    preview: `3 x travel size for RM ${(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents / 100).toFixed(0)}`,
+    id: "PUBLIC_MARKET_STOP04",
+    label: PUBLIC_MARKET_STOP04_OFFER.label,
+    kicker: "Stop 04",
+    description:
+      "Use the Public Market 5.0 Booth 7 strategy for fast Scent Trail checkout and sell-through tracking.",
+    requirements: "Public Market 5.0, MRT Tunnel MyTOWNKL, Booth 7, 19-21 June 2026.",
+    preview: "3 x 8mL RM99 · 4 x 8mL RM129 · 6 x 8mL RM188",
   },
   {
     id: "FOLLOW_TAG_UNLOCK",
@@ -92,6 +103,12 @@ export type CheckoutLinePricing = {
   promotionDetail: string | null;
 };
 
+export type PublicMarketStop04PackageBreakdown = {
+  threeSet: number;
+  fourSet: number;
+  sixSet: number;
+};
+
 export type CheckoutPricing = {
   promotionId: CheckoutPromotionId;
   promotionLabel: string;
@@ -107,6 +124,7 @@ export type CheckoutPricing = {
   freeGiftEligibleUnits: number;
   freeGiftClaimedUnits: number;
   freeGiftUnitsRemaining: number;
+  publicMarketStop04PackageBreakdown: PublicMarketStop04PackageBreakdown;
   offerHeadline: string | null;
   offerCallout: string | null;
 };
@@ -126,7 +144,11 @@ export function isCheckoutPromotionId(value: string | undefined | null): value i
 export function normalizeCheckoutPromotionId(
   promotionId: CheckoutPromotionId,
 ): CheckoutPromotionId {
-  return promotionId === "EIGHT_ML_BUNDLE" ? "HUUHA_TRAVEL_BUNDLE" : promotionId;
+  if (promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE") {
+    return "PUBLIC_MARKET_STOP04";
+  }
+
+  return promotionId;
 }
 
 export function getCheckoutPromotionOption(promotionId: CheckoutPromotionId) {
@@ -307,6 +329,216 @@ function calculateEightMlBundlePricing(
   });
 }
 
+function createEmptyStop04PackageBreakdown(): PublicMarketStop04PackageBreakdown {
+  return {
+    threeSet: 0,
+    fourSet: 0,
+    sixSet: 0,
+  };
+}
+
+function getStop04PackageDetail(breakdown: PublicMarketStop04PackageBreakdown) {
+  return PUBLIC_MARKET_STOP04_OFFER.packages
+    .map((offerPackage) => ({
+      ...offerPackage,
+      count: breakdown[offerPackage.key],
+    }))
+    .filter((offerPackage) => offerPackage.count > 0);
+}
+
+export function formatPublicMarketStop04PackageSummary(
+  breakdown: PublicMarketStop04PackageBreakdown,
+) {
+  const packageDetail = getStop04PackageDetail(breakdown);
+
+  if (!packageDetail.length) {
+    return "No Stop 04 package unlocked yet";
+  }
+
+  return packageDetail
+    .map(
+      (offerPackage) =>
+        `${offerPackage.count} x ${offerPackage.label} RM${(
+          offerPackage.priceCents / 100
+        ).toFixed(0)}`,
+    )
+    .join(" · ");
+}
+
+function findBestStop04PackageMix(eligibleUnits: number, regularUnitPriceCents: number) {
+  const startingState = {
+    totalPriceCents: 0,
+    packageUnits: 0,
+    packageCount: 0,
+    breakdown: createEmptyStop04PackageBreakdown(),
+  };
+  const states = Array.from({ length: eligibleUnits + 1 }, () => startingState);
+  states[0] = startingState;
+
+  for (let units = 1; units <= eligibleUnits; units += 1) {
+    let bestState = {
+      totalPriceCents: states[units - 1].totalPriceCents + regularUnitPriceCents,
+      packageUnits: states[units - 1].packageUnits,
+      packageCount: states[units - 1].packageCount,
+      breakdown: { ...states[units - 1].breakdown },
+    };
+
+    PUBLIC_MARKET_STOP04_OFFER.packages.forEach((offerPackage) => {
+      if (units < offerPackage.units) return;
+
+      const previousState = states[units - offerPackage.units];
+      const candidate = {
+        totalPriceCents: previousState.totalPriceCents + offerPackage.priceCents,
+        packageUnits: previousState.packageUnits + offerPackage.units,
+        packageCount: previousState.packageCount + 1,
+        breakdown: {
+          ...previousState.breakdown,
+          [offerPackage.key]: previousState.breakdown[offerPackage.key] + 1,
+        },
+      };
+
+      if (
+        candidate.totalPriceCents < bestState.totalPriceCents ||
+        (candidate.totalPriceCents === bestState.totalPriceCents &&
+          candidate.packageUnits > bestState.packageUnits) ||
+        (candidate.totalPriceCents === bestState.totalPriceCents &&
+          candidate.packageUnits === bestState.packageUnits &&
+          candidate.packageCount < bestState.packageCount)
+      ) {
+        bestState = candidate;
+      }
+    });
+
+    states[units] = bestState;
+  }
+
+  return states[eligibleUnits];
+}
+
+function getStop04UnitsUntilNextPackage(eligibleUnits: number) {
+  if (eligibleUnits < 3) return 3 - eligibleUnits;
+  if (eligibleUnits === 3) return 1;
+  if (eligibleUnits < 6) return 6 - eligibleUnits;
+  return 0;
+}
+
+function getStop04OfferCopy(eligibleUnits: number, breakdown: PublicMarketStop04PackageBreakdown) {
+  if (eligibleUnits === 0) {
+    return {
+      offerHeadline: "Build the Stop 04 Scent Trail set",
+      offerCallout: "Add any 3 travel sizes to unlock the RM99 event set.",
+    };
+  }
+
+  if (eligibleUnits < 3) {
+    return {
+      offerHeadline: "Stop 04 set in progress",
+      offerCallout: `Add ${3 - eligibleUnits} more 8mL travel size${
+        3 - eligibleUnits === 1 ? "" : "s"
+      } to unlock the RM99 event set.`,
+    };
+  }
+
+  if (eligibleUnits === 3) {
+    return {
+      offerHeadline: "Stop 04 RM99 set unlocked",
+      offerCallout: "Add 1 more 8mL to complete all four scents for RM129.",
+    };
+  }
+
+  if (eligibleUnits < 6) {
+    return {
+      offerHeadline: formatPublicMarketStop04PackageSummary(breakdown),
+      offerCallout: `Add ${6 - eligibleUnits} more 8mL travel size${
+        6 - eligibleUnits === 1 ? "" : "s"
+      } to unlock the 6 x 8mL RM188 group set.`,
+    };
+  }
+
+  return {
+    offerHeadline: formatPublicMarketStop04PackageSummary(breakdown),
+    offerCallout: "Stop 04 event package applied. Confirm payment and capture the buyer for follow-up.",
+  };
+}
+
+function calculatePublicMarketStop04Pricing(items: CheckoutPricingItem[]) {
+  const eightMlItems = items.filter(isEightMlEdpBundleEligible);
+  const eightMlEligibleUnits = eightMlItems.reduce((sum, item) => sum + item.quantity, 0);
+  const regularUnitPriceCents = eightMlItems[0]?.priceCents ?? 4500;
+  const packageMix = findBestStop04PackageMix(eightMlEligibleUnits, regularUnitPriceCents);
+  const publicMarketStop04PackageBreakdown = packageMix.breakdown;
+  const eightMlListTotalCents = eightMlItems.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
+    0,
+  );
+  const totalEightMlDiscountCents = eightMlListTotalCents - packageMix.totalPriceCents;
+  let allocatedDiscountCents = 0;
+  let remainingDiscountedUnits = packageMix.packageUnits;
+  const lastEightMlProductId = eightMlItems.at(-1)?.productId ?? null;
+  const stop04Copy = getStop04OfferCopy(eightMlEligibleUnits, publicMarketStop04PackageBreakdown);
+
+  const lines = finalizeLines(
+    items.map((item) => {
+      const listTotalCents = item.priceCents * item.quantity;
+
+      if (!isEightMlEdpBundleEligible(item) || eightMlEligibleUnits === 0) {
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          listTotalCents,
+          totalPriceCents: listTotalCents,
+          discountCents: 0,
+          bundleUnits: 0,
+          regularUnits: item.quantity,
+          discountedUnits: 0,
+          freeUnits: 0,
+          promotionLabel: null,
+          promotionDetail: isFiftyMlEdpEligible(item)
+            ? "First-batch 50mL anchor bottle"
+            : null,
+        };
+      }
+
+      const lineDiscountCents =
+        item.productId === lastEightMlProductId
+          ? totalEightMlDiscountCents - allocatedDiscountCents
+          : Math.floor((totalEightMlDiscountCents * listTotalCents) / eightMlListTotalCents);
+      allocatedDiscountCents += lineDiscountCents;
+
+      const bundleUnits = Math.min(item.quantity, remainingDiscountedUnits);
+      remainingDiscountedUnits -= bundleUnits;
+      const regularUnits = item.quantity - bundleUnits;
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        listTotalCents,
+        totalPriceCents: listTotalCents - lineDiscountCents,
+        discountCents: lineDiscountCents,
+        bundleUnits,
+        regularUnits,
+        discountedUnits: bundleUnits,
+        freeUnits: 0,
+        promotionLabel: bundleUnits ? PUBLIC_MARKET_STOP04_OFFER.label : null,
+        promotionDetail: bundleUnits
+          ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in Stop 04 package`
+          : null,
+      };
+    }),
+  );
+
+  return buildPricingSummary({
+    promotionId: "PUBLIC_MARKET_STOP04",
+    lines,
+    eightMlBundleCount: packageMix.packageCount,
+    eightMlEligibleUnits,
+    eightMlUnitsUntilNextBundle: getStop04UnitsUntilNextPackage(eightMlEligibleUnits),
+    publicMarketStop04PackageBreakdown,
+    offerHeadline: stop04Copy.offerHeadline,
+    offerCallout: stop04Copy.offerCallout,
+  });
+}
+
 function calculateBoothUnlockPricing(items: CheckoutPricingItem[]) {
   const lines = finalizeLines(
     items.map((item) => {
@@ -459,6 +691,7 @@ function buildPricingSummary({
   freeGiftEligibleUnits = 0,
   freeGiftClaimedUnits = 0,
   freeGiftUnitsRemaining = 0,
+  publicMarketStop04PackageBreakdown = createEmptyStop04PackageBreakdown(),
   offerHeadline = null,
   offerCallout = null,
 }: {
@@ -471,6 +704,7 @@ function buildPricingSummary({
   freeGiftEligibleUnits?: number;
   freeGiftClaimedUnits?: number;
   freeGiftUnitsRemaining?: number;
+  publicMarketStop04PackageBreakdown?: PublicMarketStop04PackageBreakdown;
   offerHeadline?: string | null;
   offerCallout?: string | null;
 }): CheckoutPricing {
@@ -493,6 +727,7 @@ function buildPricingSummary({
     freeGiftEligibleUnits,
     freeGiftClaimedUnits,
     freeGiftUnitsRemaining,
+    publicMarketStop04PackageBreakdown,
     offerHeadline,
     offerCallout,
   };
@@ -507,6 +742,8 @@ export function calculateCheckoutPricing(
   switch (normalizedPromotionId) {
     case "HUUHA_TRAVEL_BUNDLE":
       return calculateEightMlBundlePricing(items, "HUUHA_TRAVEL_BUNDLE");
+    case "PUBLIC_MARKET_STOP04":
+      return calculatePublicMarketStop04Pricing(items);
     case "FOLLOW_TAG_UNLOCK":
       return calculateBoothUnlockPricing(items);
     case "SUNWAY_STUDENT":

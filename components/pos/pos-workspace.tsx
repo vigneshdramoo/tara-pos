@@ -28,7 +28,7 @@ type CartLine = ProductCardData & {
   quantity: number;
 };
 
-const DEFAULT_PROMOTION_ID: CheckoutPromotionId = "FOLLOW_TAG_UNLOCK";
+const DEFAULT_PROMOTION_ID: CheckoutPromotionId = "PUBLIC_MARKET_STOP04";
 
 const initialCustomer = {
   name: "",
@@ -401,6 +401,7 @@ export function PosWorkspace({
         freeGiftEligibleUnits={checkoutPricing.freeGiftEligibleUnits}
         freeGiftClaimedUnits={checkoutPricing.freeGiftClaimedUnits}
         freeGiftUnitsRemaining={checkoutPricing.freeGiftUnitsRemaining}
+        publicMarketStop04PackageBreakdown={checkoutPricing.publicMarketStop04PackageBreakdown}
         offerHeadline={checkoutPricing.offerHeadline}
         offerCallout={checkoutPricing.offerCallout}
         submitting={submitting}

@@ -3,6 +3,7 @@ import { buildStaffCommissionProgress } from "@/lib/commissions";
 import { formatCurrency, formatInteger } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
+import { isStop04PromotionNote, STOP04_STRATEGY } from "@/lib/stop04-strategy";
 import {
   addUtcDays,
   getMalaysiaDateKey,
@@ -22,6 +23,8 @@ import type {
   QuizLeadsData,
   RecentOrderInsight,
   StaffUsersData,
+  Stop04CheckpointStatus,
+  Stop04StrategyProgress,
   TopProductInsight,
 } from "@/lib/types";
 
@@ -121,18 +124,24 @@ function describeCountChange(current: number, previous: number) {
 type PromotionOrderSnapshot = {
   totalCents: number;
   notes: string | null;
-  items: Array<{ quantity: number }>;
+  items: Array<{
+    quantity: number;
+    product: {
+      name: string;
+      sizeMl: number;
+    };
+  }>;
 };
 
 function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsight[] {
   return [
     {
-      id: "HUUHA_TRAVEL_BUNDLE",
-      label: "Huuha Land 3 x travel size",
-      detail: "RM99 event discovery bundle",
+      id: "PUBLIC_MARKET_STOP04",
+      label: "Stop 04 Public Market Scent Trail",
+      detail: "Booth 7 RM99/RM129/RM188 sell-through ladder",
       orders: 0,
       revenueCents: 0,
-      highlight: "No recent redemptions",
+      highlight: "No Stop 04 baskets yet",
     },
     {
       id: "FOLLOW_TAG_UNLOCK",
@@ -154,8 +163,8 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
     const matchingOrders = orders.filter((order) => {
       const notes = order.notes ?? "";
 
-      if (insight.id === "HUUHA_TRAVEL_BUNDLE") {
-        return notes.includes("Promotion: Huuha Land 3 x travel size");
+      if (insight.id === "PUBLIC_MARKET_STOP04") {
+        return isStop04PromotionNote(notes);
       }
 
       if (insight.id === "FOLLOW_TAG_UNLOCK") {
@@ -171,17 +180,21 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
       return insight;
     }
 
-    if (insight.id === "HUUHA_TRAVEL_BUNDLE") {
-      const bundleCount = matchingOrders.reduce((sum, order) => {
-        const match = order.notes?.match(/(\d+)\s+x Huuha Land travel bundle applied/i);
-        return sum + Number(match?.[1] ?? 0);
-      }, 0);
+    if (insight.id === "PUBLIC_MARKET_STOP04") {
+      const eightMlUnits = matchingOrders.reduce(
+        (sum, order) =>
+          sum +
+          order.items
+            .filter((item) => item.product.sizeMl === 8)
+            .reduce((itemSum, item) => itemSum + item.quantity, 0),
+        0,
+      );
 
       return {
         ...insight,
         orders: matchingOrders.length,
         revenueCents,
-        highlight: `${bundleCount || matchingOrders.length} bundle${bundleCount === 1 ? "" : "s"} moved`,
+        highlight: `${eightMlUnits} 8mL unit${eightMlUnits === 1 ? "" : "s"} moved at Stop 04`,
       };
     }
 
@@ -211,6 +224,135 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
       highlight: `${unlockedUnits} unit${unlockedUnits === 1 ? "" : "s"} sold on unlock pricing`,
     };
   });
+}
+
+type Stop04ProductSnapshot = {
+  name: string;
+  sizeMl: number;
+  stock: number;
+};
+
+function parseStop04OfferMix(orders: PromotionOrderSnapshot[]) {
+  const packageMap = new Map([
+    ["3-set", { label: "3 x 8mL RM99", count: 0, units: 0, packageUnits: 3 }],
+    ["4-set", { label: "4 x 8mL RM129", count: 0, units: 0, packageUnits: 4 }],
+    ["6-set", { label: "6 x 8mL RM188", count: 0, units: 0, packageUnits: 6 }],
+  ]);
+
+  orders.forEach((order) => {
+    const notes = order.notes ?? "";
+    const matches = notes.matchAll(/(\d+)\s+x\s+(3-set|4-set|6-set)/gi);
+
+    for (const match of matches) {
+      const count = Number(match[1] ?? 0);
+      const key = match[2];
+      const packageInsight = key ? packageMap.get(key) : undefined;
+      if (!packageInsight || !count) continue;
+
+      packageInsight.count += count;
+      packageInsight.units += count * packageInsight.packageUnits;
+    }
+  });
+
+  return [...packageMap.values()]
+    .filter((offer) => offer.count > 0)
+    .map(({ label, count, units }) => ({ label, count, units }));
+}
+
+function buildStop04StrategyProgress(
+  products: Stop04ProductSnapshot[],
+  orders: PromotionOrderSnapshot[],
+  now = new Date(),
+): Stop04StrategyProgress {
+  const eightMlProducts = products.filter((product) => product.sizeMl === 8);
+  const remainingEightMlUnits = eightMlProducts.reduce((sum, product) => sum + product.stock, 0);
+  const soldEightMlUnits = orders.reduce(
+    (orderSum, order) =>
+      orderSum +
+      order.items
+        .filter((item) => item.product.sizeMl === 8)
+        .reduce((itemSum, item) => itemSum + item.quantity, 0),
+    0,
+  );
+  const openingEightMlUnits = remainingEightMlUnits + soldEightMlUnits;
+  const sellThroughPercent = openingEightMlUnits
+    ? Math.round((soldEightMlUnits / openingEightMlUnits) * 100)
+    : 0;
+  const strategyOrders = orders.filter((order) => isStop04PromotionNote(order.notes));
+  const eventRevenueCents = orders.reduce((sum, order) => sum + order.totalCents, 0);
+  const strategyRevenueCents = strategyOrders.reduce((sum, order) => sum + order.totalCents, 0);
+  const averageOrderCents = orders.length ? Math.round(eventRevenueCents / orders.length) : 0;
+  const checkpoints = STOP04_STRATEGY.checkpoints.map((checkpoint) => {
+    const targetUnits = Math.ceil((openingEightMlUnits * checkpoint.targetPercent) / 100);
+    const unitsGap = Math.max(targetUnits - soldEightMlUnits, 0);
+    const due = now >= checkpoint.dueAt;
+    const status: Stop04CheckpointStatus =
+      soldEightMlUnits >= targetUnits ? "met" : due ? "behind" : "pending";
+
+    return {
+      id: checkpoint.id,
+      label: checkpoint.label,
+      targetLabel: checkpoint.targetLabel,
+      dueAt: checkpoint.dueAt.toISOString(),
+      targetPercent: checkpoint.targetPercent,
+      targetUnits,
+      soldUnits: soldEightMlUnits,
+      unitsGap,
+      status,
+    };
+  });
+  const behindCheckpoint = checkpoints.find((checkpoint) => checkpoint.status === "behind");
+  const pendingCheckpoint = checkpoints.find((checkpoint) => checkpoint.status === "pending");
+  const currentCheckpoint =
+    behindCheckpoint ?? pendingCheckpoint ?? checkpoints[checkpoints.length - 1];
+  const scentMixMap = new Map<string, number>();
+
+  orders.forEach((order) => {
+    order.items.forEach((item) => {
+      if (item.product.sizeMl !== 8) return;
+
+      const name = item.product.name.replace(/\s+8mL$/i, "");
+      scentMixMap.set(name, (scentMixMap.get(name) ?? 0) + item.quantity);
+    });
+  });
+
+  const scentMix = [...scentMixMap.entries()]
+    .map(([name, units]) => ({ name, units }))
+    .sort((left, right) => right.units - left.units || left.name.localeCompare(right.name))
+    .slice(0, 4);
+  const nextAction =
+    openingEightMlUnits === 0
+      ? "Sync TARA 8mL stock before the event so sell-through checkpoints have a baseline."
+      : currentCheckpoint.status === "behind"
+        ? `Push the complete 4-set and 6-unit group offer now. Need ${currentCheckpoint.unitsGap} more 8mL unit${
+            currentCheckpoint.unitsGap === 1 ? "" : "s"
+          } to recover ${currentCheckpoint.label}.`
+        : currentCheckpoint.status === "pending"
+          ? `Stay on the RM99 hero offer. Need ${currentCheckpoint.unitsGap} more 8mL unit${
+              currentCheckpoint.unitsGap === 1 ? "" : "s"
+            } by ${currentCheckpoint.label}.`
+          : "Checkpoint target is met. Keep the RM99 offer visible and use final-allocation language only when stock is genuinely tight.";
+
+  return {
+    label: STOP04_STRATEGY.label,
+    eventWindow: STOP04_STRATEGY.eventWindow,
+    booth: STOP04_STRATEGY.booth,
+    activePromotionId: STOP04_STRATEGY.activePromotionId,
+    openingEightMlUnits,
+    soldEightMlUnits,
+    remainingEightMlUnits,
+    sellThroughPercent,
+    orderCount: orders.length,
+    strategyOrderCount: strategyOrders.length,
+    eventRevenueCents,
+    strategyRevenueCents,
+    averageOrderCents,
+    currentCheckpoint,
+    checkpoints,
+    offerMix: parseStop04OfferMix(strategyOrders),
+    scentMix,
+    nextAction,
+  };
 }
 
 function emptyDashboardData(databaseIssue?: string): DashboardData {
@@ -252,6 +394,7 @@ function emptyDashboardData(databaseIssue?: string): DashboardData {
     lowStockProducts: [],
     recentOrders: [],
     promotionInsights: [],
+    stop04Progress: null,
     databaseIssue,
   };
 }
@@ -276,8 +419,15 @@ export async function getDashboardData(): Promise<DashboardData> {
     const salesTrendStart = addUtcDays(todayStart, -6);
     const topProductsStart = addUtcDays(todayStart, -29);
 
-    const [products, todayOrders, weeklyOrders, recentOrders, groupedTopProducts, promotionOrders] =
-      await prisma.$transaction([
+    const [
+      products,
+      todayOrders,
+      weeklyOrders,
+      recentOrders,
+      groupedTopProducts,
+      promotionOrders,
+      stop04Orders,
+    ] = await prisma.$transaction([
         prisma.product.findMany({
           where: { active: true },
           orderBy: [{ stock: "asc" }, { name: "asc" }],
@@ -373,6 +523,35 @@ export async function getDashboardData(): Promise<DashboardData> {
             items: {
               select: {
                 quantity: true,
+                product: {
+                  select: {
+                    name: true,
+                    sizeMl: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        prisma.order.findMany({
+          where: {
+            createdAt: {
+              gte: STOP04_STRATEGY.eventStart,
+              lt: STOP04_STRATEGY.eventEnd,
+            },
+          },
+          select: {
+            totalCents: true,
+            notes: true,
+            items: {
+              select: {
+                quantity: true,
+                product: {
+                  select: {
+                    name: true,
+                    sizeMl: true,
+                  },
+                },
               },
             },
           },
@@ -532,6 +711,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       lowStockProducts,
       recentOrders: recentOrderInsights,
       promotionInsights: buildPromotionInsights(promotionOrders),
+      stop04Progress: buildStop04StrategyProgress(products, stop04Orders),
     };
   } catch (error) {
     return emptyDashboardData(logDatabaseFallback("dashboard", error));
