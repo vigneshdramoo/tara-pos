@@ -95,6 +95,8 @@ model Order {
   items              OrderItem[]
   inventoryMovements InventoryMovement[]
 
+  @@index([createdAt])
+  @@index([customerId])
   @@index([salespersonId])
 }
 

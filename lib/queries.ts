@@ -849,15 +849,27 @@ export async function getQuizLeadsData(): Promise<QuizLeadsData> {
   }
 }
 
-export async function getOrdersData(): Promise<OrdersData> {
+const ORDERS_PAGE_SIZE = 12;
+
+export async function getOrdersData(page = 1): Promise<OrdersData> {
   try {
+    const currentPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+    const skip = (currentPage - 1) * ORDERS_PAGE_SIZE;
     const prisma = requirePrisma();
     const orders = await prisma.order.findMany({
-      take: 30,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
+      take: ORDERS_PAGE_SIZE + 1,
+      skip,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: {
+        id: true,
+        orderNumber: true,
+        paymentMethod: true,
+        totalCents: true,
+        subtotalCents: true,
+        taxCents: true,
+        commissionCents: true,
+        createdAt: true,
+        notes: true,
         customer: {
           select: {
             name: true,
@@ -869,7 +881,12 @@ export async function getOrdersData(): Promise<OrdersData> {
           },
         },
         items: {
-          include: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            quantity: true,
+            totalPriceCents: true,
+            commissionCents: true,
             product: {
               select: {
                 name: true,
@@ -879,9 +896,15 @@ export async function getOrdersData(): Promise<OrdersData> {
         },
       },
     });
+    const hasNextPage = orders.length > ORDERS_PAGE_SIZE;
+    const visibleOrders = hasNextPage ? orders.slice(0, ORDERS_PAGE_SIZE) : orders;
 
     return {
-      orders: orders.map((order) => ({
+      page: currentPage,
+      pageSize: ORDERS_PAGE_SIZE,
+      hasNextPage,
+      hasPreviousPage: currentPage > 1,
+      orders: visibleOrders.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
         paymentMethod: order.paymentMethod,
@@ -894,6 +917,7 @@ export async function getOrdersData(): Promise<OrdersData> {
         salespersonName: order.salesperson?.name ?? null,
         notes: order.notes,
         itemSummary: order.items.map((item) => ({
+          id: item.id,
           productName: item.product.name,
           quantity: item.quantity,
           totalPriceCents: item.totalPriceCents,
@@ -903,6 +927,10 @@ export async function getOrdersData(): Promise<OrdersData> {
     };
   } catch (error) {
     return {
+      page: 1,
+      pageSize: ORDERS_PAGE_SIZE,
+      hasNextPage: false,
+      hasPreviousPage: false,
       orders: [],
       databaseIssue: logDatabaseFallback("orders", error),
     };

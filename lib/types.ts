@@ -219,6 +219,7 @@ export type OrderHistoryItem = {
   salespersonName: string | null;
   notes: string | null;
   itemSummary: Array<{
+    id: string;
     productName: string;
     quantity: number;
     totalPriceCents: number;
@@ -227,6 +228,10 @@ export type OrderHistoryItem = {
 };
 
 export type OrdersData = {
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   orders: OrderHistoryItem[];
   databaseIssue?: string;
 };

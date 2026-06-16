@@ -1,15 +1,58 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { PageIntro } from "@/components/page-intro";
 import { Pill } from "@/components/ui/pill";
 import { StatusNotice } from "@/components/ui/status-notice";
 import { Surface } from "@/components/ui/surface";
-import { formatCompactDate, formatCurrency, formatFullDateTime } from "@/lib/format";
+import { formatCurrency, formatFullDateTime } from "@/lib/format";
 import { getOrdersData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 export const preferredRegion = "sin1";
 
-export default async function OrdersPage() {
-  const { orders, databaseIssue } = await getOrdersData();
+type OrdersPageProps = {
+  searchParams: Promise<{
+    page?: string;
+  }>;
+};
+
+function normalizePage(value?: string) {
+  const page = Number(value);
+  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+}
+
+function buildOrdersPageHref(page: number) {
+  return (page <= 1 ? "/orders" : `/orders?page=${page}`) as Route;
+}
+
+function PaginationLink({
+  href,
+  label,
+  disabled,
+}: {
+  href: Route;
+  label: string;
+  disabled: boolean;
+}) {
+  const className = disabled
+    ? "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium text-stone-400"
+    : "rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-[var(--brand-gold)] hover:text-[var(--brand-midnight)]";
+
+  if (disabled) {
+    return <span className={className}>{label}</span>;
+  }
+
+  return (
+    <Link href={href} className={className} prefetch={false}>
+      {label}
+    </Link>
+  );
+}
+
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const currentPage = normalizePage((await searchParams).page);
+  const { orders, databaseIssue, hasNextPage, hasPreviousPage, page, pageSize } =
+    await getOrdersData(currentPage);
 
   return (
     <>
@@ -17,11 +60,39 @@ export default async function OrdersPage() {
         eyebrow="Transaction archive"
         title="Order history"
         description="Review recent sales, customer attribution, payment mix, and item-level order composition without leaving the same local app."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone="accent">{orders.length} loaded</Pill>
+            <Pill>{pageSize} per page</Pill>
+            <Pill>Page {page}</Pill>
+          </div>
+        }
       />
 
       {databaseIssue ? <StatusNotice message={databaseIssue} /> : null}
 
       <section className="grid gap-4">
+        <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-stone-500">Recent orders only</p>
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              The archive loads a slimmer recent slice first to keep the boutique view responsive.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <PaginationLink
+              href={buildOrdersPageHref(page - 1)}
+              label="Newer"
+              disabled={!hasPreviousPage}
+            />
+            <PaginationLink
+              href={buildOrdersPageHref(page + 1)}
+              label="Older"
+              disabled={!hasNextPage}
+            />
+          </div>
+        </Surface>
+
         {orders.length ? (
           orders.map((order) => (
             <Surface key={order.id} className="flex flex-col gap-5">
@@ -52,7 +123,7 @@ export default async function OrdersPage() {
                   <div className="mt-4 grid gap-3">
                     {order.itemSummary.map((item) => (
                       <div
-                        key={`${order.id}-${item.productName}`}
+                        key={item.id}
                         className="flex items-center justify-between rounded-[18px] border border-[var(--line)] px-4 py-3"
                       >
                         <div>
@@ -64,9 +135,6 @@ export default async function OrdersPage() {
                             {formatCurrency(item.commissionCents)} commission
                           </p>
                         </div>
-                        <p className="text-sm text-stone-500">
-                          {formatCompactDate(order.createdAt)}
-                        </p>
                       </div>
                     ))}
                   </div>
@@ -107,9 +175,26 @@ export default async function OrdersPage() {
           <Surface className="text-sm leading-7 text-stone-600">
             {databaseIssue
               ? "Orders will appear here once the hosted database is connected and migrated."
-              : "No orders have been recorded yet."}
+              : hasPreviousPage
+                ? "There are no older orders on this page. Jump back to a newer page."
+                : "No orders have been recorded yet."}
           </Surface>
         )}
+
+        {orders.length ? (
+          <div className="flex justify-end gap-2">
+            <PaginationLink
+              href={buildOrdersPageHref(page - 1)}
+              label="Newer"
+              disabled={!hasPreviousPage}
+            />
+            <PaginationLink
+              href={buildOrdersPageHref(page + 1)}
+              label="Older"
+              disabled={!hasNextPage}
+            />
+          </div>
+        ) : null}
       </section>
     </>
   );
