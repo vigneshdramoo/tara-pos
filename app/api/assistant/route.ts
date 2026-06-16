@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { buildAssistantReply } from "@/lib/assistant";
 import { hasValue } from "@/lib/utils";
 
+export const preferredRegion = "sin1";
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { prompt?: string };

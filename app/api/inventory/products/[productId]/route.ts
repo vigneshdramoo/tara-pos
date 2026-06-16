@@ -11,6 +11,8 @@ import {
 } from "@/lib/inventory-admin";
 import { requirePrisma } from "@/lib/prisma";
 
+export const preferredRegion = "sin1";
+
 type RouteContext = {
   params: Promise<{
     productId: string;

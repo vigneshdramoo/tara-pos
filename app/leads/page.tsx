@@ -4,6 +4,7 @@ import { StatusNotice } from "@/components/ui/status-notice";
 import { getQuizLeadsData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function LeadsPage() {
   const data = await getQuizLeadsData();

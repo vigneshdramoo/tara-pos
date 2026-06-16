@@ -9,6 +9,8 @@ import {
 import { verifyPassword } from "@/lib/password";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 
+export const preferredRegion = "sin1";
+
 export async function POST(request: Request) {
   const configurationIssue = getAuthConfigurationIssue();
   if (!isAuthConfigured() || configurationIssue) {

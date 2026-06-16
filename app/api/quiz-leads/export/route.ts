@@ -4,6 +4,8 @@ import { getLeadSourceLabel, getPurchaseIntentLabel, getScentMatchLabel } from "
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import { getMalaysiaDateKey } from "@/lib/time";
 
+export const preferredRegion = "sin1";
+
 function escapeCsv(value: unknown) {
   const text = String(value ?? "");
   return `"${text.replace(/"/g, '""')}"`;

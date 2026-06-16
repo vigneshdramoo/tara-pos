@@ -12,6 +12,7 @@ import { getStaffCommissionProgress } from "@/lib/queries";
 import { canManageStaff, getRoleLabel } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function AccountPage() {
   const cookieStore = await cookies();

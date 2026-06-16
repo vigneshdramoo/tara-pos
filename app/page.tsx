@@ -11,6 +11,7 @@ import { formatTimeOnly } from "@/lib/format";
 import { getDashboardData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function Home() {
   const dashboard = await getDashboardData();

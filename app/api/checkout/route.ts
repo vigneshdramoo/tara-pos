@@ -26,6 +26,8 @@ import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
 import { getMalaysiaTimestamp } from "@/lib/time";
 import type { CheckoutPayload } from "@/lib/types";
 
+export const preferredRegion = "sin1";
+
 class CheckoutError extends Error {
   constructor(
     message: string,

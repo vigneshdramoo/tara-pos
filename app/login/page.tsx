@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   title: "Staff Sign-In",
 };
 
+export const preferredRegion = "sin1";
+
 type LoginPageProps = {
   searchParams: Promise<{
     next?: string;

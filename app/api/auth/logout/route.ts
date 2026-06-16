@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessionCookieName } from "@/lib/auth";
 
+export const preferredRegion = "sin1";
+
 export async function POST(request: Request) {
   const response = NextResponse.redirect(new URL("/login", request.url), 303);
 

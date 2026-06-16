@@ -5,6 +5,7 @@ import { StatusNotice } from "@/components/ui/status-notice";
 import { getInventoryAdminData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function InventoryPage() {
   const inventory = await getInventoryAdminData();

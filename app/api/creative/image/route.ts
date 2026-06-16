@@ -12,6 +12,8 @@ import {
 } from "@/lib/creative-model";
 import { getAllProductImageUrls, getProductImageUrls } from "@/lib/product-media";
 
+export const preferredRegion = "sin1";
+
 type UploadedReferenceInput = {
   dataUrl?: string;
   fileName?: string;

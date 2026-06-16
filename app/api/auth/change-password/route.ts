@@ -10,6 +10,8 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { validatePasswordStrength } from "@/lib/password-policy";
 import { requirePrisma } from "@/lib/prisma";
 
+export const preferredRegion = "sin1";
+
 export async function POST(request: Request) {
   const configurationIssue = getAuthConfigurationIssue();
   if (!isAuthConfigured() || configurationIssue) {

@@ -9,6 +9,7 @@ import { getStaffUsersData } from "@/lib/queries";
 import { getRoleCapabilities, getRoleLabel, STAFF_ROLES } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function StaffPage() {
   const staffData = await getStaffUsersData();

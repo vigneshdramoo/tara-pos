@@ -3,6 +3,7 @@ import { PageIntro } from "@/components/page-intro";
 import { buildCreativeBrief, normalizeCreativeRequest } from "@/lib/creative-model";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default function CreativePage() {
   const initialRequest = normalizeCreativeRequest({

@@ -6,6 +6,7 @@ import { buildAssistantReply } from "@/lib/assistant";
 import { getDashboardData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function AssistantPage() {
   const [dashboard, initialReply] = await Promise.all([

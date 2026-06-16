@@ -6,6 +6,7 @@ import { formatCompactDate, formatCurrency, formatFullDateTime } from "@/lib/for
 import { getOrdersData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export default async function OrdersPage() {
   const { orders, databaseIssue } = await getOrdersData();

@@ -5,6 +5,8 @@ import {
   type CreativeRequest,
 } from "@/lib/creative-model";
 
+export const preferredRegion = "sin1";
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;

@@ -7,6 +7,8 @@ import {
 } from "@/lib/prisma";
 import { getMalaysiaTimestamp } from "@/lib/time";
 
+export const preferredRegion = "sin1";
+
 const allowedScentMatches = new Set(["aureya", "zephyr", "maris", "discovery-pack"]);
 
 class QuizLeadError extends Error {
