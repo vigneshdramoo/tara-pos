@@ -3,6 +3,8 @@ import type { StaffRole } from "@/lib/staff";
 import type { StaffCommissionProgress } from "@/lib/commissions";
 import type {
   InventoryMovementType,
+  OrderStatus,
+  OrderVoidInventoryAction,
   PaymentMethod,
   PurchaseIntent,
   QuizLeadSource,
@@ -209,12 +211,17 @@ export type CustomersData = {
 export type OrderHistoryItem = {
   id: string;
   orderNumber: string;
+  status: OrderStatus;
   paymentMethod: PaymentMethod;
   totalCents: number;
   subtotalCents: number;
   taxCents: number;
   commissionCents: number;
   createdAt: string;
+  voidedAt: string | null;
+  voidReason: string | null;
+  voidedByName: string | null;
+  voidInventoryAction: OrderVoidInventoryAction | null;
   customerName: string;
   customerSocialHandle: string | null;
   customerPhone: string | null;

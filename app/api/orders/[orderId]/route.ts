@@ -1,5 +1,7 @@
 import {
   InventoryMovementType,
+  OrderStatus,
+  OrderVoidInventoryAction,
   Prisma,
   type Customer,
 } from "@prisma/client";
@@ -42,6 +44,11 @@ type OrderAmendmentPayload = {
   }>;
   notes?: string;
   reason?: string;
+};
+
+type OrderVoidPayload = {
+  reason?: string;
+  inventoryAction?: OrderVoidInventoryAction;
 };
 
 class OrderAmendmentError extends Error {
@@ -93,6 +100,18 @@ function inferPromotionId(notes: string | null): CheckoutPromotionId {
   }
 
   return "NONE";
+}
+
+function parseVoidInventoryAction(value: unknown) {
+  if (value === OrderVoidInventoryAction.RESTOCKED) {
+    return OrderVoidInventoryAction.RESTOCKED;
+  }
+
+  if (value === OrderVoidInventoryAction.KEPT_AS_TESTER) {
+    return OrderVoidInventoryAction.KEPT_AS_TESTER;
+  }
+
+  throw new OrderAmendmentError("Choose how inventory should be handled for this void.", 400);
 }
 
 function normalizeAmendmentItems(items: OrderAmendmentPayload["items"]) {
@@ -244,6 +263,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       if (!order) {
         throw new OrderAmendmentError("That order could not be found anymore.", 404);
+      }
+
+      if (order.status === OrderStatus.VOIDED) {
+        throw new OrderAmendmentError("That order is already voided.", 400);
       }
 
       const existingQuantitiesByProductId = new Map<string, number>();
@@ -448,6 +471,162 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json(
       { message: "Order amendment failed. Please try again." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const { orderId } = await context.params;
+    const session = await getManagerSession();
+    const body = (await request.json().catch(() => null)) as OrderVoidPayload | null;
+    const reason = normalizeText(body?.reason);
+
+    if (reason.length < 3) {
+      throw new OrderAmendmentError("Add a short void reason before saving.", 400);
+    }
+
+    const inventoryAction = parseVoidInventoryAction(body?.inventoryAction);
+    const prisma = requirePrisma();
+    const result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          inventoryMovements: true,
+        },
+      });
+
+      if (!order) {
+        throw new OrderAmendmentError("That order could not be found anymore.", 404);
+      }
+
+      if (order.status === OrderStatus.VOIDED) {
+        throw new OrderAmendmentError("That order is already voided.", 400);
+      }
+
+      const voidedAt = new Date();
+      const voidedByName = session?.name ?? "Manager";
+      const itemQuantitiesByProductId = new Map<string, { name: string; quantity: number }>();
+
+      order.items.forEach((item) => {
+        const current = itemQuantitiesByProductId.get(item.productId);
+        itemQuantitiesByProductId.set(item.productId, {
+          name: item.product.name,
+          quantity: (current?.quantity ?? 0) + item.quantity,
+        });
+      });
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: OrderStatus.VOIDED,
+          subtotalCents: 0,
+          taxCents: 0,
+          totalCents: 0,
+          commissionCents: 0,
+          voidedAt,
+          voidReason: reason,
+          voidedByName,
+          voidInventoryAction: inventoryAction,
+        },
+      });
+
+      await tx.orderItem.updateMany({
+        where: { orderId: order.id },
+        data: {
+          unitPriceCents: 0,
+          totalPriceCents: 0,
+          commissionRateBps: 0,
+          commissionCents: 0,
+        },
+      });
+
+      if (order.inventoryMovements.length > 0) {
+        await tx.inventoryMovement.updateMany({
+          where: {
+            orderId: order.id,
+            type: InventoryMovementType.SALE,
+          },
+          data: {
+            type: InventoryMovementType.ADJUSTMENT,
+            note:
+              inventoryAction === OrderVoidInventoryAction.KEPT_AS_TESTER
+                ? `Tester stock output from voided order ${order.orderNumber} by ${voidedByName}: ${reason}`
+                : `Voided order ${order.orderNumber} by ${voidedByName}; original sale movement reversed: ${reason}`,
+          },
+        });
+      }
+
+      if (inventoryAction === OrderVoidInventoryAction.RESTOCKED) {
+        await Promise.all(
+          [...itemQuantitiesByProductId.entries()].map(([productId, item]) =>
+            tx.product.update({
+              where: { id: productId },
+              data: {
+                stock: {
+                  increment: item.quantity,
+                },
+              },
+            }),
+          ),
+        );
+
+        await Promise.all(
+          [...itemQuantitiesByProductId.entries()].map(([productId, item]) =>
+            tx.inventoryMovement.create({
+              data: {
+                orderId: order.id,
+                productId,
+                type: InventoryMovementType.ADJUSTMENT,
+                quantityDelta: item.quantity,
+                note: `Restocked from voided order ${order.orderNumber} by ${voidedByName}: ${reason}`,
+              },
+            }),
+          ),
+        );
+      }
+
+      return {
+        orderNumber: order.orderNumber,
+        inventoryAction,
+      };
+    });
+
+    revalidateOrderAmendmentPaths();
+
+    return NextResponse.json({
+      success: true,
+      ...result,
+      message:
+        result.inventoryAction === OrderVoidInventoryAction.KEPT_AS_TESTER
+          ? `${result.orderNumber} was voided and kept as tester stock output.`
+          : `${result.orderNumber} was voided and stock was restored.`,
+    });
+  } catch (error) {
+    console.error("[orders:void]", error);
+
+    if (error instanceof OrderAmendmentError) {
+      return NextResponse.json({ message: error.message }, { status: error.status });
+    }
+
+    const databaseIssue = describeDatabaseIssue(error);
+    if (databaseIssue) {
+      return NextResponse.json({ message: databaseIssue }, { status: 503 });
+    }
+
+    return NextResponse.json(
+      { message: "Order void failed. Please try again." },
       { status: 500 },
     );
   }

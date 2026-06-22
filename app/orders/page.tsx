@@ -121,7 +121,14 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-3">
-                  <Pill tone="accent">{order.paymentMethod}</Pill>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {order.status === "VOIDED" ? (
+                      <Pill tone="danger">Voided</Pill>
+                    ) : (
+                      <Pill tone="accent">Completed</Pill>
+                    )}
+                    <Pill tone="accent">{order.paymentMethod}</Pill>
+                  </div>
                   <p className="text-2xl font-semibold text-stone-950">
                     {formatCurrency(order.totalCents)}
                   </p>

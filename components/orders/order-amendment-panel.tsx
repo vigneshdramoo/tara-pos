@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { formatCurrency, formatInteger } from "@/lib/format";
+import { formatCurrency, formatFullDateTime, formatInteger } from "@/lib/format";
 import type { OrderAmendmentProduct, OrderHistoryItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,8 @@ type AmendmentFeedback = {
   type: "success" | "error";
   message: string;
 } | null;
+
+type VoidInventoryAction = Exclude<OrderHistoryItem["voidInventoryAction"], null>;
 
 function createLine(productId: string, quantity: number, index: number): AmendmentLine {
   return {
@@ -37,7 +39,7 @@ export function OrderAmendmentPanel({
   products: OrderAmendmentProduct[];
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"amend" | "void" | null>(null);
   const [lines, setLines] = useState<AmendmentLine[]>(() =>
     order.itemSummary.map((item, index) => createLine(item.productId, item.quantity, index)),
   );
@@ -49,6 +51,9 @@ export function OrderAmendmentPanel({
   });
   const [notes, setNotes] = useState(order.notes ?? "");
   const [reason, setReason] = useState("");
+  const [voidReason, setVoidReason] = useState("");
+  const [voidInventoryAction, setVoidInventoryAction] =
+    useState<VoidInventoryAction>("KEPT_AS_TESTER");
   const [feedback, setFeedback] = useState<AmendmentFeedback>(null);
   const [saving, setSaving] = useState(false);
   const [refreshing, startRefreshTransition] = useTransition();
@@ -88,6 +93,7 @@ export function OrderAmendmentPanel({
   const selectedProductIds = new Set(lines.map((line) => line.productId).filter(Boolean));
   const firstAvailableProduct = catalog.find((product) => !selectedProductIds.has(product.id)) ?? catalog[0];
   const canSave = lines.some((line) => line.productId && Number(line.quantity) > 0) && reason.trim().length >= 3;
+  const canVoid = voidReason.trim().length >= 3;
 
   function updateLine(lineKey: string, patch: Partial<AmendmentLine>) {
     setLines((current) =>
@@ -105,6 +111,8 @@ export function OrderAmendmentPanel({
     });
     setNotes(order.notes ?? "");
     setReason("");
+    setVoidReason("");
+    setVoidInventoryAction("KEPT_AS_TESTER");
     setFeedback(null);
   }
 
@@ -157,7 +165,70 @@ export function OrderAmendmentPanel({
     }
   }
 
-  if (!open) {
+  async function handleVoidSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setFeedback(null);
+
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reason: voidReason,
+          inventoryAction: voidInventoryAction,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as
+        | {
+            message?: string;
+          }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(result?.message ?? "Order void failed.");
+      }
+
+      setFeedback({
+        type: "success",
+        message: result?.message ?? "Order voided successfully.",
+      });
+      startRefreshTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Order void failed.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (order.status === "VOIDED") {
+    return (
+      <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700">
+          Voided order
+        </p>
+        <p className="mt-2 text-sm leading-6 text-rose-800">
+          Voided by {order.voidedByName ?? "manager"}
+          {order.voidedAt ? ` on ${formatFullDateTime(order.voidedAt)}` : ""}.{" "}
+          {order.voidInventoryAction === "KEPT_AS_TESTER"
+            ? "Stock was kept out as tester output."
+            : "Stock was restored to inventory."}
+        </p>
+        {order.voidReason ? (
+          <p className="mt-2 text-sm leading-6 text-rose-700">{order.voidReason}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (!mode) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(202,158,91,0.22)] bg-[rgba(202,158,91,0.08)] px-4 py-3">
         <div>
@@ -168,14 +239,127 @@ export function OrderAmendmentPanel({
             Daniel can amend basket lines, customer follow-up details, and remarks.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="touch-target rounded-full bg-stone-950 px-5 text-sm font-semibold text-stone-50 transition hover:bg-[var(--brand-midnight)]"
-        >
-          Amend order
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("amend")}
+            className="touch-target rounded-full bg-stone-950 px-5 text-sm font-semibold text-stone-50 transition hover:bg-[var(--brand-midnight)]"
+          >
+            Amend order
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("void")}
+            className="touch-target rounded-full border border-rose-200 bg-rose-50 px-5 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+          >
+            Void order
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  if (mode === "void") {
+    return (
+      <form
+        onSubmit={handleVoidSubmit}
+        className="rounded-[24px] border border-rose-200 bg-rose-50/78 p-4"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700">
+              Manager void
+            </p>
+            <h4 className="mt-1 text-lg font-semibold text-stone-950">Void {order.orderNumber}</h4>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              setMode(null);
+            }}
+            className="touch-target rounded-full border border-rose-200 bg-white/80 px-4 text-sm font-semibold text-rose-700"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="rounded-[18px] border border-rose-200 bg-white/80 p-4">
+              <span className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  checked={voidInventoryAction === "KEPT_AS_TESTER"}
+                  onChange={() => setVoidInventoryAction("KEPT_AS_TESTER")}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-stone-950">
+                    Keep stock out as tester
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 text-stone-600">
+                    Removes this from sales while keeping the inventory deduction as tester output.
+                  </span>
+                </span>
+              </span>
+            </label>
+
+            <label className="rounded-[18px] border border-rose-200 bg-white/80 p-4">
+              <span className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  checked={voidInventoryAction === "RESTOCKED"}
+                  onChange={() => setVoidInventoryAction("RESTOCKED")}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-stone-950">
+                    Restore stock to inventory
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 text-stone-600">
+                    Removes this from sales and adds the order quantity back to stock.
+                  </span>
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
+              Void reason
+            </span>
+            <input
+              value={voidReason}
+              onChange={(event) => setVoidReason(event.target.value)}
+              className="touch-target rounded-2xl border border-rose-200 bg-white px-3 text-sm text-stone-900 outline-none focus:border-rose-400"
+              placeholder="Example: tester stock output, not a purchase"
+              required
+            />
+          </label>
+
+          {feedback ? (
+            <p
+              className={cn(
+                "rounded-2xl border px-4 py-3 text-sm",
+                feedback.type === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-rose-200 bg-white text-rose-700",
+              )}
+            >
+              {feedback.message}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={!canVoid || saving || refreshing}
+            className="touch-target rounded-full bg-rose-700 px-5 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? "Voiding order..." : refreshing ? "Refreshing orders..." : "Void order"}
+          </button>
+        </div>
+      </form>
     );
   }
 
@@ -195,7 +379,7 @@ export function OrderAmendmentPanel({
           type="button"
           onClick={() => {
             resetForm();
-            setOpen(false);
+            setMode(null);
           }}
           className="touch-target rounded-full border border-[var(--line)] bg-white/80 px-4 text-sm font-semibold text-stone-700"
         >

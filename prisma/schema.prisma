@@ -21,6 +21,16 @@ enum InventoryMovementType {
   SEED
 }
 
+enum OrderStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum OrderVoidInventoryAction {
+  RESTOCKED
+  KEPT_AS_TESTER
+}
+
 enum StaffRole {
   MANAGER
   SALES_MANAGER
@@ -80,12 +90,17 @@ model Customer {
 model Order {
   id                 String              @id @default(cuid())
   orderNumber        String              @unique
+  status             OrderStatus         @default(COMPLETED)
   subtotalCents      Int
   taxCents           Int
   totalCents         Int
   commissionCents    Int                 @default(0)
   paymentMethod      PaymentMethod
   notes              String?
+  voidedAt           DateTime?
+  voidReason         String?
+  voidedByName       String?
+  voidInventoryAction OrderVoidInventoryAction?
   customerId         String?
   salespersonId      String?
   createdAt          DateTime            @default(now())
@@ -96,6 +111,7 @@ model Order {
   inventoryMovements InventoryMovement[]
 
   @@index([createdAt])
+  @@index([status, createdAt])
   @@index([customerId])
   @@index([salespersonId])
 }

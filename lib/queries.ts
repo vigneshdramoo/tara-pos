@@ -1,4 +1,4 @@
-import { PaymentMethod } from "@prisma/client";
+import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { buildStaffCommissionProgress } from "@/lib/commissions";
 import { formatCurrency, formatInteger } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
@@ -410,6 +410,10 @@ function logDatabaseFallback(scope: string, error: unknown) {
   return issue;
 }
 
+const completedOrderWhere = {
+  status: OrderStatus.COMPLETED,
+} as const;
+
 export async function getDashboardData(): Promise<DashboardData> {
   try {
     const prisma = requirePrisma();
@@ -435,6 +439,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         }),
         prisma.order.findMany({
           where: {
+            ...completedOrderWhere,
             createdAt: {
               gte: todayStart,
               lt: tomorrow,
@@ -450,6 +455,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         }),
         prisma.order.findMany({
           where: {
+            ...completedOrderWhere,
             createdAt: {
               gte: salesTrendStart,
             },
@@ -468,6 +474,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         }),
         prisma.order.findMany({
           take: 6,
+          where: completedOrderWhere,
           orderBy: {
             createdAt: "desc",
           },
@@ -493,6 +500,7 @@ export async function getDashboardData(): Promise<DashboardData> {
           by: ["productId"],
           where: {
             order: {
+              status: OrderStatus.COMPLETED,
               createdAt: {
                 gte: topProductsStart,
               },
@@ -511,6 +519,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         }),
         prisma.order.findMany({
           where: {
+            ...completedOrderWhere,
             createdAt: {
               gte: topProductsStart,
             },
@@ -536,6 +545,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         }),
         prisma.order.findMany({
           where: {
+            ...completedOrderWhere,
             createdAt: {
               gte: STOP04_STRATEGY.eventStart,
               lt: STOP04_STRATEGY.eventEnd,
@@ -732,6 +742,7 @@ export async function getPosData(): Promise<PosData> {
         orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
         include: {
           orders: {
+            where: completedOrderWhere,
             orderBy: {
               createdAt: "desc",
             },
@@ -771,6 +782,7 @@ export async function getCustomersData(): Promise<CustomersData> {
       orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
       include: {
         orders: {
+          where: completedOrderWhere,
           orderBy: {
             createdAt: "desc",
           },
@@ -864,12 +876,17 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
       select: {
         id: true,
         orderNumber: true,
+        status: true,
         paymentMethod: true,
         totalCents: true,
         subtotalCents: true,
         taxCents: true,
         commissionCents: true,
         createdAt: true,
+        voidedAt: true,
+        voidReason: true,
+        voidedByName: true,
+        voidInventoryAction: true,
         notes: true,
         customer: {
           select: {
@@ -917,12 +934,17 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
       orders: visibleOrders.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
+        status: order.status,
         paymentMethod: order.paymentMethod,
         totalCents: order.totalCents,
         subtotalCents: order.subtotalCents,
         taxCents: order.taxCents,
         commissionCents: order.commissionCents,
         createdAt: order.createdAt.toISOString(),
+        voidedAt: order.voidedAt?.toISOString() ?? null,
+        voidReason: order.voidReason,
+        voidedByName: order.voidedByName,
+        voidInventoryAction: order.voidInventoryAction,
         customerName: order.customer?.name ?? "Walk-in guest",
         customerSocialHandle: order.customer?.email ?? null,
         customerPhone: order.customer?.phone ?? null,
@@ -984,6 +1006,7 @@ export async function getPaymentMix() {
   try {
     const prisma = requirePrisma();
     const orders = await prisma.order.findMany({
+      where: completedOrderWhere,
       select: {
         paymentMethod: true,
         totalCents: true,
@@ -1015,6 +1038,7 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
       orderBy: [{ name: "asc" }],
       include: {
         ordersSold: {
+          where: completedOrderWhere,
           orderBy: {
             createdAt: "desc",
           },
@@ -1073,6 +1097,7 @@ export async function getStaffCommissionProgress(staffId: string) {
       where: { id: staffId },
       include: {
         ordersSold: {
+          where: completedOrderWhere,
           orderBy: {
             createdAt: "desc",
           },
