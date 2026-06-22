@@ -16,6 +16,7 @@ import type {
   DashboardStat,
   InventoryAdminData,
   LowStockInsight,
+  OrderAmendmentProduct,
   OrdersData,
   PosData,
   PromotionInsight,
@@ -873,6 +874,9 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
         customer: {
           select: {
             name: true,
+            email: true,
+            phone: true,
+            notes: true,
           },
         },
         salesperson: {
@@ -889,9 +893,15 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
             commissionCents: true,
             product: {
               select: {
+                id: true,
                 name: true,
+                sku: true,
+                sizeMl: true,
+                stock: true,
+                reorderLevel: true,
               },
             },
+            unitPriceCents: true,
           },
         },
       },
@@ -914,12 +924,21 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
         commissionCents: order.commissionCents,
         createdAt: order.createdAt.toISOString(),
         customerName: order.customer?.name ?? "Walk-in guest",
+        customerSocialHandle: order.customer?.email ?? null,
+        customerPhone: order.customer?.phone ?? null,
+        customerNotes: order.customer?.notes ?? null,
         salespersonName: order.salesperson?.name ?? null,
         notes: order.notes,
         itemSummary: order.items.map((item) => ({
           id: item.id,
+          productId: item.product.id,
           productName: item.product.name,
+          productSku: item.product.sku,
+          productSizeMl: item.product.sizeMl,
+          productStock: item.product.stock,
+          productReorderLevel: item.product.reorderLevel,
           quantity: item.quantity,
+          unitPriceCents: item.unitPriceCents,
           totalPriceCents: item.totalPriceCents,
           commissionCents: item.commissionCents,
         })),
@@ -934,6 +953,30 @@ export async function getOrdersData(page = 1): Promise<OrdersData> {
       orders: [],
       databaseIssue: logDatabaseFallback("orders", error),
     };
+  }
+}
+
+export async function getOrderAmendmentProducts(): Promise<OrderAmendmentProduct[]> {
+  try {
+    const prisma = requirePrisma();
+    return prisma.product.findMany({
+      where: {
+        active: true,
+      },
+      orderBy: [{ collection: "asc" }, { name: "asc" }, { sizeMl: "desc" }],
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        sizeMl: true,
+        priceCents: true,
+        stock: true,
+        reorderLevel: true,
+      },
+    });
+  } catch (error) {
+    logDatabaseFallback("order-amendment-products", error);
+    return [];
   }
 }
 

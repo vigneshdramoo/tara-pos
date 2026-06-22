@@ -216,15 +216,34 @@ export type OrderHistoryItem = {
   commissionCents: number;
   createdAt: string;
   customerName: string;
+  customerSocialHandle: string | null;
+  customerPhone: string | null;
+  customerNotes: string | null;
   salespersonName: string | null;
   notes: string | null;
   itemSummary: Array<{
     id: string;
+    productId: string;
     productName: string;
+    productSku: string;
+    productSizeMl: number;
+    productStock: number;
+    productReorderLevel: number;
     quantity: number;
+    unitPriceCents: number;
     totalPriceCents: number;
     commissionCents: number;
   }>;
+};
+
+export type OrderAmendmentProduct = {
+  id: string;
+  name: string;
+  sku: string;
+  sizeMl: number;
+  priceCents: number;
+  stock: number;
+  reorderLevel: number;
 };
 
 export type OrdersData = {

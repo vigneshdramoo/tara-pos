@@ -35,6 +35,10 @@ export function canManageStaff(role: StaffRole) {
   return role === "MANAGER";
 }
 
+export function canAmendOrders(role: StaffRole) {
+  return role === "MANAGER";
+}
+
 export function canAccessPath(role: StaffRole, pathname: string) {
   if (pathname === "/staff" || pathname.startsWith("/staff/")) {
     return canManageStaff(role);
@@ -62,6 +66,7 @@ export function getRoleCapabilities(role: StaffRole) {
       "Creative studio access",
       "Personal password reset",
       "Product editing, restocks, and stock adjustments",
+      "Manager order amendments and correction notes",
       "Staff directory and role oversight",
     ];
   }

@@ -1,11 +1,15 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { cookies } from "next/headers";
+import { OrderAmendmentPanel } from "@/components/orders/order-amendment-panel";
 import { PageIntro } from "@/components/page-intro";
 import { Pill } from "@/components/ui/pill";
 import { StatusNotice } from "@/components/ui/status-notice";
 import { Surface } from "@/components/ui/surface";
+import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
 import { formatCurrency, formatFullDateTime } from "@/lib/format";
-import { getOrdersData } from "@/lib/queries";
+import { getOrderAmendmentProducts, getOrdersData } from "@/lib/queries";
+import { canAmendOrders } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
 export const preferredRegion = "sin1";
@@ -51,8 +55,14 @@ function PaginationLink({
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const currentPage = normalizePage((await searchParams).page);
-  const { orders, databaseIssue, hasNextPage, hasPreviousPage, page, pageSize } =
-    await getOrdersData(currentPage);
+  const cookieStore = await cookies();
+  const session = await verifySessionToken(cookieStore.get(getSessionCookieName())?.value);
+  const canAmend = session ? canAmendOrders(session.role) : false;
+  const [ordersData, amendmentProducts] = await Promise.all([
+    getOrdersData(currentPage),
+    canAmend ? getOrderAmendmentProducts() : Promise.resolve([]),
+  ]);
+  const { orders, databaseIssue, hasNextPage, hasPreviousPage, page, pageSize } = ordersData;
 
   return (
     <>
@@ -65,6 +75,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             <Pill tone="accent">{orders.length} loaded</Pill>
             <Pill>{pageSize} per page</Pill>
             <Pill>Page {page}</Pill>
+            {canAmend ? <Pill tone="accent">Manager amend</Pill> : null}
           </div>
         }
       />
@@ -169,6 +180,10 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                   ) : null}
                 </div>
               </div>
+
+              {canAmend ? (
+                <OrderAmendmentPanel order={order} products={amendmentProducts} />
+              ) : null}
             </Surface>
           ))
         ) : (
