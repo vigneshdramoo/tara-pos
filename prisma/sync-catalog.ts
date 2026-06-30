@@ -50,15 +50,12 @@ async function main() {
 
     let createdCount = 0;
     let updatedCount = 0;
-    let adjustedCount = 0;
+    let preservedStockCount = 0;
 
     for (const seed of catalogProductSeeds) {
       const existing = await tx.product.findUnique({
         where: { slug: seed.slug },
       });
-
-      const previousStock = existing?.stock ?? 0;
-      const stockDelta = seed.stock - previousStock;
 
       if (existing) {
         await tx.product.update({
@@ -72,7 +69,6 @@ async function main() {
             mood: seed.mood,
             sizeMl: seed.sizeMl,
             priceCents: seed.priceCents,
-            stock: seed.stock,
             reorderLevel: seed.reorderLevel,
             accentHex: seed.accentHex,
             active: true,
@@ -80,6 +76,7 @@ async function main() {
         });
 
         updatedCount += 1;
+        preservedStockCount += 1;
       } else {
         const created = await tx.product.create({
           data: {
@@ -112,20 +109,6 @@ async function main() {
 
         createdCount += 1;
       }
-
-      if (existing && stockDelta !== 0) {
-        await tx.inventoryMovement.create({
-          data: {
-            productId: existing.id,
-            type:
-              stockDelta > 0 ? InventoryMovementType.RESTOCK : InventoryMovementType.ADJUSTMENT,
-            quantityDelta: stockDelta,
-            note: "Stock reset during TARA catalog sync",
-          },
-        });
-
-        adjustedCount += 1;
-      }
     }
 
     return {
@@ -133,12 +116,12 @@ async function main() {
       retiredUnits,
       createdCount,
       updatedCount,
-      adjustedCount,
+      preservedStockCount,
     };
   });
 
   console.log(
-    `Catalog synced: ${summary.createdCount} created, ${summary.updatedCount} updated, ${summary.retiredCount} non-catalog products retired, ${summary.adjustedCount} stock resets applied, ${summary.retiredUnits} legacy units cleared.`,
+    `Catalog synced: ${summary.createdCount} created, ${summary.updatedCount} updated, ${summary.retiredCount} non-catalog products retired, ${summary.preservedStockCount} existing stock counts preserved, ${summary.retiredUnits} legacy units cleared.`,
   );
 }
 

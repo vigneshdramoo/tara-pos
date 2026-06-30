@@ -317,26 +317,26 @@ export function PosWorkspace({
   }
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-      <div className="grid gap-4">
-        <div className="tara-surface sticky top-2 z-20 flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-5 xl:static">
+    <section className="grid gap-3 pb-4 sm:gap-4 xl:grid-cols-[minmax(0,1.35fr)_420px] xl:pb-0">
+      <div className="grid gap-3 sm:gap-4">
+        <div className="tara-surface sticky top-2 z-20 flex flex-col gap-2 p-3 md:flex-row md:items-center md:justify-between md:gap-4 md:p-5 xl:static">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 sm:left-4 sm:h-5 sm:w-5" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search fragrance, note, or collection"
-              className="touch-target w-full rounded-[20px] border border-[var(--line)] bg-white/90 pl-12 pr-4 text-sm text-stone-900 outline-none transition focus:border-stone-950 md:rounded-[24px] md:text-base"
+              className="min-h-11 w-full rounded-[18px] border border-[var(--line)] bg-white/90 pl-10 pr-3 text-base text-stone-900 outline-none transition focus:border-stone-950 sm:min-h-[3.25rem] sm:rounded-[20px] sm:pl-12 sm:pr-4 md:rounded-[24px]"
             />
           </div>
-          <div className="scrollbar-hidden flex items-center gap-2 overflow-x-auto">
+          <div className="scrollbar-hidden -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 sm:mx-0 sm:gap-2 sm:px-0">
             {collections.map((collection) => (
               <button
                 key={collection}
                 type="button"
                 onClick={() => setActiveCollection(collection)}
                 className={cn(
-                  "touch-target rounded-2xl px-3 text-xs font-semibold whitespace-nowrap transition sm:px-4 sm:text-sm",
+                  "min-h-10 rounded-2xl px-3 text-xs font-semibold whitespace-nowrap transition sm:min-h-[3.25rem] sm:px-4 sm:text-sm",
                   activeCollection === collection
                     ? "bg-stone-950 text-stone-50"
                     : "bg-white text-stone-700",
@@ -354,7 +354,7 @@ export function PosWorkspace({
                 block: "start",
               });
             }}
-            className="tara-panel-dark touch-target flex items-center justify-between gap-3 rounded-2xl px-4 text-left xl:hidden"
+            className="tara-panel-dark min-h-12 flex items-center justify-between gap-3 rounded-2xl px-3 text-left sm:min-h-[3.25rem] sm:px-4 xl:hidden"
           >
             <span className="flex min-w-0 items-center gap-3">
               <ShoppingBag className="h-5 w-5 shrink-0" strokeWidth={1.8} />
