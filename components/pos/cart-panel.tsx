@@ -271,7 +271,7 @@ export function CartPanel({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold tracking-[0.18em] text-[var(--brand-gold)] uppercase">
-                  {isStop04Promotion ? "Stop 04 tracker" : "Travel bundle tracker"}
+                  {isStop04Promotion ? "Scent Trail tracker" : "Travel bundle tracker"}
                 </p>
                 <h4 className="mt-1 text-base font-semibold text-foreground sm:mt-2 sm:text-lg">
                   {travelBundleHeadline}
@@ -306,7 +306,7 @@ export function CartPanel({
                 Travel sizes in cart: <span className="tabular-nums font-semibold text-foreground">{eightMlEligibleUnits}</span>
               </span>
               <span className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]">
-                {isStop04Promotion ? "Event packages" : "RM99 bundles"}:{" "}
+                {isStop04Promotion ? "Scent Trail sets" : "RM99 bundles"}:{" "}
                 <span className="tabular-nums font-semibold text-foreground">{eightMlBundleCount}</span>
               </span>
               {isStop04Promotion
@@ -331,7 +331,7 @@ export function CartPanel({
               <p className="mt-1 hidden text-sm leading-6 text-[var(--muted)] sm:block">{promotionDescription}</p>
             </div>
             <span className="hidden rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-strong)] sm:inline-flex">
-              Event-ready
+              Promotion-ready
             </span>
           </div>
 

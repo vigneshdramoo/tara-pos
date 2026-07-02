@@ -129,52 +129,6 @@ export type PromotionInsight = {
   highlight: string;
 };
 
-export type Stop04CheckpointStatus = "met" | "behind" | "pending";
-
-export type Stop04CheckpointProgress = {
-  id: string;
-  label: string;
-  targetLabel: string;
-  dueAt: string;
-  targetPercent: number;
-  targetUnits: number;
-  soldUnits: number;
-  unitsGap: number;
-  status: Stop04CheckpointStatus;
-};
-
-export type Stop04OfferMixInsight = {
-  label: string;
-  count: number;
-  units: number;
-};
-
-export type Stop04ScentMixInsight = {
-  name: string;
-  units: number;
-};
-
-export type Stop04StrategyProgress = {
-  label: string;
-  eventWindow: string;
-  booth: string;
-  activePromotionId: CheckoutPromotionId;
-  openingEightMlUnits: number;
-  soldEightMlUnits: number;
-  remainingEightMlUnits: number;
-  sellThroughPercent: number;
-  orderCount: number;
-  strategyOrderCount: number;
-  eventRevenueCents: number;
-  strategyRevenueCents: number;
-  averageOrderCents: number;
-  currentCheckpoint: Stop04CheckpointProgress;
-  checkpoints: Stop04CheckpointProgress[];
-  offerMix: Stop04OfferMixInsight[];
-  scentMix: Stop04ScentMixInsight[];
-  nextAction: string;
-};
-
 export type DashboardData = {
   stats: DashboardStat[];
   salesTrend: SalesTrendPoint[];
@@ -182,7 +136,6 @@ export type DashboardData = {
   lowStockProducts: LowStockInsight[];
   recentOrders: RecentOrderInsight[];
   promotionInsights: PromotionInsight[];
-  stop04Progress: Stop04StrategyProgress | null;
   databaseIssue?: string;
 };
 

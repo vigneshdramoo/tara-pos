@@ -99,7 +99,11 @@ function inferPromotionId(notes: string | null): CheckoutPromotionId {
     return "FOLLOW_TAG_UNLOCK";
   }
 
-  if (/stop 04|public market|huuha land|travel bundle|3\s*x\s*8ml\s*edp/i.test(normalizedNotes)) {
+  if (
+    /stop 04|public market|scent trail travel|scent trail set|huuha land|travel bundle|3\s*x\s*8ml\s*edp/i.test(
+      normalizedNotes,
+    )
+  ) {
     return "PUBLIC_MARKET_STOP04";
   }
 

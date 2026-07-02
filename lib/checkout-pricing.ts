@@ -12,7 +12,7 @@ export const BOOTH_UNLOCK_OFFER = {
 } as const;
 
 export const PUBLIC_MARKET_STOP04_OFFER = {
-  label: "Stop 04 Public Market Scent Trail",
+  label: "Scent Trail travel sets",
   packages: [
     { key: "threeSet", label: "3-set", units: 3, priceCents: 9900 },
     { key: "fourSet", label: "4-set", units: 4, priceCents: 12900 },
@@ -63,10 +63,10 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
   {
     id: "PUBLIC_MARKET_STOP04",
     label: PUBLIC_MARKET_STOP04_OFFER.label,
-    kicker: "Stop 04",
+    kicker: "Scent Trail",
     description:
-      "Use the Public Market 5.0 Booth 7 strategy for fast Scent Trail checkout and sell-through tracking.",
-    requirements: "Public Market 5.0, MRT Tunnel MyTOWNKL, Booth 7, 19-21 June 2026.",
+      "Use the ongoing Scent Trail travel-size set pricing for fast discovery checkout.",
+    requirements: "Applies to paid 8mL EDP travel-size sets. Event tracking is decommissioned.",
     preview: "3 x 8mL RM99 · 4 x 8mL RM129 · 6 x 8mL RM188",
   },
   {
@@ -366,7 +366,7 @@ export function formatPublicMarketStop04PackageSummary(
   const packageDetail = getStop04PackageDetail(breakdown);
 
   if (!packageDetail.length) {
-    return "No Stop 04 package unlocked yet";
+    return "No Scent Trail set unlocked yet";
   }
 
   return packageDetail
@@ -439,23 +439,23 @@ function getStop04UnitsUntilNextPackage(eligibleUnits: number) {
 function getStop04OfferCopy(eligibleUnits: number, breakdown: PublicMarketStop04PackageBreakdown) {
   if (eligibleUnits === 0) {
     return {
-      offerHeadline: "Build the Stop 04 Scent Trail set",
-      offerCallout: "Add any 3 travel sizes to unlock the RM99 event set.",
+      offerHeadline: "Build a Scent Trail travel set",
+      offerCallout: "Add any 3 travel sizes to unlock the RM99 set.",
     };
   }
 
   if (eligibleUnits < 3) {
     return {
-      offerHeadline: "Stop 04 set in progress",
+      offerHeadline: "Scent Trail set in progress",
       offerCallout: `Add ${3 - eligibleUnits} more 8mL travel size${
         3 - eligibleUnits === 1 ? "" : "s"
-      } to unlock the RM99 event set.`,
+      } to unlock the RM99 set.`,
     };
   }
 
   if (eligibleUnits === 3) {
     return {
-      offerHeadline: "Stop 04 RM99 set unlocked",
+      offerHeadline: "Scent Trail RM99 set unlocked",
       offerCallout: "Add 1 more 8mL to complete all four scents for RM129.",
     };
   }
@@ -471,7 +471,7 @@ function getStop04OfferCopy(eligibleUnits: number, breakdown: PublicMarketStop04
 
   return {
     offerHeadline: formatPublicMarketStop04PackageSummary(breakdown),
-    offerCallout: "Stop 04 event package applied. Confirm payment and capture the buyer for follow-up.",
+    offerCallout: "Scent Trail set pricing applied. Confirm payment and capture the buyer for follow-up.",
   };
 }
 
@@ -535,7 +535,7 @@ function calculatePublicMarketStop04Pricing(items: CheckoutPricingItem[]) {
         freeUnits: 0,
         promotionLabel: bundleUnits ? PUBLIC_MARKET_STOP04_OFFER.label : null,
         promotionDetail: bundleUnits
-          ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in Stop 04 package`
+          ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in Scent Trail set pricing`
           : null,
       };
     }),

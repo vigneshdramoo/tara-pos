@@ -85,13 +85,13 @@ function buildPromotionOrderNote(
   }
 
   if (promotionId === "PUBLIC_MARKET_STOP04") {
-    promotionSummary.push("Booth 7 Public Market 5.0 strategy");
+    promotionSummary.push("Scent Trail travel-size set pricing");
     promotionSummary.push(
-      `Stop 04 packages: ${formatPublicMarketStop04PackageSummary(
+      `Scent Trail sets: ${formatPublicMarketStop04PackageSummary(
         checkoutPricing.publicMarketStop04PackageBreakdown,
       )}`,
     );
-    promotionSummary.push(`Stop 04 8mL units in basket: ${checkoutPricing.eightMlEligibleUnits}`);
+    promotionSummary.push(`8mL units in basket: ${checkoutPricing.eightMlEligibleUnits}`);
   }
 
   if (promotionId === "FOLLOW_TAG_UNLOCK") {
