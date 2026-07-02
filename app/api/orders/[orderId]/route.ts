@@ -91,6 +91,10 @@ function inferPromotionId(notes: string | null): CheckoutPromotionId {
     return "SUNWAY_STUDENT";
   }
 
+  if (/vendor exclusive|vendor nett|rm30 nett/i.test(normalizedNotes)) {
+    return "VENDOR_EXCLUSIVE";
+  }
+
   if (/follow\.tag\.unlock/i.test(normalizedNotes)) {
     return "FOLLOW_TAG_UNLOCK";
   }

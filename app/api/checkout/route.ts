@@ -113,6 +113,11 @@ function buildPromotionOrderNote(
     }
   }
 
+  if (promotionId === "VENDOR_EXCLUSIVE") {
+    promotionSummary.push("Approved vendor nett pricing");
+    promotionSummary.push(`8mL units at RM30 nett: ${checkoutPricing.eightMlEligibleUnits}`);
+  }
+
   noteParts.push(promotionSummary.join(" · "));
 
   return noteParts.join("\n\n");

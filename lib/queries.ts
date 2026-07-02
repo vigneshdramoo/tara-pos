@@ -160,6 +160,14 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
       revenueCents: 0,
       highlight: "No recent student baskets",
     },
+    {
+      id: "VENDOR_EXCLUSIVE",
+      label: "Vendor exclusive",
+      detail: "Approved vendor RM30 nett 8mL pricing",
+      orders: 0,
+      revenueCents: 0,
+      highlight: "No recent vendor baskets",
+    },
   ].map((insight) => {
     const matchingOrders = orders.filter((order) => {
       const notes = order.notes ?? "";
@@ -172,7 +180,11 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
         return notes.includes("Promotion: Booth 66 Follow.Tag.Unlock");
       }
 
-      return notes.includes("Promotion: Student discount");
+      if (insight.id === "SUNWAY_STUDENT") {
+        return notes.includes("Promotion: Student discount");
+      }
+
+      return notes.includes("Promotion: Vendor exclusive");
     });
 
     const revenueCents = matchingOrders.reduce((sum, order) => sum + order.totalCents, 0);
@@ -210,6 +222,24 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
         orders: matchingOrders.length,
         revenueCents,
         highlight: `${discountedBottleCount || matchingOrders.length} full-size bottle${discountedBottleCount === 1 ? "" : "s"} discounted`,
+      };
+    }
+
+    if (insight.id === "VENDOR_EXCLUSIVE") {
+      const vendorEightMlUnits = matchingOrders.reduce(
+        (sum, order) =>
+          sum +
+          order.items
+            .filter((item) => item.product.sizeMl === 8)
+            .reduce((itemSum, item) => itemSum + item.quantity, 0),
+        0,
+      );
+
+      return {
+        ...insight,
+        orders: matchingOrders.length,
+        revenueCents,
+        highlight: `${vendorEightMlUnits} vendor 8mL unit${vendorEightMlUnits === 1 ? "" : "s"} sold at RM30 nett`,
       };
     }
 

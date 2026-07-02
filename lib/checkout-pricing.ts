@@ -25,6 +25,11 @@ export const SUNWAY_STUDENT_OFFER = {
   fiftyMlDiscountRate: 0.2,
 } as const;
 
+export const VENDOR_EXCLUSIVE_OFFER = {
+  label: "Vendor exclusive",
+  eightMlUnitPriceCents: 3000,
+} as const;
+
 export const CHECKOUT_PROMOTION_IDS = [
   "NONE",
   "EIGHT_ML_BUNDLE",
@@ -32,6 +37,7 @@ export const CHECKOUT_PROMOTION_IDS = [
   "PUBLIC_MARKET_STOP04",
   "FOLLOW_TAG_UNLOCK",
   "SUNWAY_STUDENT",
+  "VENDOR_EXCLUSIVE",
 ] as const;
 
 export type CheckoutPromotionId = (typeof CHECKOUT_PROMOTION_IDS)[number];
@@ -78,6 +84,14 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     description: "Apply the student appreciation price on full-size bottles.",
     requirements: "Verify student status. 20% off each 50mL and 1 free 8mL travel size per 50mL purchased.",
     preview: "50mL at 20% off + free 8mL travel size",
+  },
+  {
+    id: "VENDOR_EXCLUSIVE",
+    label: VENDOR_EXCLUSIVE_OFFER.label,
+    kicker: "Vendor nett",
+    description: "Apply vendor-exclusive nett pricing for paid 8mL travel-size units.",
+    requirements: "Use only for approved vendors. 8mL units are RM30 nett each.",
+    preview: "8mL at RM30 nett each",
   },
 ];
 
@@ -681,6 +695,65 @@ function calculateSunwayStudentPricing(items: CheckoutPricingItem[]) {
   });
 }
 
+function calculateVendorExclusivePricing(items: CheckoutPricingItem[]) {
+  const eightMlEligibleUnits = items.reduce(
+    (sum, item) => sum + (isEightMlEdpBundleEligible(item) ? item.quantity : 0),
+    0,
+  );
+
+  const lines = finalizeLines(
+    items.map((item) => {
+      const listTotalCents = item.priceCents * item.quantity;
+
+      if (!isEightMlEdpBundleEligible(item)) {
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          listTotalCents,
+          totalPriceCents: listTotalCents,
+          discountCents: 0,
+          bundleUnits: 0,
+          regularUnits: item.quantity,
+          discountedUnits: 0,
+          freeUnits: 0,
+          promotionLabel: null,
+          promotionDetail: isFiftyMlEdpEligible(item) ? "Regular full-size pricing" : null,
+        };
+      }
+
+      const totalPriceCents = VENDOR_EXCLUSIVE_OFFER.eightMlUnitPriceCents * item.quantity;
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        listTotalCents,
+        totalPriceCents,
+        discountCents: listTotalCents - totalPriceCents,
+        bundleUnits: 0,
+        regularUnits: 0,
+        discountedUnits: item.quantity,
+        freeUnits: 0,
+        promotionLabel: VENDOR_EXCLUSIVE_OFFER.label,
+        promotionDetail: `${item.quantity} 8mL unit${item.quantity === 1 ? "" : "s"} at RM30 nett`,
+      };
+    }),
+  );
+
+  return buildPricingSummary({
+    promotionId: "VENDOR_EXCLUSIVE",
+    lines,
+    eightMlEligibleUnits,
+    offerHeadline:
+      eightMlEligibleUnits > 0
+        ? `${eightMlEligibleUnits} vendor 8mL unit${eightMlEligibleUnits === 1 ? "" : "s"} priced at RM30 nett`
+        : "Vendor exclusive pricing ready",
+    offerCallout:
+      eightMlEligibleUnits > 0
+        ? "Confirm the buyer is an approved vendor before completing checkout."
+        : "Add paid 8mL travel sizes to apply the RM30 nett vendor price.",
+  });
+}
+
 function buildPricingSummary({
   promotionId,
   lines,
@@ -748,6 +821,8 @@ export function calculateCheckoutPricing(
       return calculateBoothUnlockPricing(items);
     case "SUNWAY_STUDENT":
       return calculateSunwayStudentPricing(items);
+    case "VENDOR_EXCLUSIVE":
+      return calculateVendorExclusivePricing(items);
     case "NONE":
     default:
       return calculateStandardPricing(items, "NONE");
