@@ -68,6 +68,9 @@ export default async function StaffPage() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone="accent">{getRoleLabel(staffUser.role)}</Pill>
+                    {staffUser.commissionProgress.seniorOverride ? (
+                      <Pill>{staffUser.commissionProgress.seniorOverride.title}</Pill>
+                    ) : null}
                     <Pill tone={staffUser.active ? "default" : "danger"}>
                       {staffUser.active ? "Active" : "Inactive"}
                     </Pill>

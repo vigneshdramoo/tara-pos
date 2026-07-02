@@ -4,6 +4,16 @@ const MALAYSIA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
 
 export const BASIC_DAILY_PAY_CENTS = 7000;
 
+export const SENIOR_SCENT_TRAIL_OVERRIDE = {
+  mentorUsername: "syaz",
+  mentorTitle: "Senior Scent Trail Crew",
+  rateBps: 200,
+  effectiveFromDateKey: "2026-07-03",
+  crewUsernames: ["rielyna.richard"],
+} as const;
+
+export const SCENT_TRAIL_DIRECT_COMMISSION_RATE_BPS = 1000;
+
 export const COMMISSION_TARGETS = [
   {
     key: "fullBottle",
@@ -53,6 +63,7 @@ export type BottleTargetProgress = {
 export type StaffCommissionProgress = {
   totalSalesCents: number;
   totalCommissionCents: number;
+  totalPayoutCommissionCents: number;
   todaySalesCents: number;
   todayCommissionCents: number;
   todayTargetBonusCents: number;
@@ -64,7 +75,25 @@ export type StaffCommissionProgress = {
   sevenDayOrderCount: number;
   sevenDayStreakBonusCents: number;
   targets: BottleTargetProgress[];
+  seniorOverride: SeniorScentTrailOverrideProgress | null;
   nextCoachingMessage: string;
+};
+
+export type SeniorScentTrailOverrideProgress = {
+  title: string;
+  rateBps: number;
+  rateLabel: string;
+  effectiveFromDateKey: string;
+  crewNames: string[];
+  todaySalesCents: number;
+  todayCommissionCents: number;
+  todayOrderCount: number;
+  sevenDaySalesCents: number;
+  sevenDayCommissionCents: number;
+  sevenDayOrderCount: number;
+  totalSalesCents: number;
+  totalCommissionCents: number;
+  totalOrderCount: number;
 };
 
 type CommissionProgressItem = {
@@ -80,6 +109,18 @@ export type CommissionProgressOrder = {
   commissionCents: number;
   createdAt: Date | string;
   items: CommissionProgressItem[];
+};
+
+export type SeniorScentTrailOrder = CommissionProgressOrder & {
+  salesperson: {
+    name: string;
+    username: string;
+  } | null;
+};
+
+type BuildStaffCommissionProgressOptions = {
+  staffUsername?: string;
+  teamOrders?: SeniorScentTrailOrder[];
 };
 
 function roundCommissionCents(amountCents: number, commissionRateBps: number) {
@@ -98,24 +139,50 @@ export function getCommissionTargetForSize(sizeMl: number) {
   return null;
 }
 
+export function isScentTrailCommissionStaff(username?: string | null) {
+  return Boolean(
+    username &&
+      (username === SENIOR_SCENT_TRAIL_OVERRIDE.mentorUsername ||
+        SENIOR_SCENT_TRAIL_OVERRIDE.crewUsernames.includes(
+          username as (typeof SENIOR_SCENT_TRAIL_OVERRIDE.crewUsernames)[number],
+        )),
+  );
+}
+
+function getDirectCommissionRateBps(sizeMl: number, staffUsername?: string | null) {
+  const target = getCommissionTargetForSize(sizeMl);
+
+  if (!target) {
+    return 0;
+  }
+
+  return isScentTrailCommissionStaff(staffUsername)
+    ? SCENT_TRAIL_DIRECT_COMMISSION_RATE_BPS
+    : target.commissionRateBps;
+}
+
 export function calculateLineCommission(input: {
   sizeMl: number;
   unitPriceCents: number;
   quantity: number;
+  staffUsername?: string | null;
 }): CommissionLineResult {
   return calculateLineCommissionFromTotal({
     sizeMl: input.sizeMl,
     totalPriceCents: input.unitPriceCents * input.quantity,
+    staffUsername: input.staffUsername,
   });
 }
 
 export function calculateLineCommissionFromTotal(input: {
   sizeMl: number;
   totalPriceCents: number;
+  staffUsername?: string | null;
 }): CommissionLineResult {
   const target = getCommissionTargetForSize(input.sizeMl);
+  const commissionRateBps = getDirectCommissionRateBps(input.sizeMl, input.staffUsername);
 
-  if (!target) {
+  if (!target || commissionRateBps === 0) {
     return {
       targetKey: null,
       commissionRateBps: 0,
@@ -125,8 +192,8 @@ export function calculateLineCommissionFromTotal(input: {
 
   return {
     targetKey: target.key,
-    commissionRateBps: target.commissionRateBps,
-    commissionCents: roundCommissionCents(input.totalPriceCents, target.commissionRateBps),
+    commissionRateBps,
+    commissionCents: roundCommissionCents(input.totalPriceCents, commissionRateBps),
   };
 }
 
@@ -164,6 +231,84 @@ function getMalaysiaWeekdayLabel(value: Date | string) {
   }).format(asDate(value));
 }
 
+function isOnOrAfterDateKey(value: Date | string, dateKey: string) {
+  return getMalaysiaDateKey(value) >= dateKey;
+}
+
+export function isSeniorScentTrailLead(username?: string | null) {
+  return username === SENIOR_SCENT_TRAIL_OVERRIDE.mentorUsername;
+}
+
+function buildSeniorOverrideProgress(
+  options: BuildStaffCommissionProgressOptions,
+  todayKey: string,
+  sevenDayKeySet: Set<string>,
+): SeniorScentTrailOverrideProgress | null {
+  if (!isSeniorScentTrailLead(options.staffUsername)) {
+    return null;
+  }
+
+  const crewUsernameSet = new Set<string>(SENIOR_SCENT_TRAIL_OVERRIDE.crewUsernames);
+  const eligibleOrders =
+    options.teamOrders?.filter((order) => {
+      const username = order.salesperson?.username;
+
+      return (
+        Boolean(username && crewUsernameSet.has(username)) &&
+        isOnOrAfterDateKey(order.createdAt, SENIOR_SCENT_TRAIL_OVERRIDE.effectiveFromDateKey)
+      );
+    }) ?? [];
+  const todayOrders = eligibleOrders.filter(
+    (order) => getMalaysiaDateKey(order.createdAt) === todayKey,
+  );
+  const sevenDayOrders = eligibleOrders.filter((order) =>
+    sevenDayKeySet.has(getMalaysiaDateKey(order.createdAt)),
+  );
+  const sumSales = (orders: SeniorScentTrailOrder[]) =>
+    orders.reduce((sum, order) => sum + order.totalCents, 0);
+  const uniqueCrewNames = Array.from(
+    new Set(
+      eligibleOrders
+        .map((order) => order.salesperson?.name)
+        .filter((name): name is string => Boolean(name)),
+    ),
+  );
+
+  if (!uniqueCrewNames.length) {
+    uniqueCrewNames.push("Rielyna");
+  }
+
+  const todaySalesCents = sumSales(todayOrders);
+  const sevenDaySalesCents = sumSales(sevenDayOrders);
+  const totalSalesCents = sumSales(eligibleOrders);
+
+  return {
+    title: SENIOR_SCENT_TRAIL_OVERRIDE.mentorTitle,
+    rateBps: SENIOR_SCENT_TRAIL_OVERRIDE.rateBps,
+    rateLabel: `${SENIOR_SCENT_TRAIL_OVERRIDE.rateBps / 100}%`,
+    effectiveFromDateKey: SENIOR_SCENT_TRAIL_OVERRIDE.effectiveFromDateKey,
+    crewNames: uniqueCrewNames,
+    todaySalesCents,
+    todayCommissionCents: roundCommissionCents(
+      todaySalesCents,
+      SENIOR_SCENT_TRAIL_OVERRIDE.rateBps,
+    ),
+    todayOrderCount: todayOrders.length,
+    sevenDaySalesCents,
+    sevenDayCommissionCents: roundCommissionCents(
+      sevenDaySalesCents,
+      SENIOR_SCENT_TRAIL_OVERRIDE.rateBps,
+    ),
+    sevenDayOrderCount: sevenDayOrders.length,
+    totalSalesCents,
+    totalCommissionCents: roundCommissionCents(
+      totalSalesCents,
+      SENIOR_SCENT_TRAIL_OVERRIDE.rateBps,
+    ),
+    totalOrderCount: eligibleOrders.length,
+  };
+}
+
 function isSameTarget(item: CommissionProgressItem, key: CommissionTargetKey) {
   return getCommissionTargetForSize(item.product.sizeMl)?.key === key;
 }
@@ -195,11 +340,13 @@ function sumTargetCommission(orders: CommissionProgressOrder[], key: CommissionT
 export function buildStaffCommissionProgress(
   orders: CommissionProgressOrder[],
   now = new Date(),
+  options: BuildStaffCommissionProgressOptions = {},
 ): StaffCommissionProgress {
   const todayKey = getMalaysiaDateKey(now);
   const todayWeekdayLabel = getMalaysiaWeekdayLabel(now);
   const sevenDayKeys = getLastMalaysiaDateKeys(7, now);
   const sevenDayKeySet = new Set(sevenDayKeys);
+  const seniorOverride = buildSeniorOverrideProgress(options, todayKey, sevenDayKeySet);
   const todayOrders = orders.filter((order) => getMalaysiaDateKey(order.createdAt) === todayKey);
   const sevenDayOrders = orders.filter((order) =>
     sevenDayKeySet.has(getMalaysiaDateKey(order.createdAt)),
@@ -269,6 +416,8 @@ export function buildStaffCommissionProgress(
     0,
   );
   const todayTargetBonusCents = targets.reduce((sum, target) => sum + target.targetBonusCents, 0);
+  const todaySeniorOverrideCents = seniorOverride?.todayCommissionCents ?? 0;
+  const totalCommissionCents = orders.reduce((sum, order) => sum + order.commissionCents, 0);
   const sevenDayStreakBonusCents = targets.reduce(
     (sum, target) =>
       sum + (target.sevenDayTargetDaysMet === sevenDayKeys.length ? target.sevenDayStreakBonusCents : 0),
@@ -283,11 +432,13 @@ export function buildStaffCommissionProgress(
 
   return {
     totalSalesCents: orders.reduce((sum, order) => sum + order.totalCents, 0),
-    totalCommissionCents: orders.reduce((sum, order) => sum + order.commissionCents, 0),
+    totalCommissionCents,
+    totalPayoutCommissionCents: totalCommissionCents + (seniorOverride?.totalCommissionCents ?? 0),
     todaySalesCents: todayOrders.reduce((sum, order) => sum + order.totalCents, 0),
     todayCommissionCents,
     todayTargetBonusCents,
-    todayPayoutPaceCents: BASIC_DAILY_PAY_CENTS + todayCommissionCents + todayTargetBonusCents,
+    todayPayoutPaceCents:
+      BASIC_DAILY_PAY_CENTS + todayCommissionCents + todayTargetBonusCents + todaySeniorOverrideCents,
     todayOrderCount: todayOrders.length,
     todayWeekdayLabel,
     historicalSameWeekdayOrderAverage:
@@ -308,6 +459,7 @@ export function buildStaffCommissionProgress(
     sevenDayOrderCount: sevenDayOrders.length,
     sevenDayStreakBonusCents,
     targets,
+    seniorOverride,
     nextCoachingMessage,
   };
 }

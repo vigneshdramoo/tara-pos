@@ -1,5 +1,5 @@
 import { OrderStatus, PaymentMethod } from "@prisma/client";
-import { buildStaffCommissionProgress } from "@/lib/commissions";
+import { buildStaffCommissionProgress, isSeniorScentTrailLead } from "@/lib/commissions";
 import { formatCurrency, formatInteger } from "@/lib/format";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
@@ -442,6 +442,30 @@ function logDatabaseFallback(scope: string, error: unknown) {
 
 const completedOrderWhere = {
   status: OrderStatus.COMPLETED,
+} as const;
+
+const staffCommissionOrderInclude = {
+  items: {
+    select: {
+      quantity: true,
+      commissionCents: true,
+      product: {
+        select: {
+          sizeMl: true,
+        },
+      },
+    },
+  },
+} as const;
+
+const seniorScentTrailOrderInclude = {
+  ...staffCommissionOrderInclude,
+  salesperson: {
+    select: {
+      name: true,
+      username: true,
+    },
+  },
 } as const;
 
 export async function getDashboardData(): Promise<DashboardData> {
@@ -1064,30 +1088,29 @@ export async function getPaymentMix() {
 export async function getStaffUsersData(): Promise<StaffUsersData> {
   try {
     const prisma = requirePrisma();
-    const staffUsers = await prisma.staffUser.findMany({
-      orderBy: [{ name: "asc" }],
-      include: {
-        ordersSold: {
-          where: completedOrderWhere,
-          orderBy: {
-            createdAt: "desc",
-          },
-          include: {
-            items: {
-              select: {
-                quantity: true,
-                commissionCents: true,
-                product: {
-                  select: {
-                    sizeMl: true,
-                  },
-                },
-              },
+    const [staffUsers, seniorOverrideOrders] = await Promise.all([
+      prisma.staffUser.findMany({
+        orderBy: [{ name: "asc" }],
+        include: {
+          ordersSold: {
+            where: completedOrderWhere,
+            orderBy: {
+              createdAt: "desc",
             },
+            include: staffCommissionOrderInclude,
           },
         },
-      },
-    });
+      }),
+      prisma.order.findMany({
+        where: completedOrderWhere,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: seniorScentTrailOrderInclude,
+      }),
+    ]);
+    const hasSeniorLead = staffUsers.some((staffUser) => isSeniorScentTrailLead(staffUser.username));
+    const teamOrders = hasSeniorLead ? seniorOverrideOrders : [];
     const roleOrder = {
       MANAGER: 0,
       SALES_MANAGER: 1,
@@ -1105,7 +1128,10 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
           active: staffUser.active,
           lastLoginAt: staffUser.lastLoginAt?.toISOString() ?? null,
           createdAt: staffUser.createdAt.toISOString(),
-          commissionProgress: buildStaffCommissionProgress(staffUser.ordersSold),
+          commissionProgress: buildStaffCommissionProgress(staffUser.ordersSold, new Date(), {
+            staffUsername: staffUser.username,
+            teamOrders,
+          }),
         }))
         .sort(
           (left, right) =>
@@ -1123,32 +1149,34 @@ export async function getStaffUsersData(): Promise<StaffUsersData> {
 export async function getStaffCommissionProgress(staffId: string) {
   try {
     const prisma = requirePrisma();
-    const staffUser = await prisma.staffUser.findUnique({
-      where: { id: staffId },
-      include: {
-        ordersSold: {
-          where: completedOrderWhere,
-          orderBy: {
-            createdAt: "desc",
-          },
-          include: {
-            items: {
-              select: {
-                quantity: true,
-                commissionCents: true,
-                product: {
-                  select: {
-                    sizeMl: true,
-                  },
-                },
-              },
+    const [staffUser, seniorOverrideOrders] = await Promise.all([
+      prisma.staffUser.findUnique({
+        where: { id: staffId },
+        include: {
+          ordersSold: {
+            where: completedOrderWhere,
+            orderBy: {
+              createdAt: "desc",
             },
+            include: staffCommissionOrderInclude,
           },
         },
-      },
-    });
+      }),
+      prisma.order.findMany({
+        where: completedOrderWhere,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: seniorScentTrailOrderInclude,
+      }),
+    ]);
 
-    return staffUser ? buildStaffCommissionProgress(staffUser.ordersSold) : null;
+    return staffUser
+      ? buildStaffCommissionProgress(staffUser.ordersSold, new Date(), {
+          staffUsername: staffUser.username,
+          teamOrders: isSeniorScentTrailLead(staffUser.username) ? seniorOverrideOrders : [],
+        })
+      : null;
   } catch (error) {
     logDatabaseFallback("staff-commission", error);
     return null;

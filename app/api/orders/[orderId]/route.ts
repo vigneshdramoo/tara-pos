@@ -257,6 +257,11 @@ export async function PATCH(request: Request, context: RouteContext) {
         where: { id: orderId },
         include: {
           customer: true,
+          salesperson: {
+            select: {
+              username: true,
+            },
+          },
           items: {
             include: {
               product: true,
@@ -346,6 +351,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         const commission = calculateLineCommissionFromTotal({
           sizeMl: item.product.sizeMl,
           totalPriceCents: linePricing.totalPriceCents,
+          staffUsername: order.salesperson?.username,
         });
 
         return {

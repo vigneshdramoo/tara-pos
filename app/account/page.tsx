@@ -38,6 +38,9 @@ export default async function AccountPage() {
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Pill tone="accent">{getRoleLabel(session.role)}</Pill>
+            {commissionProgress?.seniorOverride ? (
+              <Pill>{commissionProgress.seniorOverride.title}</Pill>
+            ) : null}
             {isManager ? (
               <Link
                 href="/staff"

@@ -277,6 +277,7 @@ export async function POST(request: Request) {
         commission: calculateLineCommissionFromTotal({
           sizeMl: item.product.sizeMl,
           totalPriceCents: linePricing.totalPriceCents,
+          staffUsername: session?.username,
         }),
       };
     });
