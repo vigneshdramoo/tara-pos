@@ -371,6 +371,7 @@ export async function POST(request: Request) {
     revalidatePath("/orders");
     revalidatePath("/assistant");
     revalidatePath("/account");
+    revalidatePath("/payouts");
     revalidatePath("/staff");
 
     return NextResponse.json(result);

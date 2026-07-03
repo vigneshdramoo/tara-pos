@@ -1,8 +1,16 @@
 import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { buildStaffCommissionProgress, isSeniorScentTrailLead } from "@/lib/commissions";
 import { formatCurrency, formatInteger } from "@/lib/format";
+import {
+  buildShiftClockSummary,
+  buildStaffPayoutDay,
+  getPayoutDateBounds,
+  getRecentPayoutDateKeys,
+  isClockEligibleStaff,
+} from "@/lib/payroll";
 import { getProductImageUrl } from "@/lib/product-media";
 import { describeDatabaseIssue, requirePrisma } from "@/lib/prisma";
+import { canManageStaff, type StaffSession } from "@/lib/staff";
 import { isStop04PromotionNote } from "@/lib/stop04-strategy";
 import {
   addUtcDays,
@@ -18,11 +26,13 @@ import type {
   LowStockInsight,
   OrderAmendmentProduct,
   OrdersData,
+  PayoutsData,
   PosData,
   PromotionInsight,
   ProductCardData,
   QuizLeadsData,
   RecentOrderInsight,
+  StaffShiftClockData,
   StaffUsersData,
   TopProductInsight,
 } from "@/lib/types";
@@ -332,6 +342,32 @@ const seniorScentTrailOrderInclude = {
     select: {
       name: true,
       username: true,
+    },
+  },
+} as const;
+
+const payrollOrderSelect = {
+  id: true,
+  orderNumber: true,
+  subtotalCents: true,
+  totalCents: true,
+  createdAt: true,
+  salesperson: {
+    select: {
+      name: true,
+      username: true,
+    },
+  },
+  items: {
+    select: {
+      quantity: true,
+      totalPriceCents: true,
+      product: {
+        select: {
+          name: true,
+          sizeMl: true,
+        },
+      },
     },
   },
 } as const;
@@ -1022,6 +1058,190 @@ export async function getStaffCommissionProgress(staffId: string) {
   } catch (error) {
     logDatabaseFallback("staff-commission", error);
     return null;
+  }
+}
+
+export async function getStaffShiftClockData(staffId: string): Promise<StaffShiftClockData> {
+  try {
+    const prisma = requirePrisma();
+    const todayKey = getMalaysiaDateKey();
+    const staffUser = await prisma.staffUser.findUnique({
+      where: { id: staffId },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        payoutPreference: true,
+        shifts: {
+          where: {
+            OR: [{ dateKey: todayKey }, { clockOutAt: null }],
+          },
+          orderBy: {
+            clockInAt: "desc",
+          },
+          select: {
+            id: true,
+            dateKey: true,
+            clockInAt: true,
+            clockOutAt: true,
+            notes: true,
+          },
+        },
+      },
+    });
+
+    return {
+      shiftSummary: staffUser
+        ? buildShiftClockSummary({
+            staff: staffUser,
+            shifts: staffUser.shifts,
+          })
+        : null,
+    };
+  } catch (error) {
+    return {
+      shiftSummary: null,
+      databaseIssue: logDatabaseFallback("staff-shift-clock", error),
+    };
+  }
+}
+
+export async function getPayoutsData(session: StaffSession): Promise<PayoutsData> {
+  try {
+    const prisma = requirePrisma();
+    const canManageAll = canManageStaff(session.role);
+    const dateKeys = getRecentPayoutDateKeys(7);
+    const firstDateBounds = getPayoutDateBounds(dateKeys[0]);
+    const lastDateBounds = getPayoutDateBounds(dateKeys[dateKeys.length - 1]);
+    const staffUsers = await prisma.staffUser.findMany({
+      where: canManageAll
+        ? {
+            username: {
+              in: ["syaz", "rielyna.richard"],
+            },
+          }
+        : {
+            id: session.staffId,
+          },
+      orderBy: [{ name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        payoutPreference: true,
+      },
+    });
+    const eligibleStaffUsers = staffUsers.filter((staffUser) =>
+      isClockEligibleStaff(staffUser.username),
+    );
+    const staffIds = eligibleStaffUsers.map((staffUser) => staffUser.id);
+
+    if (!staffIds.length) {
+      return {
+        canManageAll,
+        dateKeys,
+        reports: [],
+      };
+    }
+
+    const [orders, shifts, payouts] = await Promise.all([
+      prisma.order.findMany({
+        where: {
+          status: OrderStatus.COMPLETED,
+          createdAt: {
+            gte: firstDateBounds.start,
+            lt: lastDateBounds.end,
+          },
+          salespersonId: {
+            in: staffIds,
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: payrollOrderSelect,
+      }),
+      prisma.staffShift.findMany({
+        where: {
+          staffUserId: {
+            in: staffIds,
+          },
+          dateKey: {
+            in: dateKeys,
+          },
+        },
+        orderBy: {
+          clockInAt: "asc",
+        },
+        select: {
+          id: true,
+          staffUserId: true,
+          dateKey: true,
+          clockInAt: true,
+          clockOutAt: true,
+          notes: true,
+        },
+      }),
+      prisma.staffPayout.findMany({
+        where: {
+          staffUserId: {
+            in: staffIds,
+          },
+          dateKey: {
+            in: dateKeys,
+          },
+        },
+        include: {
+          completedBy: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+    const payoutByStaffAndDate = new Map(
+      payouts.map((payout) => [`${payout.staffUserId}:${payout.dateKey}`, payout]),
+    );
+    const reports = eligibleStaffUsers.map((staffUser) => {
+      const staffOrders = orders.filter(
+        (order) => order.salesperson?.username === staffUser.username,
+      );
+      const staffShifts = shifts.filter((shift) => shift.staffUserId === staffUser.id);
+
+      return {
+        staffUserId: staffUser.id,
+        staffName: staffUser.name,
+        username: staffUser.username,
+        payoutPreference: staffUser.payoutPreference,
+        canClock: isClockEligibleStaff(staffUser.username),
+        days: dateKeys
+          .map((dateKey) =>
+            buildStaffPayoutDay({
+              staff: staffUser,
+              dateKey,
+              orders: staffOrders,
+              teamOrders: orders,
+              shifts: staffShifts,
+              payout: payoutByStaffAndDate.get(`${staffUser.id}:${dateKey}`) ?? null,
+            }),
+          )
+          .reverse(),
+      };
+    });
+
+    return {
+      canManageAll,
+      dateKeys,
+      reports,
+    };
+  } catch (error) {
+    return {
+      canManageAll: canManageStaff(session.role),
+      dateKeys: getRecentPayoutDateKeys(7),
+      reports: [],
+      databaseIssue: logDatabaseFallback("staff-payouts", error),
+    };
   }
 }
 

@@ -233,6 +233,7 @@ function revalidateOrderAmendmentPaths() {
   revalidatePath("/customers");
   revalidatePath("/inventory");
   revalidatePath("/orders");
+  revalidatePath("/payouts");
   revalidatePath("/pos");
   revalidatePath("/staff");
 }

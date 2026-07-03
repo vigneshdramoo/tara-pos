@@ -68,6 +68,7 @@ export function getRoleCapabilities(role: StaffRole) {
       "Product editing, restocks, and stock adjustments",
       "Manager order amendments and correction notes",
       "Staff directory and role oversight",
+      "Crew payout oversight and payout completion",
     ];
   }
 
@@ -80,16 +81,19 @@ export function getRoleCapabilities(role: StaffRole) {
       "Creative studio access",
       "Personal password reset",
       "Product editing, restocks, and stock adjustments",
+      "Personal payout history visibility",
       "No staff administration access",
     ];
   }
 
   return [
     "Checkout and order lookup access",
-      "Customer capture visibility",
-      "Booth lead and quiz participant capture",
-      "Daily dashboard visibility",
+    "Customer capture visibility",
+    "Booth lead and quiz participant capture",
+    "Daily dashboard visibility",
     "Creative studio access",
+    "Shift clock for Scent Trail crew",
+    "Personal payout history visibility",
     "Personal password reset",
     "No inventory administration access",
     "No staff administration access",

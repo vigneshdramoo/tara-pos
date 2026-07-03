@@ -3,12 +3,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { PageIntro } from "@/components/page-intro";
+import { ShiftClockPanel } from "@/components/payroll/shift-clock-panel";
 import { CommissionProgress } from "@/components/staff/commission-progress";
 import { Pill } from "@/components/ui/pill";
 import { Surface } from "@/components/ui/surface";
 import { formatFullDateTime } from "@/lib/format";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
-import { getStaffCommissionProgress } from "@/lib/queries";
+import { getStaffCommissionProgress, getStaffShiftClockData } from "@/lib/queries";
 import { canManageStaff, getRoleLabel } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,10 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
-  const commissionProgress = await getStaffCommissionProgress(session.staffId);
+  const [commissionProgress, shiftClockData] = await Promise.all([
+    getStaffCommissionProgress(session.staffId),
+    getStaffShiftClockData(session.staffId),
+  ]);
   const isManager = canManageStaff(session.role);
   const pageTitle = isManager ? "Manager account settings" : "Personal account settings";
   const pageDescription = isManager
@@ -114,6 +118,11 @@ export default async function AccountPage() {
 
           {commissionProgress ? (
             <Surface>
+              {shiftClockData.shiftSummary ? (
+                <div className="mb-4">
+                  <ShiftClockPanel summary={shiftClockData.shiftSummary} />
+                </div>
+              ) : null}
               <CommissionProgress progress={commissionProgress} title="Your target progress" />
             </Surface>
           ) : null}

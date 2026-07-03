@@ -37,6 +37,16 @@ enum StaffRole {
   CASHIER
 }
 
+enum PayoutPreference {
+  DAILY
+  EVERY_TWO_DAYS
+}
+
+enum PayoutStatus {
+  PENDING
+  COMPLETED
+}
+
 enum QuizLeadSource {
   POPUP_BOOTH
   WEBSITE
@@ -149,17 +159,63 @@ model InventoryMovement {
 }
 
 model StaffUser {
-  id           String    @id @default(cuid())
-  name         String
-  username     String    @unique
-  email        String?   @unique
-  passwordHash String
-  role         StaffRole
-  active       Boolean   @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  ordersSold   Order[]   @relation("SalespersonOrders")
+  id               String           @id @default(cuid())
+  name             String
+  username         String           @unique
+  email            String?          @unique
+  passwordHash     String
+  role             StaffRole
+  payoutPreference PayoutPreference @default(DAILY)
+  active           Boolean          @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  ordersSold       Order[]          @relation("SalespersonOrders")
+  shifts           StaffShift[]
+  payouts          StaffPayout[]    @relation("StaffPayouts")
+  completedPayouts StaffPayout[]    @relation("CompletedPayouts")
+}
+
+model StaffShift {
+  id          String    @id @default(cuid())
+  staffUserId String
+  dateKey     String
+  clockInAt   DateTime
+  clockOutAt  DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  staffUser   StaffUser @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+
+  @@index([staffUserId, dateKey])
+  @@index([dateKey])
+  @@index([clockInAt])
+}
+
+model StaffPayout {
+  id                    String           @id @default(cuid())
+  staffUserId           String
+  dateKey               String
+  status                PayoutStatus     @default(PENDING)
+  payoutPreference      PayoutPreference @default(DAILY)
+  clockedHours          Int              @default(0)
+  basePayCents          Int              @default(0)
+  directCommissionCents Int              @default(0)
+  targetBonusCents      Int              @default(0)
+  seniorOverrideCents   Int              @default(0)
+  totalPayoutCents      Int              @default(0)
+  completedAt           DateTime?
+  completedById         String?
+  notes                 String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  staffUser             StaffUser        @relation("StaffPayouts", fields: [staffUserId], references: [id], onDelete: Cascade)
+  completedBy           StaffUser?       @relation("CompletedPayouts", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@unique([staffUserId, dateKey])
+  @@index([dateKey])
+  @@index([status, dateKey])
+  @@index([completedById])
 }
 
 model QuizLead {

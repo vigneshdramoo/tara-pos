@@ -1,6 +1,7 @@
 import type { CheckoutPromotionId } from "@/lib/checkout-pricing";
 import type { StaffRole } from "@/lib/staff";
 import type { StaffCommissionProgress } from "@/lib/commissions";
+import type { ShiftClockSummary, StaffPayoutDay } from "@/lib/payroll";
 import type {
   InventoryMovementType,
   OrderStatus,
@@ -258,6 +259,27 @@ export type StaffUserInsight = {
 
 export type StaffUsersData = {
   staffUsers: StaffUserInsight[];
+  databaseIssue?: string;
+};
+
+export type StaffShiftClockData = {
+  shiftSummary: ShiftClockSummary | null;
+  databaseIssue?: string;
+};
+
+export type PayoutStaffReport = {
+  staffUserId: string;
+  staffName: string;
+  username: string;
+  payoutPreference: "DAILY" | "EVERY_TWO_DAYS";
+  canClock: boolean;
+  days: StaffPayoutDay[];
+};
+
+export type PayoutsData = {
+  canManageAll: boolean;
+  dateKeys: string[];
+  reports: PayoutStaffReport[];
   databaseIssue?: string;
 };
 
