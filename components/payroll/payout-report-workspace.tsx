@@ -40,10 +40,18 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
   const [message, setMessage] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState(data.reports[0]?.staffUserId ?? "");
+  const [selectedDateByStaff, setSelectedDateByStaff] = useState<Record<string, string>>({});
   const [hourDrafts, setHourDrafts] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const selectedReport =
     data.reports.find((report) => report.staffUserId === selectedStaffId) ?? data.reports[0] ?? null;
+  const selectedDateKey = selectedReport
+    ? (selectedDateByStaff[selectedReport.staffUserId] ?? selectedReport.days[0]?.dateKey ?? "")
+    : "";
+  const selectedDay =
+    selectedReport?.days.find((day) => day.dateKey === selectedDateKey) ??
+    selectedReport?.days[0] ??
+    null;
   const reportsToRender = selectedReport ? [selectedReport] : [];
 
   function updatePreference(payoutPreference: PayoutStaffReport["payoutPreference"]) {
@@ -138,28 +146,61 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
         </div>
       ) : null}
 
-      {data.canManageAll && data.reports.length > 1 ? (
+      {selectedReport ? (
         <div className="tara-surface rounded-[24px] p-4">
-          <label
-            htmlFor="payout-staff-filter"
-            className="text-xs uppercase tracking-[0.24em] text-[var(--brand-gold)]"
-          >
-            Crew
-          </label>
-          <select
-            id="payout-staff-filter"
-            value={selectedReport?.staffUserId ?? ""}
-            onChange={(event) => setSelectedStaffId(event.target.value)}
-            className="mt-3 min-h-[48px] w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 text-base text-foreground outline-none focus:border-[var(--brand-gold)]"
-          >
-            {data.reports.map((report) => (
-              <option key={report.staffUserId} value={report.staffUserId}>
-                {report.staffName} (@{report.username})
-              </option>
-            ))}
-          </select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {data.canManageAll && data.reports.length > 1 ? (
+              <div>
+                <label
+                  htmlFor="payout-staff-filter"
+                  className="text-xs uppercase tracking-[0.24em] text-[var(--brand-gold)]"
+                >
+                  Crew
+                </label>
+                <select
+                  id="payout-staff-filter"
+                  value={selectedReport.staffUserId}
+                  onChange={(event) => setSelectedStaffId(event.target.value)}
+                  className="mt-3 min-h-[48px] w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 text-base text-foreground outline-none focus:border-[var(--brand-gold)]"
+                >
+                  {data.reports.map((report) => (
+                    <option key={report.staffUserId} value={report.staffUserId}>
+                      {report.staffName} (@{report.username})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+
+            <div>
+              <label
+                htmlFor="payout-date-filter"
+                className="text-xs uppercase tracking-[0.24em] text-[var(--brand-gold)]"
+              >
+                Past 7 days
+              </label>
+              <select
+                id="payout-date-filter"
+                value={selectedDay?.dateKey ?? ""}
+                onChange={(event) =>
+                  setSelectedDateByStaff((dates) => ({
+                    ...dates,
+                    [selectedReport.staffUserId]: event.target.value,
+                  }))
+                }
+                className="mt-3 min-h-[48px] w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 text-base text-foreground outline-none focus:border-[var(--brand-gold)]"
+              >
+                {selectedReport.days.map((day) => (
+                  <option key={day.dateKey} value={day.dateKey}>
+                    {formatDateKey(day.dateKey)} · {formatCurrency(day.totalPayoutCents)} ·{" "}
+                    {day.status === "COMPLETED" ? "Paid" : "Pending"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Showing one crew payout file at a time to keep the page compact on mobile.
+            Showing one crew and one payout day at a time to keep the page compact on mobile.
           </p>
         </div>
       ) : null}
@@ -233,7 +274,7 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
             ) : null}
 
             <div className="grid gap-3">
-              {report.days.map((day) => {
+              {selectedDay ? [selectedDay].map((day) => {
                 const completeActionKey = `complete:${day.staffUserId}:${day.dateKey}`;
                 const hoursActionKey = `hours:${day.staffUserId}:${day.dateKey}`;
                 const draftedHours = hourDrafts[hoursActionKey] ?? String(day.clockedHours);
@@ -378,7 +419,7 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
                     ) : null}
                   </article>
                 );
-              })}
+              }) : null}
             </div>
           </section>
         );
