@@ -86,7 +86,7 @@ const SCENTS: Record<ScentKey, ScentProfile> = {
     mood: ["Radiant", "Graceful", "Warm"],
     price: "RM169 first 100 / RM239 regular",
     accent: "#E6A89A",
-    image: "/products/aureya.png",
+    image: "/products/aureya-product-20260705.jpg",
     imageAlt: "Aureya fragrance bottle with warm golden-pink liquid.",
   },
   zephyr: {
@@ -103,7 +103,7 @@ const SCENTS: Record<ScentKey, ScentProfile> = {
     mood: ["Confident", "Clean", "Composed"],
     price: "RM169 first 100 / RM239 regular",
     accent: "#6E8FB5",
-    image: "/products/zephyr.png",
+    image: "/products/zephyr-product-20260705.jpg",
     imageAlt: "Zephyr fragrance bottle with cool blue liquid.",
   },
   maris: {
@@ -120,7 +120,7 @@ const SCENTS: Record<ScentKey, ScentProfile> = {
     mood: ["Quiet", "Intimate", "Addictive"],
     price: "RM169 first 100 / RM239 regular",
     accent: "#87957B",
-    image: "/products/maris.png",
+    image: "/products/maris-product-20260705.jpg",
     imageAlt: "Maris fragrance bottle with soft green liquid.",
   },
 };
@@ -962,7 +962,7 @@ export default function FindYourLightPage() {
               <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[rgba(255,255,255,0.05)]">
                 <div className="relative aspect-[4/3]">
                   <Image
-                    src="/products/aureya.png"
+                    src="/products/aureya-product-20260705.jpg"
                     alt="Aureya bottle for TARA scent quiz introduction."
                     fill
                     priority
