@@ -218,7 +218,7 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
                     </div>
 
                     <div className="mt-4 grid gap-2 text-sm sm:grid-cols-5">
-                      <Metric label="Base" value={formatCurrency(day.basePayCents)} />
+                      <Metric label="Base at RM10/hr" value={formatCurrency(day.basePayCents)} />
                       <Metric label="Commission" value={formatCurrency(day.directCommissionCents)} />
                       <Metric label="Target bonus" value={formatCurrency(day.targetBonusCents)} />
                       <Metric label="Senior override" value={formatCurrency(day.seniorOverrideCents)} />

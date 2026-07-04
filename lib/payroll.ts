@@ -1,6 +1,6 @@
 import type { PayoutPreference, PayoutStatus } from "@prisma/client";
 import {
-  BASIC_DAILY_PAY_CENTS,
+  BASE_HOURLY_PAY_CENTS,
   COMMISSION_TARGETS,
   SCENT_TRAIL_DIRECT_COMMISSION_RATE_BPS,
   SENIOR_SCENT_TRAIL_OVERRIDE,
@@ -272,10 +272,9 @@ export function buildStaffPayoutDay(input: {
     (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
     0,
   );
-  const hasWork = clockedMinutes > 0 || dailyOrders.length > 0;
   const computed = {
     clockedHours,
-    basePayCents: hasWork ? BASIC_DAILY_PAY_CENTS : 0,
+    basePayCents: clockedHours * BASE_HOURLY_PAY_CENTS,
     directCommissionCents: getDirectCommissionCents(input.staff, dailyOrders),
     targetBonusCents: getTargetBonusCents(dailyOrders),
     seniorOverrideCents: getSeniorOverrideCents(input.staff, input.dateKey, input.teamOrders),

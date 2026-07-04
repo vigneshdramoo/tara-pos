@@ -2,7 +2,7 @@ import { formatCurrency } from "@/lib/format";
 
 const MALAYSIA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
 
-export const BASIC_DAILY_PAY_CENTS = 7000;
+export const BASE_HOURLY_PAY_CENTS = 1000;
 
 export const SENIOR_SCENT_TRAIL_OVERRIDE = {
   mentorUsername: "syaz",
@@ -379,8 +379,7 @@ export function buildStaffCommissionProgress(
       target.targetUnitPriceCents * target.dailyTargetUnits,
       target.commissionRateBps,
     );
-    const dailyTargetPayoutCents =
-      BASIC_DAILY_PAY_CENTS + dailyTargetCommissionCents + target.targetBonusCents;
+    const dailyTargetPayoutCents = dailyTargetCommissionCents + target.targetBonusCents;
 
     return {
       key: target.key,
@@ -437,8 +436,7 @@ export function buildStaffCommissionProgress(
     todaySalesCents: todayOrders.reduce((sum, order) => sum + order.totalCents, 0),
     todayCommissionCents,
     todayTargetBonusCents,
-    todayPayoutPaceCents:
-      BASIC_DAILY_PAY_CENTS + todayCommissionCents + todayTargetBonusCents + todaySeniorOverrideCents,
+    todayPayoutPaceCents: todayCommissionCents + todayTargetBonusCents + todaySeniorOverrideCents,
     todayOrderCount: todayOrders.length,
     todayWeekdayLabel,
     historicalSameWeekdayOrderAverage:

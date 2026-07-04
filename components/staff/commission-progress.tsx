@@ -1,4 +1,4 @@
-import { BASIC_DAILY_PAY_CENTS, type StaffCommissionProgress } from "@/lib/commissions";
+import { BASE_HOURLY_PAY_CENTS, type StaffCommissionProgress } from "@/lib/commissions";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -35,24 +35,24 @@ export function CommissionProgress({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--brand-gold)]">
-            Today payout
+            Performance pay
           </p>
           <p className="mt-2 text-lg font-semibold text-foreground">
             {formatCurrency(progress.todayPayoutPaceCents)}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Base pay + commission + unlocked bonus
+            Commission + bonus + coaching override
           </p>
         </div>
 
         <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--brand-gold)]">
-            Basic pay
+            Base hourly rate
           </p>
           <p className="mt-2 text-lg font-semibold text-foreground">
-            {formatCurrency(BASIC_DAILY_PAY_CENTS)}
+            {formatCurrency(BASE_HOURLY_PAY_CENTS)}/hr
           </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">Guaranteed shift floor</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Totalled from rounded clocked hours</p>
         </div>
 
         <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
@@ -101,13 +101,16 @@ export function CommissionProgress({
               Payout breakdown
             </p>
             <h4 className="mt-2 text-lg font-semibold text-foreground">
-              {formatCurrency(BASIC_DAILY_PAY_CENTS)} base +{" "}
               {formatCurrency(progress.todayCommissionCents)} commission +{" "}
               {formatCurrency(progress.todayTargetBonusCents)} bonus
               {seniorOverride
                 ? ` + ${formatCurrency(seniorOverride.todayCommissionCents)} coaching override`
                 : ""}
             </h4>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Base pay is calculated in Payouts as rounded clocked hours ×{" "}
+              {formatCurrency(BASE_HOURLY_PAY_CENTS)}.
+            </p>
           </div>
           <div className="text-left sm:text-right">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted-strong)]">
@@ -243,7 +246,7 @@ export function CommissionProgress({
 
               <div className="grid gap-2 text-xs text-[var(--muted)] sm:grid-cols-3">
                 <p>Bonus: {formatCurrency(target.targetBonusCents)}</p>
-                <p>Daily target payout: {formatCurrency(target.dailyTargetPayoutCents)}</p>
+                <p>Target commission + bonus: {formatCurrency(target.dailyTargetPayoutCents)}</p>
                 <p>7-day target: {formatCurrency(target.sevenDayTargetPayoutCents)}</p>
               </div>
             </div>
