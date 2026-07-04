@@ -204,6 +204,10 @@ model StaffPayout {
   targetBonusCents      Int              @default(0)
   seniorOverrideCents   Int              @default(0)
   totalPayoutCents      Int              @default(0)
+  manualClockedHours    Int?
+  manualAdjustedAt      DateTime?
+  manualAdjustedById    String?
+  manualAdjustmentNotes String?
   completedAt           DateTime?
   completedById         String?
   notes                 String?
@@ -215,6 +219,7 @@ model StaffPayout {
   @@unique([staffUserId, dateKey])
   @@index([dateKey])
   @@index([status, dateKey])
+  @@index([manualAdjustedById])
   @@index([completedById])
 }
 

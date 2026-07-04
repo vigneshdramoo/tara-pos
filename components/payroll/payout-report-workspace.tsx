@@ -39,7 +39,12 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState(data.reports[0]?.staffUserId ?? "");
+  const [hourDrafts, setHourDrafts] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
+  const selectedReport =
+    data.reports.find((report) => report.staffUserId === selectedStaffId) ?? data.reports[0] ?? null;
+  const reportsToRender = selectedReport ? [selectedReport] : [];
 
   function updatePreference(payoutPreference: PayoutStaffReport["payoutPreference"]) {
     setMessage(null);
@@ -65,7 +70,7 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
   }
 
   function markCompleted(staffUserId: string, dateKey: string) {
-    const actionKey = `${staffUserId}:${dateKey}`;
+    const actionKey = `complete:${staffUserId}:${dateKey}`;
     setMessage(null);
     setPendingKey(actionKey);
     startTransition(async () => {
@@ -88,6 +93,43 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
     });
   }
 
+  function adjustPayableHours(staffUserId: string, dateKey: string, currentHours: number) {
+    const actionKey = `hours:${staffUserId}:${dateKey}`;
+    const rawValue = hourDrafts[actionKey] ?? String(currentHours);
+    const parsedHours = Number(rawValue);
+
+    if (!Number.isInteger(parsedHours) || parsedHours < 0 || parsedHours > 24) {
+      setMessage("Enter whole payable hours from 0 to 24.");
+      return;
+    }
+
+    setMessage(null);
+    setPendingKey(actionKey);
+    startTransition(async () => {
+      const response = await fetch("/api/payouts", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ staffUserId, dateKey, clockedHours: parsedHours }),
+      });
+      const body = (await response.json().catch(() => null)) as { message?: string } | null;
+
+      setPendingKey(null);
+      if (!response.ok) {
+        setMessage(body?.message ?? "Payable hours adjustment failed.");
+        return;
+      }
+
+      setHourDrafts((drafts) => {
+        const nextDrafts = { ...drafts };
+        delete nextDrafts[actionKey];
+        return nextDrafts;
+      });
+      router.refresh();
+    });
+  }
+
   return (
     <div className="grid gap-4">
       {message ? (
@@ -96,7 +138,33 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
         </div>
       ) : null}
 
-      {data.reports.map((report) => {
+      {data.canManageAll && data.reports.length > 1 ? (
+        <div className="tara-surface rounded-[24px] p-4">
+          <label
+            htmlFor="payout-staff-filter"
+            className="text-xs uppercase tracking-[0.24em] text-[var(--brand-gold)]"
+          >
+            Crew
+          </label>
+          <select
+            id="payout-staff-filter"
+            value={selectedReport?.staffUserId ?? ""}
+            onChange={(event) => setSelectedStaffId(event.target.value)}
+            className="mt-3 min-h-[48px] w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 text-base text-foreground outline-none focus:border-[var(--brand-gold)]"
+          >
+            {data.reports.map((report) => (
+              <option key={report.staffUserId} value={report.staffUserId}>
+                {report.staffName} (@{report.username})
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Showing one crew payout file at a time to keep the page compact on mobile.
+          </p>
+        </div>
+      ) : null}
+
+      {reportsToRender.map((report) => {
         const sevenDayTotal = report.days.reduce((sum, day) => sum + day.totalPayoutCents, 0);
         const sevenDayHours = report.days.reduce((sum, day) => sum + day.clockedHours, 0);
         const currentPreference = report.payoutPreference;
@@ -166,7 +234,9 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
 
             <div className="grid gap-3">
               {report.days.map((day) => {
-                const actionKey = `${day.staffUserId}:${day.dateKey}`;
+                const completeActionKey = `complete:${day.staffUserId}:${day.dateKey}`;
+                const hoursActionKey = `hours:${day.staffUserId}:${day.dateKey}`;
+                const draftedHours = hourDrafts[hoursActionKey] ?? String(day.clockedHours);
                 const canComplete =
                   data.canManageAll && day.status !== "COMPLETED" && day.totalPayoutCents > 0;
 
@@ -186,6 +256,9 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
                         <p className="mt-1 text-sm text-[var(--muted)]">
                           {day.clockedHours}h payable · {formatMinutes(day.clockedMinutes)} actual
                           clocked · {day.orderCount} order{day.orderCount === 1 ? "" : "s"}
+                          {day.isClockedHoursAdjusted
+                            ? ` · adjusted from ${day.actualClockedHours}h auto`
+                            : ""}
                         </p>
                       </div>
 
@@ -199,14 +272,19 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
                         >
                           {day.status === "COMPLETED" ? "Paid" : "Pending"}
                         </span>
+                        {day.isClockedHoursAdjusted ? (
+                          <span className="tara-chip-default rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                            Adjusted
+                          </span>
+                        ) : null}
                         {canComplete ? (
                           <button
                             type="button"
-                            disabled={pendingKey === actionKey}
+                            disabled={pendingKey === completeActionKey}
                             onClick={() => markCompleted(day.staffUserId, day.dateKey)}
                             className="tara-button-primary inline-flex min-h-[42px] items-center justify-center gap-2 rounded-2xl px-4 text-sm disabled:opacity-60"
                           >
-                            {pendingKey === actionKey ? (
+                            {pendingKey === completeActionKey ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <CheckCircle2 className="h-4 w-4" />
@@ -224,6 +302,52 @@ export function PayoutReportWorkspace({ data }: { data: PayoutsData }) {
                       <Metric label="Senior override" value={formatCurrency(day.seniorOverrideCents)} />
                       <Metric label="Sales" value={formatCurrency(day.salesCents)} />
                     </div>
+
+                    {data.canManageAll ? (
+                      <div className="mt-4 grid gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-soft)] p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                        <div>
+                          <label
+                            htmlFor={`payable-hours-${day.staffUserId}-${day.dateKey}`}
+                            className="text-xs uppercase tracking-[0.18em] text-[var(--brand-gold)]"
+                          >
+                            Manual payable hours
+                          </label>
+                          <input
+                            id={`payable-hours-${day.staffUserId}-${day.dateKey}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={24}
+                            step={1}
+                            value={draftedHours}
+                            onChange={(event) =>
+                              setHourDrafts((drafts) => ({
+                                ...drafts,
+                                [hoursActionKey]: event.target.value,
+                              }))
+                            }
+                            className="mt-2 min-h-[44px] w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 text-base font-semibold text-foreground outline-none focus:border-[var(--brand-gold)]"
+                          />
+                          <p className="mt-1 text-xs text-[var(--muted)]">
+                            Auto rounded: {day.actualClockedHours}h from{" "}
+                            {formatMinutes(day.clockedMinutes)} actual clocked.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={pendingKey === hoursActionKey}
+                          onClick={() =>
+                            adjustPayableHours(day.staffUserId, day.dateKey, day.clockedHours)
+                          }
+                          className="tara-button-secondary inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl px-4 text-sm disabled:opacity-60"
+                        >
+                          {pendingKey === hoursActionKey ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          Save hours
+                        </button>
+                      </div>
+                    ) : null}
 
                     {day.completedAt ? (
                       <p className="mt-3 text-xs text-[var(--muted)]">

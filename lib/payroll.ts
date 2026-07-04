@@ -58,6 +58,10 @@ export type PayrollPayout = {
   targetBonusCents: number;
   seniorOverrideCents: number;
   totalPayoutCents: number;
+  manualClockedHours: number | null;
+  manualAdjustedAt: Date | string | null;
+  manualAdjustedById: string | null;
+  manualAdjustmentNotes: string | null;
   completedAt: Date | string | null;
   notes: string | null;
   completedBy: {
@@ -97,6 +101,7 @@ export type StaffPayoutDay = {
   completedAt: string | null;
   completedByName: string | null;
   clockedMinutes: number;
+  actualClockedHours: number;
   clockedHours: number;
   salesCents: number;
   orderCount: number;
@@ -107,6 +112,7 @@ export type StaffPayoutDay = {
   seniorOverrideCents: number;
   totalPayoutCents: number;
   isSnapshot: boolean;
+  isClockedHoursAdjusted: boolean;
   orderRows: Array<{
     orderNumber: string;
     totalCents: number;
@@ -279,19 +285,23 @@ export function buildStaffPayoutDay(input: {
     targetBonusCents: getTargetBonusCents(dailyOrders),
     seniorOverrideCents: getSeniorOverrideCents(input.staff, input.dateKey, input.teamOrders),
   };
-  const useSnapshot = input.payout?.status === "COMPLETED";
-  const payoutSnapshot = useSnapshot ? input.payout : null;
-  const basePayCents = payoutSnapshot ? payoutSnapshot.basePayCents : computed.basePayCents;
-  const directCommissionCents = payoutSnapshot
-    ? payoutSnapshot.directCommissionCents
+  const completedSnapshot = input.payout?.status === "COMPLETED" ? input.payout : null;
+  const manualClockedHours = input.payout?.manualClockedHours ?? null;
+  const adjustedClockedHours = manualClockedHours ?? computed.clockedHours;
+  const adjustedBasePayCents = adjustedClockedHours * BASE_HOURLY_PAY_CENTS;
+  const basePayCents = completedSnapshot ? completedSnapshot.basePayCents : adjustedBasePayCents;
+  const directCommissionCents = completedSnapshot
+    ? completedSnapshot.directCommissionCents
     : computed.directCommissionCents;
-  const targetBonusCents = payoutSnapshot
-    ? payoutSnapshot.targetBonusCents
+  const targetBonusCents = completedSnapshot
+    ? completedSnapshot.targetBonusCents
     : computed.targetBonusCents;
-  const seniorOverrideCents = payoutSnapshot
-    ? payoutSnapshot.seniorOverrideCents
+  const seniorOverrideCents = completedSnapshot
+    ? completedSnapshot.seniorOverrideCents
     : computed.seniorOverrideCents;
-  const reportClockedHours = payoutSnapshot ? payoutSnapshot.clockedHours : computed.clockedHours;
+  const reportClockedHours = completedSnapshot
+    ? completedSnapshot.clockedHours
+    : adjustedClockedHours;
 
   return {
     staffUserId: input.staff.id,
@@ -304,6 +314,7 @@ export function buildStaffPayoutDay(input: {
     completedAt: input.payout?.completedAt ? asDate(input.payout.completedAt).toISOString() : null,
     completedByName: input.payout?.completedBy?.name ?? null,
     clockedMinutes,
+    actualClockedHours: computed.clockedHours,
     clockedHours: reportClockedHours,
     salesCents,
     orderCount: dailyOrders.length,
@@ -314,7 +325,8 @@ export function buildStaffPayoutDay(input: {
     seniorOverrideCents,
     totalPayoutCents:
       basePayCents + directCommissionCents + targetBonusCents + seniorOverrideCents,
-    isSnapshot: useSnapshot,
+    isSnapshot: Boolean(completedSnapshot),
+    isClockedHoursAdjusted: manualClockedHours !== null,
     orderRows: dailyOrders.map((order) => ({
       orderNumber: order.orderNumber,
       totalCents: order.totalCents,
