@@ -235,7 +235,7 @@ export function OrderAmendmentPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-gold)]">
             Manager correction
           </p>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-sm text-[var(--muted)]">
             Daniel can amend basket lines, customer follow-up details, and remarks.
           </p>
         </div>
@@ -270,7 +270,7 @@ export function OrderAmendmentPanel({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700">
               Manager void
             </p>
-            <h4 className="mt-1 text-lg font-semibold text-stone-950">Void {order.orderNumber}</h4>
+            <h4 className="mt-1 text-lg font-semibold text-[var(--brand-midnight)]">Void {order.orderNumber}</h4>
           </div>
           <button
             type="button"
@@ -295,10 +295,10 @@ export function OrderAmendmentPanel({
                   className="mt-1"
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-stone-950">
+                  <span className="block text-sm font-semibold text-[var(--brand-midnight)]">
                     Keep stock out as tester
                   </span>
-                  <span className="mt-1 block text-sm leading-6 text-stone-600">
+                  <span className="mt-1 block text-sm leading-6 text-[var(--muted)]">
                     Removes this from sales while keeping the inventory deduction as tester output.
                   </span>
                 </span>
@@ -314,10 +314,10 @@ export function OrderAmendmentPanel({
                   className="mt-1"
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-stone-950">
+                  <span className="block text-sm font-semibold text-[var(--brand-midnight)]">
                     Restore stock to inventory
                   </span>
-                  <span className="mt-1 block text-sm leading-6 text-stone-600">
+                  <span className="mt-1 block text-sm leading-6 text-[var(--muted)]">
                     Removes this from sales and adds the order quantity back to stock.
                   </span>
                 </span>
@@ -373,7 +373,7 @@ export function OrderAmendmentPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-gold)]">
             Manager correction
           </p>
-          <h4 className="mt-1 text-lg font-semibold text-stone-950">Amend {order.orderNumber}</h4>
+          <h4 className="mt-1 text-lg font-semibold text-[var(--brand-midnight)]">Amend {order.orderNumber}</h4>
         </div>
         <button
           type="button"
@@ -390,7 +390,7 @@ export function OrderAmendmentPanel({
       <div className="mt-5 grid gap-4">
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
               Basket lines
             </p>
             <button
@@ -420,7 +420,7 @@ export function OrderAmendmentPanel({
                 className="grid gap-3 rounded-[18px] border border-[var(--line)] bg-white/82 p-3 md:grid-cols-[minmax(0,1fr)_120px_auto]"
               >
                 <label className="grid gap-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                     Product
                   </span>
                   <select
@@ -442,7 +442,7 @@ export function OrderAmendmentPanel({
                 </label>
 
                 <label className="grid gap-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                     Qty
                   </span>
                   <input
@@ -456,7 +456,7 @@ export function OrderAmendmentPanel({
                 </label>
 
                 <div className="flex items-end justify-between gap-3 md:flex-col md:items-end">
-                  <p className="text-xs leading-5 text-stone-500">
+                  <p className="text-xs leading-5 text-[var(--muted)]">
                     Available after correction:{" "}
                     <span className="font-semibold text-stone-800">
                       {formatInteger(availableQuantity)}
@@ -483,7 +483,7 @@ export function OrderAmendmentPanel({
 
         <div className="grid gap-3 md:grid-cols-2">
           <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
               Customer name
             </span>
             <input
@@ -494,7 +494,7 @@ export function OrderAmendmentPanel({
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
               Social handle
             </span>
             <input
@@ -505,7 +505,7 @@ export function OrderAmendmentPanel({
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
               Phone
             </span>
             <input
@@ -516,7 +516,7 @@ export function OrderAmendmentPanel({
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
               Customer note
             </span>
             <input
@@ -529,7 +529,7 @@ export function OrderAmendmentPanel({
         </div>
 
         <label className="grid gap-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
             Order remarks
           </span>
           <textarea
@@ -542,7 +542,7 @@ export function OrderAmendmentPanel({
         </label>
 
         <label className="grid gap-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
             Correction reason
           </span>
           <input
@@ -570,7 +570,7 @@ export function OrderAmendmentPanel({
         <button
           type="submit"
           disabled={!canSave || saving || refreshing}
-          className="touch-target rounded-full bg-[var(--brand-gold)] px-5 text-sm font-semibold text-stone-950 transition hover:bg-[var(--brand-amber)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="touch-target rounded-full bg-[var(--brand-gold)] px-5 text-sm font-semibold text-[var(--brand-midnight)] transition hover:bg-[var(--brand-amber)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Saving amendment..." : refreshing ? "Refreshing orders..." : "Save amendment"}
         </button>

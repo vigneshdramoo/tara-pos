@@ -3,13 +3,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { PageIntro } from "@/components/page-intro";
+import { PayoutReportWorkspace } from "@/components/payroll/payout-report-workspace";
 import { ShiftClockPanel } from "@/components/payroll/shift-clock-panel";
 import { CommissionProgress } from "@/components/staff/commission-progress";
 import { Pill } from "@/components/ui/pill";
+import { StatusNotice } from "@/components/ui/status-notice";
 import { Surface } from "@/components/ui/surface";
 import { formatFullDateTime } from "@/lib/format";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
-import { getStaffCommissionProgress, getStaffShiftClockData } from "@/lib/queries";
+import { getPayoutsData, getStaffCommissionProgress, getStaffShiftClockData } from "@/lib/queries";
 import { canManageStaff, getRoleLabel } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +30,11 @@ export default async function AccountPage() {
     getStaffShiftClockData(session.staffId),
   ]);
   const isManager = canManageStaff(session.role);
-  const pageTitle = isManager ? "Manager account settings" : "Personal account settings";
+  const payoutsData = isManager ? null : await getPayoutsData(session);
+  const pageTitle = isManager ? "Manager account settings" : "My shift";
   const pageDescription = isManager
     ? "Your password, shift clock, and payout pace — with staff oversight one tap away."
-    : "Your password, shift clock, and selling targets.";
+    : "Clock your shift, track targets, check payouts, and manage your password.";
 
   return (
     <>
@@ -130,6 +133,13 @@ export default async function AccountPage() {
 
         <ChangePasswordForm />
       </section>
+
+      {payoutsData ? (
+        <>
+          {payoutsData.databaseIssue ? <StatusNotice message={payoutsData.databaseIssue} /> : null}
+          <PayoutReportWorkspace data={payoutsData} />
+        </>
+      ) : null}
     </>
   );
 }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
-  ClipboardList,
   KeyRound,
   LayoutDashboard,
   ReceiptText,
@@ -28,12 +27,21 @@ const baseNavItems: Array<{
 }> = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pos", label: "POS", icon: ShoppingBag },
-  { href: "/leads", label: "Leads", icon: ClipboardList },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
-  { href: "/payouts" as Route, label: "Payouts", icon: ReceiptText },
-  { href: "/account", label: "Account", icon: KeyRound },
 ];
+
+const myShiftNavItem = { href: "/account", label: "My Shift", icon: KeyRound } satisfies {
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+};
+
+const payoutsNavItem = { href: "/payouts" as Route, label: "Payouts", icon: ReceiptText } satisfies {
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+};
 
 const managerNavItem = { href: "/staff", label: "Staff", icon: ShieldCheck } satisfies {
   href: Route;
@@ -65,8 +73,10 @@ export function SidebarNav({
   const pathname = usePathname();
   const navItems = [
     ...baseNavItems,
+    ...(!role || canManageStaff(role) ? [payoutsNavItem] : []),
     ...(!role || canManageInventory(role) ? [inventoryNavItem] : []),
     ...(!role || canManageStaff(role) ? [managerNavItem] : []),
+    myShiftNavItem,
   ];
 
   return (

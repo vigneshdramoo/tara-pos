@@ -61,9 +61,7 @@ export function getRoleCapabilities(role: StaffRole) {
     return [
       "Full dashboard and POS access",
       "Customer and order visibility",
-      "Booth lead and quiz participant capture",
-      "AI brief access",
-      "Creative studio access",
+      "Quiz lead visibility",
       "Personal password reset",
       "Product editing, restocks, and stock adjustments",
       "Manager order amendments and correction notes",
@@ -76,9 +74,7 @@ export function getRoleCapabilities(role: StaffRole) {
     return [
       "Dashboard and checkout access",
       "Customer and order visibility",
-      "Booth lead and quiz participant capture",
-      "AI brief access",
-      "Creative studio access",
+      "Quiz lead visibility",
       "Personal password reset",
       "Product editing, restocks, and stock adjustments",
       "Personal payout history visibility",
@@ -89,9 +85,8 @@ export function getRoleCapabilities(role: StaffRole) {
   return [
     "Checkout and order lookup access",
     "Customer capture visibility",
-    "Booth lead and quiz participant capture",
+    "Quiz lead visibility",
     "Daily dashboard visibility",
-    "Creative studio access",
     "Shift clock for Scent Trail crew",
     "Personal payout history visibility",
     "Personal password reset",

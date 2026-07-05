@@ -5,6 +5,7 @@ import { PayoutReportWorkspace } from "@/components/payroll/payout-report-worksp
 import { Pill } from "@/components/ui/pill";
 import { StatusNotice } from "@/components/ui/status-notice";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
+import { canManageStaff } from "@/lib/staff";
 import { formatCurrency } from "@/lib/format";
 import { getPayoutsData } from "@/lib/queries";
 
@@ -17,6 +18,10 @@ export default async function PayoutsPage() {
 
   if (!session) {
     redirect("/login");
+  }
+
+  if (!canManageStaff(session.role)) {
+    redirect("/account");
   }
 
   const payoutsData = await getPayoutsData(session);
@@ -34,16 +39,12 @@ export default async function PayoutsPage() {
     <>
       <PageIntro
         eyebrow="Crew payout"
-        title={payoutsData.canManageAll ? "Payout control" : "My payout history"}
-        description={
-          payoutsData.canManageAll
-            ? "Crew hours, commissions, bonuses, and payout status."
-            : "Your last 7 payout days: hours, commission, and status."
-        }
+        title="Payout control"
+        description="Crew hours, commissions, bonuses, and payout status."
         actions={
           <div className="flex flex-wrap justify-end gap-2">
             <Pill tone="accent">{formatCurrency(pendingTotalCents)} pending</Pill>
-            <Pill>{payoutsData.canManageAll ? "Daniel oversight" : "Crew view"}</Pill>
+            <Pill>Manager oversight</Pill>
           </div>
         }
       />
