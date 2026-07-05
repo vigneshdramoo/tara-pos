@@ -7,8 +7,6 @@ import type {
   OrderStatus,
   OrderVoidInventoryAction,
   PaymentMethod,
-  PurchaseIntent,
-  QuizLeadSource,
 } from "@prisma/client";
 
 export type ProductCardData = {
@@ -283,29 +281,3 @@ export type PayoutsData = {
   databaseIssue?: string;
 };
 
-export type QuizLeadInsight = {
-  id: string;
-  leadNumber: string;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  ageRange: string | null;
-  genderIdentity: string | null;
-  city: string | null;
-  eventName: string | null;
-  source: QuizLeadSource;
-  resultScent: string;
-  secondaryScent: string | null;
-  purchaseIntent: PurchaseIntent;
-  marketingConsent: boolean;
-  notes: string | null;
-  convertedCustomerId: string | null;
-  convertedCustomerName: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type QuizLeadsData = {
-  leads: QuizLeadInsight[];
-  databaseIssue?: string;
-};

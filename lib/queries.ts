@@ -30,7 +30,6 @@ import type {
   PosData,
   PromotionInsight,
   ProductCardData,
-  QuizLeadsData,
   RecentOrderInsight,
   StaffShiftClockData,
   StaffUsersData,
@@ -742,54 +741,6 @@ export async function getCustomersData(): Promise<CustomersData> {
     return {
       customers: [],
       databaseIssue: logDatabaseFallback("customers", error),
-    };
-  }
-}
-
-export async function getQuizLeadsData(): Promise<QuizLeadsData> {
-  try {
-    const prisma = requirePrisma();
-    const leads = await prisma.quizLead.findMany({
-      take: 250,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        convertedCustomer: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-
-    return {
-      leads: leads.map((lead) => ({
-        id: lead.id,
-        leadNumber: lead.leadNumber,
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        ageRange: lead.ageRange,
-        genderIdentity: lead.genderIdentity,
-        city: lead.city,
-        eventName: lead.eventName,
-        source: lead.source,
-        resultScent: lead.resultScent,
-        secondaryScent: lead.secondaryScent,
-        purchaseIntent: lead.purchaseIntent,
-        marketingConsent: lead.marketingConsent,
-        notes: lead.notes,
-        convertedCustomerId: lead.convertedCustomerId,
-        convertedCustomerName: lead.convertedCustomer?.name ?? null,
-        createdAt: lead.createdAt.toISOString(),
-        updatedAt: lead.updatedAt.toISOString(),
-      })),
-    };
-  } catch (error) {
-    return {
-      leads: [],
-      databaseIssue: logDatabaseFallback("quiz-leads", error),
     };
   }
 }

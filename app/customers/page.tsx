@@ -1,66 +1,14 @@
-import Link from "next/link";
-import type { Route } from "next";
-import { BoothLeadsWorkspace } from "@/components/leads/booth-leads-workspace";
 import { PageIntro } from "@/components/page-intro";
 import { Pill } from "@/components/ui/pill";
 import { StatusNotice } from "@/components/ui/status-notice";
 import { Surface } from "@/components/ui/surface";
 import { formatCompactDate, formatCurrency } from "@/lib/format";
-import { getCustomersData, getQuizLeadsData } from "@/lib/queries";
-import { cn } from "@/lib/utils";
+import { getCustomersData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 export const preferredRegion = "sin1";
 
-type CustomersPageProps = {
-  searchParams: Promise<{
-    view?: string;
-  }>;
-};
-
-function ViewTab({ href, label, active }: { href: Route; label: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      prefetch={false}
-      className={cn(
-        "touch-target inline-flex items-center rounded-full px-5 text-sm font-medium transition",
-        active
-          ? "tara-panel-dark shadow-lg"
-          : "border border-[var(--line)] text-[var(--muted)] hover:text-[var(--brand-midnight)]",
-      )}
-    >
-      {label}
-    </Link>
-  );
-}
-
-export default async function CustomersPage({ searchParams }: CustomersPageProps) {
-  const { view: viewParam } = await searchParams;
-  const view = viewParam === "leads" ? "leads" : "customers";
-
-  if (view === "leads") {
-    const leadsData = await getQuizLeadsData();
-
-    return (
-      <>
-        <PageIntro
-          eyebrow="Clienteling"
-          title="Customers and leads"
-          description="Quiz leads with scent result, consent, and purchase intent."
-        />
-
-        <div className="flex flex-wrap gap-2">
-          <ViewTab href="/customers" label="Customers" active={false} />
-          <ViewTab href={"/customers?view=leads" as Route} label="Leads" active />
-        </div>
-
-        {leadsData.databaseIssue ? <StatusNotice message={leadsData.databaseIssue} /> : null}
-        <BoothLeadsWorkspace leads={leadsData.leads} />
-      </>
-    );
-  }
-
+export default async function CustomersPage() {
   const { customers, databaseIssue } = await getCustomersData();
   const repeatCustomers = customers.filter((customer) => customer.ordersCount > 1).length;
 
@@ -68,14 +16,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
     <>
       <PageIntro
         eyebrow="Clienteling"
-        title="Customers and leads"
+        title="Customer capture"
         description="Captured customers with repeat-buyer and lifetime-spend visibility."
       />
-
-      <div className="flex flex-wrap gap-2">
-        <ViewTab href="/customers" label="Customers" active />
-        <ViewTab href={"/customers?view=leads" as Route} label="Leads" active={false} />
-      </div>
 
       {databaseIssue ? <StatusNotice message={databaseIssue} /> : null}
 

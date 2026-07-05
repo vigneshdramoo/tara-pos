@@ -17,7 +17,6 @@ import {
   formatPublicMarketStop04PackageSummary,
   getCheckoutPromotionOption,
   isCheckoutPromotionId,
-  normalizeCheckoutPromotionId,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import { calculateLineCommissionFromTotal } from "@/lib/commissions";
@@ -77,12 +76,6 @@ function buildPromotionOrderNote(
 
   const promotion = getCheckoutPromotionOption(promotionId);
   const promotionSummary = [`Promotion: ${promotion.label}`];
-
-  if (promotionId === "HUUHA_TRAVEL_BUNDLE" && checkoutPricing.eightMlBundleCount > 0) {
-    promotionSummary.push(
-      `${checkoutPricing.eightMlBundleCount} x Huuha Land travel bundle applied`,
-    );
-  }
 
   if (promotionId === "PUBLIC_MARKET_STOP04") {
     promotionSummary.push("Scent Trail travel-size set pricing");
@@ -198,7 +191,7 @@ export async function POST(request: Request) {
     if (!isCheckoutPromotionId(requestedPromotionId)) {
       throw new CheckoutError("Choose a valid promotion before checkout.", 400);
     }
-    const promotionId = normalizeCheckoutPromotionId(requestedPromotionId);
+    const promotionId = requestedPromotionId;
 
     const requestedQuantitiesByProductId = new Map<string, number>();
 

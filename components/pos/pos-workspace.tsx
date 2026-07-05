@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   calculateCheckoutPricing,
   isCheckoutPromotionId,
-  normalizeCheckoutPromotionId,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import {
@@ -157,7 +156,7 @@ export function PosWorkspace({
 
     if (isCheckoutPromotionId(rawPromotionId)) {
       const frame = window.requestAnimationFrame(() => {
-        setPromotionId(normalizeCheckoutPromotionId(rawPromotionId));
+        setPromotionId(rawPromotionId);
       });
 
       return () => window.cancelAnimationFrame(frame);

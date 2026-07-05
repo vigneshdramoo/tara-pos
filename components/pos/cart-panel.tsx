@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   CHECKOUT_PROMOTION_OPTIONS,
-  EIGHT_ML_EDP_BUNDLE_OFFER,
   PUBLIC_MARKET_STOP04_OFFER,
   type CheckoutPromotionId,
   type CheckoutLinePricing,
@@ -76,7 +75,6 @@ export function CartPanel({
   cartLinePricing,
   eightMlBundleCount,
   eightMlEligibleUnits,
-  eightMlUnitsUntilNextBundle,
   freeGiftEligibleUnits,
   freeGiftClaimedUnits,
   freeGiftUnitsRemaining,
@@ -101,19 +99,7 @@ export function CartPanel({
     cartLinePricing.map((linePricing) => [linePricing.productId, linePricing]),
   );
   const cartQuantityByProductId = new Map(cart.map((item) => [item.id, item.quantity]));
-  const isTravelBundlePromotion =
-    promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE";
   const isStop04Promotion = promotionId === "PUBLIC_MARKET_STOP04";
-  const showEightMlOfferTracker = isTravelBundlePromotion || isStop04Promotion;
-  const travelBundleUnitsInProgress = isTravelBundlePromotion
-    ? eightMlEligibleUnits === 0
-      ? 0
-      : eightMlUnitsUntilNextBundle === 0
-        ? EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize
-        : EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlUnitsUntilNextBundle
-    : 0;
-  const travelBundleProgressPercent =
-    (travelBundleUnitsInProgress / EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize) * 100;
   const stop04ProgressTarget =
     eightMlEligibleUnits < 3 ? 3 : eightMlEligibleUnits < 6 ? 6 : eightMlEligibleUnits;
   const stop04ProgressPercent = stop04ProgressTarget
@@ -125,19 +111,6 @@ export function CartPanel({
       count: publicMarketStop04PackageBreakdown[offerPackage.key],
     }))
     .filter((offerPackage) => offerPackage.count > 0);
-  const travelBundleHeadline = isTravelBundlePromotion
-    ? eightMlBundleCount > 0
-      ? `${eightMlBundleCount} bundle${eightMlBundleCount === 1 ? "" : "s"} unlocked`
-      : "Build the RM99 travel bundle"
-    : offerHeadline;
-  const travelBundleMessage = isTravelBundlePromotion
-    ? eightMlEligibleUnits === 0
-      ? `Add any ${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize} travel sizes to unlock ${promotionLabel} at ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}.`
-      : eightMlUnitsUntilNextBundle === 0
-        ? `This set is complete at ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)}. Add more travel sizes to start the next bundle.`
-      : `Add ${eightMlUnitsUntilNextBundle} more travel size${eightMlUnitsUntilNextBundle === 1 ? "" : "s"} to unlock the next ${formatCurrency(EIGHT_ML_EDP_BUNDLE_OFFER.bundlePriceCents)} bundle.`
-    : offerCallout;
-
   function getStockToneClasses(tone: ReturnType<typeof getStockStatus>["tone"]) {
     switch (tone) {
       case "healthy":
@@ -266,24 +239,22 @@ export function CartPanel({
           )}
         </div>
 
-        {showEightMlOfferTracker ? (
+        {isStop04Promotion ? (
           <div className="rounded-[20px] border border-[rgba(202,158,91,0.32)] bg-[linear-gradient(135deg,rgba(202,158,91,0.14),rgba(247,243,235,0.92))] p-3 shadow-[0_18px_50px_rgba(202,158,91,0.12)] sm:rounded-[24px] sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold tracking-[0.18em] text-[var(--brand-gold)] uppercase">
-                  {isStop04Promotion ? "Scent Trail tracker" : "Travel bundle tracker"}
+                  {"Scent Trail tracker"}
                 </p>
                 <h4 className="mt-1 text-base font-semibold text-foreground sm:mt-2 sm:text-lg">
-                  {travelBundleHeadline}
+                  {offerHeadline}
                 </h4>
                 <p className="mt-1 text-sm leading-6 text-[var(--muted-strong)] sm:mt-2">
-                  {travelBundleMessage}
+                  {offerCallout}
                 </p>
               </div>
               <span className="rounded-full border border-[rgba(202,158,91,0.28)] bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-midnight)]">
-                {isStop04Promotion
-                  ? `${eightMlEligibleUnits}/${stop04ProgressTarget || 3}`
-                  : `${travelBundleUnitsInProgress}/${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize}`}
+                {`${eightMlEligibleUnits}/${stop04ProgressTarget || 3}`}
               </span>
             </div>
 
@@ -291,12 +262,7 @@ export function CartPanel({
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,var(--brand-gold),var(--brand-amber))] transition-[width]"
                 style={{
-                  width: `${Math.max(
-                    isStop04Promotion ? stop04ProgressPercent : travelBundleProgressPercent,
-                    (isStop04Promotion ? stop04ProgressPercent : travelBundleProgressPercent) > 0
-                      ? 12
-                      : 0,
-                  )}%`,
+                  width: `${Math.max(stop04ProgressPercent, stop04ProgressPercent > 0 ? 12 : 0)}%`,
                 }}
               />
             </div>
@@ -306,19 +272,17 @@ export function CartPanel({
                 Travel sizes in cart: <span className="tabular-nums font-semibold text-foreground">{eightMlEligibleUnits}</span>
               </span>
               <span className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]">
-                {isStop04Promotion ? "Scent Trail sets" : "RM99 bundles"}:{" "}
+                {"Scent Trail sets"}:{" "}
                 <span className="tabular-nums font-semibold text-foreground">{eightMlBundleCount}</span>
               </span>
-              {isStop04Promotion
-                ? stop04PackageSummary.map((offerPackage) => (
-                    <span
-                      key={offerPackage.key}
-                      className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]"
-                    >
-                      {offerPackage.count} x {offerPackage.label}
-                    </span>
-                  ))
-                : null}
+              {stop04PackageSummary.map((offerPackage) => (
+                <span
+                  key={offerPackage.key}
+                  className="rounded-full border border-[rgba(26,51,74,0.08)] bg-white/80 px-3 py-1 text-xs font-medium text-[var(--muted-strong)]"
+                >
+                  {offerPackage.count} x {offerPackage.label}
+                </span>
+              ))}
             </div>
           </div>
         ) : null}
@@ -550,7 +514,7 @@ export function CartPanel({
                 <span className="text-[rgba(247,243,235,0.72)]">Active promotion</span>
                 <span className="font-semibold">{offerHeadline}</span>
               </div>
-              {offerCallout && !isTravelBundlePromotion ? (
+              {offerCallout ? (
                 <p className="mt-2 text-xs leading-6 text-[rgba(247,243,235,0.72)]">{offerCallout}</p>
               ) : null}
             </div>

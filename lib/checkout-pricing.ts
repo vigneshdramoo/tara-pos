@@ -1,10 +1,3 @@
-export const EIGHT_ML_EDP_BUNDLE_OFFER = {
-  label: "3 x 8mL EDP",
-  bundleSize: 3,
-  bundlePriceCents: 9900,
-  discountedUnitPriceCents: 3300,
-} as const;
-
 export const BOOTH_UNLOCK_OFFER = {
   label: "Follow.Tag.Unlock",
   eightMlUnitPriceCents: 3800,
@@ -32,8 +25,6 @@ export const VENDOR_EXCLUSIVE_OFFER = {
 
 export const CHECKOUT_PROMOTION_IDS = [
   "NONE",
-  "EIGHT_ML_BUNDLE",
-  "HUUHA_TRAVEL_BUNDLE",
   "PUBLIC_MARKET_STOP04",
   "FOLLOW_TAG_UNLOCK",
   "SUNWAY_STUDENT",
@@ -155,21 +146,9 @@ export function isCheckoutPromotionId(value: string | undefined | null): value i
   return CHECKOUT_PROMOTION_IDS.some((id) => id === value);
 }
 
-export function normalizeCheckoutPromotionId(
-  promotionId: CheckoutPromotionId,
-): CheckoutPromotionId {
-  if (promotionId === "EIGHT_ML_BUNDLE" || promotionId === "HUUHA_TRAVEL_BUNDLE") {
-    return "PUBLIC_MARKET_STOP04";
-  }
-
-  return promotionId;
-}
-
 export function getCheckoutPromotionOption(promotionId: CheckoutPromotionId) {
-  const normalizedPromotionId = normalizeCheckoutPromotionId(promotionId);
-
   return (
-    CHECKOUT_PROMOTION_OPTIONS.find((option) => option.id === normalizedPromotionId) ??
+    CHECKOUT_PROMOTION_OPTIONS.find((option) => option.id === promotionId) ??
     CHECKOUT_PROMOTION_OPTIONS[0]
   );
 }
@@ -271,75 +250,6 @@ function calculateStandardPricing(items: CheckoutPricingItem[], promotionId: Che
               freeGiftClaimedUnits === 1 ? "" : "s"
             } already added to this order.`
           : null,
-  });
-}
-
-function calculateEightMlBundlePricing(
-  items: CheckoutPricingItem[],
-  promotionId: Extract<CheckoutPromotionId, "EIGHT_ML_BUNDLE" | "HUUHA_TRAVEL_BUNDLE">,
-) {
-  const promotion = getCheckoutPromotionOption(promotionId);
-  const eightMlEligibleUnits = items.reduce(
-    (sum, item) => sum + (isEightMlEdpBundleEligible(item) ? item.quantity : 0),
-    0,
-  );
-  const eightMlBundleCount = Math.floor(
-    eightMlEligibleUnits / EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize,
-  );
-  const eightMlBundledUnits = eightMlBundleCount * EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize;
-  let remainingBundledUnits = eightMlBundledUnits;
-
-  const lines = finalizeLines(
-    items.map((item) => {
-      const listTotalCents = item.priceCents * item.quantity;
-      const bundleUnits = isEightMlEdpBundleEligible(item)
-        ? Math.min(item.quantity, remainingBundledUnits)
-        : 0;
-      remainingBundledUnits -= bundleUnits;
-
-      const regularUnits = item.quantity - bundleUnits;
-      const totalPriceCents =
-        bundleUnits * EIGHT_ML_EDP_BUNDLE_OFFER.discountedUnitPriceCents +
-        regularUnits * item.priceCents;
-
-      return {
-        productId: item.productId,
-        quantity: item.quantity,
-        listTotalCents,
-        totalPriceCents,
-        discountCents: listTotalCents - totalPriceCents,
-        bundleUnits,
-        regularUnits,
-        discountedUnits: bundleUnits,
-        freeUnits: 0,
-        promotionLabel: bundleUnits ? promotion.label : null,
-        promotionDetail: bundleUnits
-          ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in the RM99 travel bundle`
-          : null,
-      };
-    }),
-  );
-
-  const eightMlRemainder = eightMlEligibleUnits % EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize;
-
-  return buildPricingSummary({
-    promotionId,
-    lines,
-    eightMlBundleCount,
-    eightMlEligibleUnits,
-    eightMlUnitsUntilNextBundle: eightMlRemainder
-      ? EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlRemainder
-      : 0,
-    offerHeadline:
-      eightMlBundleCount > 0
-        ? `${eightMlBundleCount} ${promotion.label} offer${eightMlBundleCount === 1 ? "" : "s"} applied`
-        : null,
-    offerCallout:
-      eightMlEligibleUnits > 0 && eightMlRemainder
-        ? `Add ${
-            EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlRemainder
-          } more 8mL travel size${EIGHT_ML_EDP_BUNDLE_OFFER.bundleSize - eightMlRemainder === 1 ? "" : "s"} to unlock another RM99 bundle.`
-        : null,
   });
 }
 
@@ -810,11 +720,7 @@ export function calculateCheckoutPricing(
   items: CheckoutPricingItem[],
   promotionId: CheckoutPromotionId = "NONE",
 ): CheckoutPricing {
-  const normalizedPromotionId = normalizeCheckoutPromotionId(promotionId);
-
-  switch (normalizedPromotionId) {
-    case "HUUHA_TRAVEL_BUNDLE":
-      return calculateEightMlBundlePricing(items, "HUUHA_TRAVEL_BUNDLE");
+  switch (promotionId) {
     case "PUBLIC_MARKET_STOP04":
       return calculatePublicMarketStop04Pricing(items);
     case "FOLLOW_TAG_UNLOCK":
