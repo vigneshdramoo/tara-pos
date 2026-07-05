@@ -90,7 +90,6 @@ export function slugifyProductName(value: string) {
 
 export function revalidateInventoryPaths() {
   revalidatePath("/");
-  revalidatePath("/assistant");
   revalidatePath("/inventory");
   revalidatePath("/pos");
 }

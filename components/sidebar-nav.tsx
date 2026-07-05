@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
-  Camera,
   ClipboardList,
   KeyRound,
   LayoutDashboard,
@@ -13,7 +12,6 @@ import {
   ScrollText,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
   Users,
 } from "lucide-react";
 import {
@@ -34,8 +32,6 @@ const baseNavItems: Array<{
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: ScrollText },
   { href: "/payouts" as Route, label: "Payouts", icon: ReceiptText },
-  { href: "/assistant", label: "Daily Insights", icon: Sparkles },
-  { href: "/creative", label: "Creative", icon: Camera },
   { href: "/account", label: "Account", icon: KeyRound },
 ];
 

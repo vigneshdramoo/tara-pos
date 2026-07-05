@@ -229,7 +229,6 @@ async function resolveAmendedCustomer(
 function revalidateOrderAmendmentPaths() {
   revalidatePath("/");
   revalidatePath("/account");
-  revalidatePath("/assistant");
   revalidatePath("/customers");
   revalidatePath("/inventory");
   revalidatePath("/orders");

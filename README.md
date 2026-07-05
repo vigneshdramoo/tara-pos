@@ -17,8 +17,6 @@ A premium iPad POS web app for the TARA perfume brand, now prepared for secure o
 - Customer list with lifetime spend and repeat-buyer visibility
 - Order history with item-level breakdown
 - Manager-only staff directory with role-aware access
-- Local AI assistant page for sales summaries, restock prompts, and Tomedes SMART handoff packs
-- Creative studio with uploaded reference photos, POS product-photo fallback, 10 emotional storytelling campaign prompt modes, fresh-request variation to avoid same-looking outputs, aspect presets, upscale-aware image generation prompts, Midjourney handoff packs, and Tomedes SMART prompt-refinement briefs
 
 ## Online deployment profile
 
@@ -36,8 +34,6 @@ Create a `.env` file from `.env.example` and set:
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/tara_pos?schema=public&sslmode=require"
 NEXT_PUBLIC_APP_URL="https://pos.yourdomain.com"
 POS_SESSION_SECRET="a-long-random-secret"
-OPENAI_API_KEY="sk-..."
-OPENAI_IMAGE_MODEL="gpt-image-1.5"
 SEED_MANAGER_PASSWORD="set-daniels-bootstrap-password"
 SEED_SALES_MANAGER_PASSWORD="set-shireens-bootstrap-password"
 SEED_CASHIER_PASSWORD="set-cashier-bootstrap-password"
@@ -49,8 +45,6 @@ SEED_SOFEA_PASSWORD="set-sofeas-bootstrap-password"
 `NEXT_PUBLIC_APP_URL` should be the final public HTTPS URL of the POS.
 The seeded staff usernames are `daniel`, `shireen`, `cashier`, `syaz`, `jermaine`, and `sofea`.
 If you do not override the seed passwords, all six accounts default to `TARA2026`.
-`OPENAI_API_KEY` is only required if you want the Creative Studio to render images directly from the app.
-If you use Midjourney, the Creative Studio can still generate the full strategy, prompt pack, aspect guidance, and reference instructions without that key.
 For staging, you can also enable a demo login hint with `NEXT_PUBLIC_ENABLE_STAGING_DEMO="true"` and label the UI with `NEXT_PUBLIC_APP_ENV_LABEL="Staging"`.
 
 ## Staging environment

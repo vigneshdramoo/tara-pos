@@ -21,7 +21,7 @@ export default async function Home() {
       <PageIntro
         eyebrow="Daily trading"
         title="Boutique command center"
-        description="Track today’s revenue, watch what is moving on the fragrance floor, and catch low-stock risks before they disrupt the selling rhythm."
+        description="Today’s revenue, movers, and low-stock risks at a glance."
         actions={
           <div className="tara-card-soft rounded-[22px] border border-[var(--line)] px-4 py-3 text-sm">
             <p className="font-semibold text-[var(--brand-midnight)]">System online</p>

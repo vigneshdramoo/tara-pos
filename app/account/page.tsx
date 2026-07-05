@@ -30,8 +30,8 @@ export default async function AccountPage() {
   const isManager = canManageStaff(session.role);
   const pageTitle = isManager ? "Manager account settings" : "Personal account settings";
   const pageDescription = isManager
-    ? "Manage the password tied to your own manager account, keep your payout pace visible, and jump into staff oversight when the boutique floor needs support."
-    : "Manage the password tied to your own TARA staff account while keeping the boutique floor protected and your selling targets visible.";
+    ? "Your password, shift clock, and payout pace — with staff oversight one tap away."
+    : "Your password, shift clock, and selling targets.";
 
   return (
     <>

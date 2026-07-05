@@ -17,32 +17,32 @@ export default async function CustomersPage() {
       <PageIntro
         eyebrow="Clienteling"
         title="Customer capture"
-        description="Every checkout can feed a richer customer record, making it easy to remember preferences, repeat buyers, and high-value fragrance clients."
+        description="Captured customers with repeat-buyer and lifetime-spend visibility."
       />
 
       {databaseIssue ? <StatusNotice message={databaseIssue} /> : null}
 
       <section className="grid gap-4 md:grid-cols-3">
         <Surface>
-          <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Captured profiles</p>
-          <p className="mt-4 font-display text-5xl text-stone-950">{customers.length}</p>
-          <p className="mt-2 text-sm text-stone-600">Stored in the live boutique database.</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Captured profiles</p>
+          <p className="mt-4 font-display text-5xl text-[var(--brand-midnight)]">{customers.length}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">Stored in the live boutique database.</p>
         </Surface>
         <Surface>
-          <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Repeat buyers</p>
-          <p className="mt-4 font-display text-5xl text-stone-950">{repeatCustomers}</p>
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Repeat buyers</p>
+          <p className="mt-4 font-display text-5xl text-[var(--brand-midnight)]">{repeatCustomers}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">
             Guests with more than one recorded order so far.
           </p>
         </Surface>
         <Surface>
-          <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Tracked value</p>
-          <p className="mt-4 font-display text-5xl text-stone-950">
+          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Tracked value</p>
+          <p className="mt-4 font-display text-5xl text-[var(--brand-midnight)]">
             {formatCurrency(
               customers.reduce((sum, customer) => sum + customer.lifetimeValueCents, 0),
             )}
           </p>
-          <p className="mt-2 text-sm text-stone-600">Lifetime spend across captured customers.</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">Lifetime spend across captured customers.</p>
         </Surface>
       </section>
 
@@ -52,11 +52,11 @@ export default async function CustomersPage() {
             <Surface key={customer.id} className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-stone-950">{customer.name}</h3>
-                  <p className="mt-1 text-sm text-stone-600">
+                  <h3 className="text-xl font-semibold text-[var(--brand-midnight)]">{customer.name}</h3>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
                     {customer.email ? `Social handle · ${customer.email}` : "No social handle captured"}
                   </p>
-                  <p className="text-sm text-stone-600">{customer.phone ?? "No phone captured"}</p>
+                  <p className="text-sm text-[var(--muted)]">{customer.phone ?? "No phone captured"}</p>
                 </div>
                 <Pill tone={customer.ordersCount > 1 ? "accent" : "default"}>
                   {customer.ordersCount > 1 ? "Repeat" : "New"} client
@@ -65,24 +65,24 @@ export default async function CustomersPage() {
 
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded-[22px] bg-white/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-stone-500">Orders</p>
-                  <p className="mt-2 text-2xl font-semibold text-stone-950">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Orders</p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--brand-midnight)]">
                     {customer.ordersCount}
                   </p>
                 </div>
                 <div className="rounded-[22px] bg-white/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-stone-500">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
                     Lifetime spend
                   </p>
-                  <p className="mt-2 text-2xl font-semibold text-stone-950">
+                  <p className="mt-2 text-2xl font-semibold text-[var(--brand-midnight)]">
                     {formatCurrency(customer.lifetimeValueCents)}
                   </p>
                 </div>
                 <div className="rounded-[22px] bg-white/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-stone-500">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
                     Last purchase
                   </p>
-                  <p className="mt-2 text-2xl font-semibold text-stone-950">
+                  <p className="mt-2 text-2xl font-semibold text-[var(--brand-midnight)]">
                     {customer.lastPurchaseAt ? formatCompactDate(customer.lastPurchaseAt) : "—"}
                   </p>
                 </div>
@@ -96,7 +96,7 @@ export default async function CustomersPage() {
             </Surface>
           ))
         ) : (
-          <Surface className="text-sm leading-7 text-stone-600">
+          <Surface className="text-sm leading-7 text-[var(--muted)]">
             {databaseIssue
               ? "Customer records will appear once the hosted database is connected and migrated."
               : "No customer profiles have been captured yet."}

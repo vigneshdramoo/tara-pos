@@ -14,7 +14,7 @@ export default async function PosPage() {
       <PageIntro
         eyebrow="Selling floor"
         title="Product catalog and checkout"
-        description="Browse the fragrance collection, keep the cart flowing with big touch targets, and capture customer details at the moment of purchase."
+        description="Browse the collection, build the cart, and check out."
       />
       {data.databaseIssue ? <StatusNotice message={data.databaseIssue} /> : null}
       <PosWorkspace products={data.products} recentCustomers={data.recentCustomers} />

@@ -37,8 +37,8 @@ export default async function PayoutsPage() {
         title={payoutsData.canManageAll ? "Payout control" : "My payout history"}
         description={
           payoutsData.canManageAll
-            ? "Review Syazwana and Rielyna's clocked hours, daily commissions, target bonuses, senior override, and payout fulfilment status."
-            : "Check your last 7 payout days, clocked hours, commission, target bonus, and fulfilment status."
+            ? "Crew hours, commissions, bonuses, and payout status."
+            : "Your last 7 payout days: hours, commission, and status."
         }
         actions={
           <div className="flex flex-wrap justify-end gap-2">

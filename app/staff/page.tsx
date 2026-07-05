@@ -22,7 +22,7 @@ export default async function StaffPage() {
       <PageIntro
         eyebrow="Staff access"
         title="Boutique team control"
-        description="Review the live TARA staff roster, sales attribution, commission progress, and role access from the same floor control view."
+        description="Staff roster, commission progress, and role access."
         actions={
           <div className="flex flex-wrap gap-2">
             <Pill tone="accent">{activeStaffCount} active staff</Pill>

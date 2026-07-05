@@ -136,7 +136,6 @@ export async function POST(request: Request) {
 
     revalidatePath("/leads");
     revalidatePath("/customers");
-    revalidatePath("/assistant");
 
     return NextResponse.json({
       success: true,

@@ -14,7 +14,7 @@ export default async function LeadsPage() {
       <PageIntro
         eyebrow="Booth CRM"
         title="Quiz leads and visitor signals"
-        description="Capture popup visitors who take the scent quiz, track their scent result, consent, intent, and demographic signals before they become buyers."
+        description="Quiz leads with scent result, consent, and purchase intent."
       />
       {data.databaseIssue ? <StatusNotice message={data.databaseIssue} /> : null}
       <BoothLeadsWorkspace leads={data.leads} />

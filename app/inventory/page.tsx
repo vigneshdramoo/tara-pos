@@ -19,7 +19,7 @@ export default async function InventoryPage() {
       <PageIntro
         eyebrow="Inventory admin"
         title="Catalog control room"
-        description="Create and refine fragrance products, restock the floor, and record manual stock corrections without leaving the POS workspace."
+        description="Manage products, restocks, and stock corrections."
         actions={
           <div className="flex flex-wrap gap-2">
             <Pill tone="accent">{activeProducts} live products</Pill>

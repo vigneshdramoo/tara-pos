@@ -23,14 +23,13 @@ type AppShellProps = {
 export function AppShell({ children, session }: AppShellProps) {
   const pathname = usePathname();
   const isLoginRoute = pathname === "/login";
-  const isFragranceQuizRoute = pathname.startsWith("/find-your-light");
   const environmentLabel = process.env.NEXT_PUBLIC_APP_ENV_LABEL?.trim() || null;
   const roleLabel = session ? getRoleLabel(session.role) : "Local preview";
   const sessionSubtitle = session
     ? `${roleLabel} · @${session.username}`
     : "Auth-free preview while staff sign-in is disabled";
 
-  if (isLoginRoute || isFragranceQuizRoute) {
+  if (isLoginRoute) {
     return <div className="min-h-screen">{children}</div>;
   }
 

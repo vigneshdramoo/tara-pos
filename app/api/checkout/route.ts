@@ -369,7 +369,6 @@ export async function POST(request: Request) {
     revalidatePath("/pos");
     revalidatePath("/customers");
     revalidatePath("/orders");
-    revalidatePath("/assistant");
     revalidatePath("/account");
     revalidatePath("/payouts");
     revalidatePath("/staff");

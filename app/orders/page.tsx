@@ -69,7 +69,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       <PageIntro
         eyebrow="Transaction archive"
         title="Order history"
-        description="Review recent sales, customer attribution, payment mix, and item-level order composition without leaving the same local app."
+        description="Recent sales with payment mix and item-level detail."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone="accent">{orders.length} loaded</Pill>
@@ -85,8 +85,8 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       <section className="grid gap-4">
         <Surface className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-stone-500">Recent orders only</p>
-            <p className="mt-2 text-sm leading-6 text-stone-600">
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Recent orders only</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
               The archive loads a slimmer recent slice first to keep the boutique view responsive.
             </p>
           </div>
@@ -109,14 +109,14 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             <Surface key={order.id} className="flex flex-col gap-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-stone-500">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">
                     {formatFullDateTime(order.createdAt)}
                   </p>
-                  <h3 className="mt-2 text-xl font-semibold text-stone-950">
+                  <h3 className="mt-2 text-xl font-semibold text-[var(--brand-midnight)]">
                     {order.orderNumber}
                   </h3>
-                  <p className="mt-1 text-sm text-stone-600">{order.customerName}</p>
-                  <p className="mt-1 text-sm text-stone-500">
+                  <p className="mt-1 text-sm text-[var(--muted)]">{order.customerName}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
                     Sold by {order.salespersonName ?? "unassigned"}
                   </p>
                 </div>
@@ -129,7 +129,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                     )}
                     <Pill tone="accent">{order.paymentMethod}</Pill>
                   </div>
-                  <p className="text-2xl font-semibold text-stone-950">
+                  <p className="text-2xl font-semibold text-[var(--brand-midnight)]">
                     {formatCurrency(order.totalCents)}
                   </p>
                 </div>
@@ -137,7 +137,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <div className="rounded-[24px] bg-white/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.22em] text-stone-500">Items</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted)]">Items</p>
                   <div className="mt-4 grid gap-3">
                     {order.itemSummary.map((item) => (
                       <div
@@ -146,10 +146,10 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                       >
                         <div>
                           <p className="font-medium text-stone-900">{item.productName}</p>
-                          <p className="text-sm text-stone-600">
+                          <p className="text-sm text-[var(--muted)]">
                             Qty {item.quantity} · {formatCurrency(item.totalPriceCents)}
                           </p>
-                          <p className="text-xs text-stone-500">
+                          <p className="text-xs text-[var(--muted)]">
                             {formatCurrency(item.commissionCents)} commission
                           </p>
                         </div>
@@ -194,7 +194,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             </Surface>
           ))
         ) : (
-          <Surface className="text-sm leading-7 text-stone-600">
+          <Surface className="text-sm leading-7 text-[var(--muted)]">
             {databaseIssue
               ? "Orders will appear here once the hosted database is connected and migrated."
               : hasPreviousPage
