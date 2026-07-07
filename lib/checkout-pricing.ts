@@ -23,12 +23,23 @@ export const VENDOR_EXCLUSIVE_OFFER = {
   eightMlUnitPriceCents: 3000,
 } as const;
 
+export const SUNFEST_77_OFFER = {
+  label: "7.7",
+  eventName: "Sunfest 7.7",
+  pairUnits: 2,
+  pairPriceCents: 7700,
+  startsAtUtc: "2026-07-06T16:00:00.000Z",
+  expiresAtUtc: "2026-07-07T15:59:59.999Z",
+  expiryLabel: "7 Jul 2026, 11:59 PM MYT",
+} as const;
+
 export const CHECKOUT_PROMOTION_IDS = [
   "NONE",
   "PUBLIC_MARKET_STOP04",
   "FOLLOW_TAG_UNLOCK",
   "SUNWAY_STUDENT",
   "VENDOR_EXCLUSIVE",
+  "SUNFEST_77",
 ] as const;
 
 export type CheckoutPromotionId = (typeof CHECKOUT_PROMOTION_IDS)[number];
@@ -83,6 +94,14 @@ export const CHECKOUT_PROMOTION_OPTIONS: CheckoutPromotionOption[] = [
     description: "Apply vendor-exclusive nett pricing for paid 8mL travel-size units.",
     requirements: "Use only for approved vendors. 8mL units are RM30 nett each.",
     preview: "8mL at RM30 nett each",
+  },
+  {
+    id: "SUNFEST_77",
+    label: SUNFEST_77_OFFER.label,
+    kicker: SUNFEST_77_OFFER.eventName,
+    description: "Today-only Sunfest pair pricing for any 2 travel-size EDP choices.",
+    requirements: `Sunfest 7.7 exclusive. Expires ${SUNFEST_77_OFFER.expiryLabel}.`,
+    preview: "2 x 8mL EDP for RM77",
   },
 ];
 
@@ -144,6 +163,34 @@ export function isFiftyMlEdpEligible(item: Pick<CheckoutPricingItem, "sizeMl">) 
 
 export function isCheckoutPromotionId(value: string | undefined | null): value is CheckoutPromotionId {
   return CHECKOUT_PROMOTION_IDS.some((id) => id === value);
+}
+
+export function isSunfest77Active(now = new Date()) {
+  const timestamp = now.getTime();
+
+  return (
+    timestamp >= new Date(SUNFEST_77_OFFER.startsAtUtc).getTime() &&
+    timestamp <= new Date(SUNFEST_77_OFFER.expiresAtUtc).getTime()
+  );
+}
+
+export function getCheckoutPromotionOptions(now = new Date()) {
+  return CHECKOUT_PROMOTION_OPTIONS.filter(
+    (option) => option.id !== "SUNFEST_77" || isSunfest77Active(now),
+  );
+}
+
+export function isCheckoutPromotionAvailable(
+  value: string | undefined | null,
+  now = new Date(),
+): value is CheckoutPromotionId {
+  if (!isCheckoutPromotionId(value)) return false;
+
+  return getCheckoutPromotionOptions(now).some((option) => option.id === value);
+}
+
+export function getDefaultCheckoutPromotionId(now = new Date()): CheckoutPromotionId {
+  return isSunfest77Active(now) ? "SUNFEST_77" : "PUBLIC_MARKET_STOP04";
 }
 
 export function getCheckoutPromotionOption(promotionId: CheckoutPromotionId) {
@@ -664,6 +711,124 @@ function calculateVendorExclusivePricing(items: CheckoutPricingItem[]) {
   });
 }
 
+function getSunfest77OfferCopy(eightMlEligibleUnits: number, pairCount: number) {
+  if (eightMlEligibleUnits === 0) {
+    return {
+      offerHeadline: "Sunfest 7.7 pair ready",
+      offerCallout: "Add any 2 travel-size EDP choices to unlock RM77 today-only pricing.",
+    };
+  }
+
+  if (eightMlEligibleUnits === 1) {
+    return {
+      offerHeadline: "7.7 RM77 pair in progress",
+      offerCallout: "Add 1 more 8mL EDP to complete the Sunfest RM77 pair.",
+    };
+  }
+
+  if (eightMlEligibleUnits % SUNFEST_77_OFFER.pairUnits === 1) {
+    return {
+      offerHeadline: `${pairCount} Sunfest RM77 pair${pairCount === 1 ? "" : "s"} unlocked`,
+      offerCallout: "Add 1 more 8mL EDP to unlock another RM77 pair.",
+    };
+  }
+
+  return {
+    offerHeadline: `${pairCount} Sunfest RM77 pair${pairCount === 1 ? "" : "s"} unlocked`,
+    offerCallout: `Today-only ${SUNFEST_77_OFFER.eventName} pricing applied until ${SUNFEST_77_OFFER.expiryLabel}.`,
+  };
+}
+
+function calculateSunfest77Pricing(items: CheckoutPricingItem[]) {
+  const eightMlItems = items.filter(isEightMlEdpBundleEligible);
+  const eightMlEligibleUnits = eightMlItems.reduce((sum, item) => sum + item.quantity, 0);
+  const pairCount = Math.floor(eightMlEligibleUnits / SUNFEST_77_OFFER.pairUnits);
+  const bundledUnits = pairCount * SUNFEST_77_OFFER.pairUnits;
+  let remainingUnitsForListTotal = bundledUnits;
+  const bundledListTotalCents = eightMlItems.reduce((sum, item) => {
+    const units = Math.min(item.quantity, remainingUnitsForListTotal);
+    remainingUnitsForListTotal -= units;
+    return sum + units * item.priceCents;
+  }, 0);
+  const totalBundlePriceCents = pairCount * SUNFEST_77_OFFER.pairPriceCents;
+  const totalBundleDiscountCents = bundledListTotalCents - totalBundlePriceCents;
+  let remainingBundledUnits = bundledUnits;
+  let allocatedDiscountCents = 0;
+  let remainingUnitsForLastBundledProduct = bundledUnits;
+  const lastBundledProductId = eightMlItems.reduce<string | null>((lastProductId, item) => {
+    if (remainingUnitsForLastBundledProduct <= 0) return lastProductId;
+
+    const units = Math.min(item.quantity, remainingUnitsForLastBundledProduct);
+    remainingUnitsForLastBundledProduct -= units;
+
+    return units > 0 ? item.productId : lastProductId;
+  }, null);
+  const sunfestCopy = getSunfest77OfferCopy(eightMlEligibleUnits, pairCount);
+
+  const lines = finalizeLines(
+    items.map((item) => {
+      const listTotalCents = item.priceCents * item.quantity;
+
+      if (!isEightMlEdpBundleEligible(item) || bundledUnits === 0) {
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          listTotalCents,
+          totalPriceCents: listTotalCents,
+          discountCents: 0,
+          bundleUnits: 0,
+          regularUnits: item.quantity,
+          discountedUnits: 0,
+          freeUnits: 0,
+          promotionLabel: null,
+          promotionDetail: isFiftyMlEdpEligible(item) ? "Regular full-size pricing" : null,
+        };
+      }
+
+      const bundleUnits = Math.min(item.quantity, remainingBundledUnits);
+      remainingBundledUnits -= bundleUnits;
+      const regularUnits = item.quantity - bundleUnits;
+      const lineBundleListTotalCents = bundleUnits * item.priceCents;
+      const lineDiscountCents =
+        item.productId === lastBundledProductId
+          ? totalBundleDiscountCents - allocatedDiscountCents
+          : bundledListTotalCents
+            ? Math.floor((totalBundleDiscountCents * lineBundleListTotalCents) / bundledListTotalCents)
+            : 0;
+      allocatedDiscountCents += lineDiscountCents;
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        listTotalCents,
+        totalPriceCents: listTotalCents - lineDiscountCents,
+        discountCents: lineDiscountCents,
+        bundleUnits,
+        regularUnits,
+        discountedUnits: bundleUnits,
+        freeUnits: 0,
+        promotionLabel: bundleUnits ? SUNFEST_77_OFFER.label : null,
+        promotionDetail: bundleUnits
+          ? `${bundleUnits} unit${bundleUnits === 1 ? "" : "s"} in Sunfest 7.7 RM77 pair pricing`
+          : null,
+      };
+    }),
+  );
+
+  return buildPricingSummary({
+    promotionId: "SUNFEST_77",
+    lines,
+    eightMlBundleCount: pairCount,
+    eightMlEligibleUnits,
+    eightMlUnitsUntilNextBundle:
+      eightMlEligibleUnits % SUNFEST_77_OFFER.pairUnits === 0
+        ? 0
+        : SUNFEST_77_OFFER.pairUnits - (eightMlEligibleUnits % SUNFEST_77_OFFER.pairUnits),
+    offerHeadline: sunfestCopy.offerHeadline,
+    offerCallout: sunfestCopy.offerCallout,
+  });
+}
+
 function buildPricingSummary({
   promotionId,
   lines,
@@ -729,6 +894,8 @@ export function calculateCheckoutPricing(
       return calculateSunwayStudentPricing(items);
     case "VENDOR_EXCLUSIVE":
       return calculateVendorExclusivePricing(items);
+    case "SUNFEST_77":
+      return calculateSunfest77Pricing(items);
     case "NONE":
     default:
       return calculateStandardPricing(items, "NONE");
