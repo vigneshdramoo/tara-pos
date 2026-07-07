@@ -252,3 +252,21 @@ model QuizLead {
   @@index([purchaseIntent])
   @@index([convertedCustomerId])
 }
+
+model Voucher {
+  code            String    @id
+  campaign        String
+  discountType    String    @default("fixed")
+  value           Decimal
+  minSpend        Decimal   @default(0)
+  expiresAt       DateTime
+  claimedAt       DateTime?
+  winnerName      String?
+  winnerContact   String?
+  redeemedAt      DateTime?
+  redeemedChannel String?
+  orderId         String?
+  createdAt       DateTime  @default(now())
+
+  @@index([campaign])
+}

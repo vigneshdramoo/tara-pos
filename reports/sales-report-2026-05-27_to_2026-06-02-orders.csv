@@ -1,0 +1,39 @@
+local_date,local_time,order_number,customer_name,salesperson_name,salesperson_username,promotion,collection_mix,size_mix,item_units,subtotal_myr,total_myr,commission_myr,items,notes
+2026-05-28,12:34:33,TARA-20260528-043432-87,Walk-in guest,Nur Syazwana Binti Armansah,syaz,None,For Her | For Him,8mL,3,99.00,99.00,9.90,Eliora 8mL x1 | Zephyr 8mL x1 | Aureya 8mL x1,
+2026-05-28,12:37:03,TARA-20260528-043703-76,Ryo,Nur Syazwana Binti Armansah,syaz,None,Signature,8mL,3,99.00,99.00,9.90,Maris 8mL x3,
+2026-05-29,20:14:17,TARA-20260529-121417-77,Xiao Ye,Daniel Jorge,daniel,None,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,
+2026-05-29,20:58:03,TARA-20260529-125803-71,Thiviru,Daniel Jorge,daniel,None,For Him,50mL,1,169.00,169.00,25.35,Zephyr x1,
+2026-05-30,19:14:31,TARA-20260530-111431-74,@ksozraumm,Nur Syazwana Binti Armansah,syaz,Notes only,For Her,8mL,1,45.00,45.00,4.50,Eliora 8mL x1,Student discount 15%
+2026-05-30,22:00:47,TARA-20260530-140047-78,Alamin,Daniel Jorge,daniel,None,For Her | Signature | For Him,8mL,3,99.00,99.00,9.90,Eliora 8mL x1 | Maris 8mL x1 | Zephyr 8mL x1,
+2026-05-30,22:01:04,TARA-20260530-140103-24,an indian auntie,Nur Syazwana Binti Armansah,syaz,Notes only,Signature,8mL,1,45.00,45.00,4.50,Maris 8mL x1,11% off tag on insta
+2026-05-30,22:01:45,TARA-20260530-140144-24,Walk-in guest,Daniel Jorge,daniel,None,For Her,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x2,
+2026-05-31,17:59:25,TARA-20260531-095925-53,Nikitaa Lau,Daniel Jorge,daniel,None,For Her | For Him | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Zephyr 8mL x1 | Maris 8mL x1,
+2026-05-31,18:33:59,TARA-20260531-103358-71,Walk-in guest,Daniel Jorge,daniel,None,For Her,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x2,
+2026-05-31,19:29:05,TARA-20260531-112905-50,Keshvin,Daniel Jorge,daniel,None,For Her | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Maris 8mL x1,
+2026-05-31,20:05:00,TARA-20260531-120500-13,413.tyl,Jermaine,jermaine,None,For Him,8mL,1,45.00,45.00,4.50,Zephyr 8mL x1,
+2026-05-31,20:05:28,TARA-20260531-120528-36,Ian / Dev,Daniel Jorge,daniel,None,For Her | For Him | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Zephyr 8mL x1 | Maris 8mL x1,
+2026-05-31,20:25:03,TARA-20260531-122503-38,A chinese girl,Nur Syazwana Binti Armansah,syaz,Notes only,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,11% off promo on insta
+2026-05-31,21:47:08,TARA-20260531-134707-77,Joel,Daniel Jorge,daniel,None,For Him,8mL,1,45.00,45.00,4.50,Zephyr 8mL x1,
+2026-05-31,21:48:01,TARA-20260531-134801-92,Sriram,Daniel Jorge,daniel,None,For Him,50mL,1,169.00,169.00,25.35,Zephyr x1,
+2026-05-31,21:48:42,TARA-20260531-134841-27,Sriram,Daniel Jorge,daniel,None,For Her,50mL,1,169.00,169.00,25.35,Aureya x1,
+2026-05-31,21:50:03,TARA-20260531-135003-72,Walk-in guest,Daniel Jorge,daniel,None,For Her | For Him,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Zephyr 8mL x1,
+2026-05-31,22:03:38,TARA-20260531-140337-66,karim313xtreme,Jermaine,jermaine,None,For Him,8mL,1,45.00,45.00,4.50,Zephyr 8mL x1,
+2026-06-01,00:08:41,TARA-20260531-160841-18,Dasya,Daniel Jorge,daniel,None,For Her | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Maris 8mL x1,
+2026-06-01,00:28:43,TARA-20260531-162843-40,Ashif (ash1f),Jermaine,jermaine,None,Signature,8mL,1,45.00,45.00,4.50,Maris 8mL x1,
+2026-06-01,18:34:04,TARA-20260601-103403-88,Jessie Toh,Shireen Radley,shireen,None,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,
+2026-06-01,18:35:05,TARA-20260601-103504-24,Pragala Chandran,Shireen Radley,shireen,None,For Him | For Her,8mL,3,99.00,99.00,9.90,Zephyr 8mL x2 | Aureya 8mL x1,
+2026-06-01,19:47:42,TARA-20260601-114741-98,Walk-in guest,Nur Syazwana Binti Armansah,syaz,Notes only,For Her | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Maris 8mL x1,A chinese lady
+2026-06-01,19:48:28,TARA-20260601-114827-28,Walk-in guest,Nur Syazwana Binti Armansah,syaz,Notes only,For Her | For Him,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Zephyr 8mL x1,A malay couple
+2026-06-01,21:08:26,TARA-20260601-130825-13,Dr Jayanthi,Nur Syazwana Binti Armansah,syaz,None,Signature,8mL,3,99.00,99.00,9.90,Maris 8mL x3,
+2026-06-01,21:27:26,TARA-20260601-132725-66,An indian auntie,Nur Syazwana Binti Armansah,syaz,Notes only,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,11% off promo on insta
+2026-06-01,22:17:03,TARA-20260601-141702-61,Walk-in guest,Nur Syazwana Binti Armansah,syaz,None,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,
+2026-06-01,23:36:09,TARA-20260601-153609-80,Racheal Chee,Jermaine,jermaine,None,For Her | Signature,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Eliora 8mL x1 | Maris 8mL x1,
+2026-06-02,00:52:13,TARA-20260601-165212-73,Jalil,Jermaine,jermaine,None,For Him,50mL,1,169.00,169.00,25.35,Zephyr x1,
+2026-06-02,18:24:15,TARA-20260602-102414-34,Walk-in guest,Nur Syazwana Binti Armansah,syaz,Notes only,For Her,50mL | 8mL,2,214.00,214.00,29.85,Aureya x1 | Eliora 8mL x1,20% off student discount
+2026-06-02,19:11:16,TARA-20260602-111116-27,Sultaanarfin_,Daniel Jorge,daniel,None,For Her | For Him,8mL,3,99.00,99.00,9.90,Aureya 8mL x1 | Zephyr 8mL x2,
+2026-06-02,20:29:11,TARA-20260602-122910-93,Walk-in guest,Nur Syazwana Binti Armansah,syaz,None,For Her,8mL,1,45.00,45.00,4.50,Aureya 8mL x1,
+2026-06-02,20:38:49,TARA-20260602-123849-77,Walk-in guest,Nur Syazwana Binti Armansah,syaz,None,For Him | For Her,8mL,3,99.00,99.00,9.90,Zephyr 8mL x2 | Aureya 8mL x1,
+2026-06-02,20:47:40,TARA-20260602-124739-75,Sabrina,Daniel Jorge,daniel,None,For Her,50mL,1,169.00,169.00,25.35,Aureya x1,
+2026-06-02,20:49:04,TARA-20260602-124903-99,Ashvin/Tara,Daniel Jorge,daniel,Notes only,For Her,50mL,1,169.00,169.00,25.35,Eliora x1,"Free 1 x Travel pack (Eliora)
+20% OFF"
+2026-06-02,20:53:31,TARA-20260602-125331-32,@ivaaaaa_0918,Daniel Jorge,daniel,None,Signature | For Her,8mL,3,99.00,99.00,9.90,Maris 8mL x2 | Aureya 8mL x1,
