@@ -59,6 +59,7 @@ export type CartItemInput = {
 };
 
 export type CheckoutPayload = {
+  voucherCode?: string;
   items: CartItemInput[];
   paymentMethod: PaymentMethod;
   promotionId?: CheckoutPromotionId;
@@ -68,6 +69,7 @@ export type CheckoutPayload = {
     email?: string;
     phone?: string;
     notes?: string;
+    voucherCode?: string;
   };
 };
 

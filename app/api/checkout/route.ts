@@ -182,6 +182,41 @@ async function resolveCustomer(
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* SunFest voucher: validate inside the checkout transaction so the   */
+/* code redeems if-and-only-if the order commits.                     */
+/* ------------------------------------------------------------------ */
+async function applyVoucher(
+  tx: Prisma.TransactionClient,
+  rawCode: string,
+  subtotalCents: number,
+) {
+  const code = rawCode.trim().toUpperCase();
+  const voucher = await tx.voucher.findUnique({ where: { code } });
+
+  if (!voucher) {
+    throw new CheckoutError("Voucher code not found.", 400);
+  }
+  if (voucher.redeemedAt) {
+    throw new CheckoutError("This voucher has already been redeemed.", 400);
+  }
+  if (voucher.expiresAt < new Date()) {
+    throw new CheckoutError("This voucher has expired.", 400);
+  }
+
+  const minSpendCents = Math.round(Number(voucher.minSpend) * 100);
+  if (subtotalCents < minSpendCents) {
+    throw new CheckoutError(
+      `This voucher needs a minimum spend of RM${Number(voucher.minSpend)}.`,
+      400,
+    );
+  }
+
+  const discountCents = Math.min(Math.round(Number(voucher.value) * 100), subtotalCents);
+
+  return { code: voucher.code, discountCents };
+}
+
 export async function POST(request: Request) {
   try {
     const prisma = requirePrisma();
@@ -204,6 +239,7 @@ export async function POST(request: Request) {
       throw new CheckoutError("This checkout promotion has expired or is not available.", 400);
     }
     const promotionId = requestedPromotionId;
+    const voucherCode = normalizeValue(body.voucherCode);
 
     const requestedQuantitiesByProductId = new Map<string, number>();
 
@@ -290,8 +326,15 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const customer = await resolveCustomer(tx, body.customer);
       const subtotalCents = normalizedItems.reduce((sum, item) => sum + item.totalPriceCents, 0);
-      const taxCents = Math.round(subtotalCents * SALES_TAX_RATE);
-      const totalCents = subtotalCents + taxCents;
+
+      const appliedVoucher = voucherCode
+        ? await applyVoucher(tx, voucherCode, subtotalCents)
+        : null;
+      const voucherDiscountCents = appliedVoucher?.discountCents ?? 0;
+      const discountedSubtotalCents = subtotalCents - voucherDiscountCents;
+
+      const taxCents = Math.round(discountedSubtotalCents * SALES_TAX_RATE);
+      const totalCents = discountedSubtotalCents + taxCents;
       const commissionCents = normalizedItems.reduce(
         (sum, item) => sum + item.commission.commissionCents,
         0,
@@ -313,6 +356,13 @@ export async function POST(request: Request) {
         throw new CheckoutError("This staff account is unavailable for checkout.", 403);
       }
 
+      const promotionNote = buildPromotionOrderNote(promotionId, checkoutPricing, body.notes);
+      const voucherNote = appliedVoucher
+        ? `Voucher ${appliedVoucher.code} applied · −RM${(voucherDiscountCents / 100).toFixed(2)}`
+        : undefined;
+      const combinedNotes =
+        [promotionNote, voucherNote].filter(Boolean).join("\n\n") || undefined;
+
       const order = await tx.order.create({
         data: {
           orderNumber,
@@ -321,7 +371,7 @@ export async function POST(request: Request) {
           totalCents,
           commissionCents,
           paymentMethod: PaymentMethod.TRANSFER,
-          notes: buildPromotionOrderNote(promotionId, checkoutPricing, body.notes),
+          notes: combinedNotes,
           customerId: customer?.id,
           salespersonId: salesperson?.id,
           items: {
@@ -336,6 +386,27 @@ export async function POST(request: Request) {
           },
         },
       });
+
+      if (appliedVoucher) {
+        // Atomic guard: redeemedAt null in the WHERE means two devices can
+        // never redeem the same code, and the redemption only commits with
+        // the order.
+        const { count } = await tx.voucher.updateMany({
+          where: { code: appliedVoucher.code, redeemedAt: null },
+          data: {
+            redeemedAt: new Date(),
+            redeemedChannel: "sunfest",
+            orderId: order.orderNumber,
+          },
+        });
+
+        if (count === 0) {
+          throw new CheckoutError(
+            "This voucher was just redeemed on another device.",
+            409,
+          );
+        }
+      }
 
       await Promise.all(
         normalizedItems.map((item) =>
@@ -367,6 +438,7 @@ export async function POST(request: Request) {
       return {
         orderNumber: order.orderNumber,
         totalCents: order.totalCents,
+        voucherDiscountCents,
       };
     });
 
