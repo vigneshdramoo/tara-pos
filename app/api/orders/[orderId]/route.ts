@@ -95,6 +95,10 @@ function inferPromotionId(notes: string | null): CheckoutPromotionId {
     return "VENDOR_EXCLUSIVE";
   }
 
+  if (/sunfest\s*7\.7|promotion:\s*7\.7|2\s*x\s*8ml\s*edp\s*for\s*rm77/i.test(normalizedNotes)) {
+    return "SUNFEST_77";
+  }
+
   if (/follow\.tag\.unlock/i.test(normalizedNotes)) {
     return "FOLLOW_TAG_UNLOCK";
   }

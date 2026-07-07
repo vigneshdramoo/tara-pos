@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import {
-  CHECKOUT_PROMOTION_OPTIONS,
   PUBLIC_MARKET_STOP04_OFFER,
+  getCheckoutPromotionOptions,
   type CheckoutPromotionId,
   type CheckoutLinePricing,
   type PublicMarketStop04PackageBreakdown,
@@ -111,6 +111,7 @@ export function CartPanel({
       count: publicMarketStop04PackageBreakdown[offerPackage.key],
     }))
     .filter((offerPackage) => offerPackage.count > 0);
+  const checkoutPromotionOptions = getCheckoutPromotionOptions();
   function getStockToneClasses(tone: ReturnType<typeof getStockStatus>["tone"]) {
     switch (tone) {
       case "healthy":
@@ -300,7 +301,7 @@ export function CartPanel({
           </div>
 
           <div className="mt-3 grid gap-2 sm:mt-4">
-            {CHECKOUT_PROMOTION_OPTIONS.map((option) => {
+            {checkoutPromotionOptions.map((option) => {
               const active = option.id === promotionId;
 
               return (

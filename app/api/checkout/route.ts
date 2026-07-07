@@ -16,7 +16,9 @@ import {
   calculateCheckoutPricing,
   formatPublicMarketStop04PackageSummary,
   getCheckoutPromotionOption,
+  isCheckoutPromotionAvailable,
   isCheckoutPromotionId,
+  SUNFEST_77_OFFER,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import { calculateLineCommissionFromTotal } from "@/lib/commissions";
@@ -111,6 +113,13 @@ function buildPromotionOrderNote(
     promotionSummary.push(`8mL units at RM30 nett: ${checkoutPricing.eightMlEligibleUnits}`);
   }
 
+  if (promotionId === "SUNFEST_77") {
+    promotionSummary.push(`${SUNFEST_77_OFFER.eventName} exclusive`);
+    promotionSummary.push("2 x 8mL EDP for RM77");
+    promotionSummary.push(`Expires ${SUNFEST_77_OFFER.expiryLabel}`);
+    promotionSummary.push(`8mL units in basket: ${checkoutPricing.eightMlEligibleUnits}`);
+  }
+
   noteParts.push(promotionSummary.join(" · "));
 
   return noteParts.join("\n\n");
@@ -190,6 +199,9 @@ export async function POST(request: Request) {
     const requestedPromotionId = body.promotionId ?? "NONE";
     if (!isCheckoutPromotionId(requestedPromotionId)) {
       throw new CheckoutError("Choose a valid promotion before checkout.", 400);
+    }
+    if (!isCheckoutPromotionAvailable(requestedPromotionId)) {
+      throw new CheckoutError("This checkout promotion has expired or is not available.", 400);
     }
     const promotionId = requestedPromotionId;
 

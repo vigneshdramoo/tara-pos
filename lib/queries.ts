@@ -1,4 +1,5 @@
 import { OrderStatus, PaymentMethod } from "@prisma/client";
+import { SUNFEST_77_OFFER } from "@/lib/checkout-pricing";
 import { buildStaffCommissionProgress, isSeniorScentTrailLead } from "@/lib/commissions";
 import { formatCurrency, formatInteger } from "@/lib/format";
 import {
@@ -175,6 +176,14 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
       revenueCents: 0,
       highlight: "No recent vendor baskets",
     },
+    {
+      id: "SUNFEST_77",
+      label: SUNFEST_77_OFFER.label,
+      detail: "Sunfest 7.7 · 2 x 8mL EDP for RM77",
+      orders: 0,
+      revenueCents: 0,
+      highlight: "No Sunfest 7.7 pairs yet",
+    },
   ].map((insight) => {
     const matchingOrders = orders.filter((order) => {
       const notes = order.notes ?? "";
@@ -191,7 +200,11 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
         return notes.includes("Promotion: Student discount");
       }
 
-      return notes.includes("Promotion: Vendor exclusive");
+      if (insight.id === "VENDOR_EXCLUSIVE") {
+        return notes.includes("Promotion: Vendor exclusive");
+      }
+
+      return notes.includes("Promotion: 7.7") || /sunfest\s*7\.7/i.test(notes);
     });
 
     const revenueCents = matchingOrders.reduce((sum, order) => sum + order.totalCents, 0);
@@ -247,6 +260,26 @@ function buildPromotionInsights(orders: PromotionOrderSnapshot[]): PromotionInsi
         orders: matchingOrders.length,
         revenueCents,
         highlight: `${vendorEightMlUnits} vendor 8mL unit${vendorEightMlUnits === 1 ? "" : "s"} sold at RM30 nett`,
+      };
+    }
+
+    if (insight.id === "SUNFEST_77") {
+      const sunfestEightMlUnits = matchingOrders.reduce(
+        (sum, order) =>
+          sum +
+          order.items
+            .filter((item) => item.product.sizeMl === 8)
+            .reduce((itemSum, item) => itemSum + item.quantity, 0),
+        0,
+      );
+
+      return {
+        ...insight,
+        orders: matchingOrders.length,
+        revenueCents,
+        highlight: `${Math.floor(sunfestEightMlUnits / 2)} RM77 pair${
+          Math.floor(sunfestEightMlUnits / 2) === 1 ? "" : "s"
+        } unlocked at Sunfest 7.7`,
       };
     }
 

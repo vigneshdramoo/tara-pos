@@ -5,7 +5,8 @@ import { Search, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   calculateCheckoutPricing,
-  isCheckoutPromotionId,
+  getDefaultCheckoutPromotionId,
+  isCheckoutPromotionAvailable,
   type CheckoutPromotionId,
 } from "@/lib/checkout-pricing";
 import {
@@ -26,8 +27,6 @@ import { ProductCard } from "@/components/pos/product-card";
 type CartLine = ProductCardData & {
   quantity: number;
 };
-
-const DEFAULT_PROMOTION_ID: CheckoutPromotionId = "PUBLIC_MARKET_STOP04";
 
 const initialCustomer = {
   name: "",
@@ -100,7 +99,9 @@ export function PosWorkspace({
   const [query, setQuery] = useState("");
   const [activeCollection, setActiveCollection] = useState("All");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [promotionId, setPromotionId] = useState<CheckoutPromotionId>(DEFAULT_PROMOTION_ID);
+  const [promotionId, setPromotionId] = useState<CheckoutPromotionId>(
+    getDefaultCheckoutPromotionId(),
+  );
   const [customer, setCustomer] = useState(initialCustomer);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -154,7 +155,7 @@ export function PosWorkspace({
   useEffect(() => {
     const rawPromotionId = window.localStorage.getItem(CHECKOUT_PROMOTION_STORAGE_KEY);
 
-    if (isCheckoutPromotionId(rawPromotionId)) {
+    if (isCheckoutPromotionAvailable(rawPromotionId)) {
       const frame = window.requestAnimationFrame(() => {
         setPromotionId(rawPromotionId);
       });
@@ -163,7 +164,7 @@ export function PosWorkspace({
     }
 
     const frame = window.requestAnimationFrame(() => {
-      setPromotionId(DEFAULT_PROMOTION_ID);
+      setPromotionId(getDefaultCheckoutPromotionId());
     });
 
     return () => window.cancelAnimationFrame(frame);
