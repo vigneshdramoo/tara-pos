@@ -79,7 +79,7 @@ export function ProductCard({
               )}
             >
               <span className="flex min-w-0 items-baseline gap-2">
-                <span className="text-sm font-semibold text-foreground">{option.label}</span>
+                <span className="whitespace-nowrap text-sm font-semibold text-foreground">{option.label}</span>
                 <span className="text-sm font-semibold text-[var(--brand-midnight)]">
                   {formatCurrency(optionProduct.priceCents)}
                 </span>

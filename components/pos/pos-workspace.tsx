@@ -383,7 +383,7 @@ export function PosWorkspace({
           </button>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:gap-4 2xl:grid-cols-3">
+        <div className="grid items-start gap-3 sm:grid-cols-2 xl:gap-4 2xl:grid-cols-3">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
