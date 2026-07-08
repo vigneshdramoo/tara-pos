@@ -96,7 +96,7 @@ export function ProductCard({
                     className={cn("h-2 w-2 rounded-full", getStockDotClass(stockStatus.tone))}
                   />
                   <span className="tabular-nums">
-                    {soldOut ? "Sold out" : `${remaining} left`}
+                    {soldOut ? "Sold out" : remaining}
                   </span>
                 </span>
                 {!soldOut ? (
