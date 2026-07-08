@@ -385,7 +385,12 @@ export function PosWorkspace({
 
         <div className="grid gap-3 sm:grid-cols-2 xl:gap-4 2xl:grid-cols-3">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onAdd={addProduct} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAdd={addProduct}
+              cartQuantities={new Map(cart.map((item) => [item.id, item.quantity]))}
+            />
           ))}
         </div>
       </div>
