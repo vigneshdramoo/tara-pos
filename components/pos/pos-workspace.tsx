@@ -390,56 +390,56 @@ export function PosWorkspace({
         </div>
       </div>
 
-      <div className="grid content-start gap-3 sm:gap-4">
-        <CartPanel
-          cart={cart}
-          travelGiftOptions={travelGiftOptions}
-          recentCustomers={recentCustomers}
-          notes={notes}
-          customer={customer}
-          subtotalCents={subtotalCents}
-          listSubtotalCents={checkoutPricing.listSubtotalCents}
-          discountCents={checkoutPricing.discountCents}
-          taxCents={taxCents}
-          totalCents={totalCents}
-          promotionId={promotionId}
-          promotionLabel={checkoutPricing.promotionLabel}
-          promotionDescription={checkoutPricing.promotionDescription}
-          cartLinePricing={checkoutPricing.lines}
-          eightMlBundleCount={checkoutPricing.eightMlBundleCount}
-          eightMlEligibleUnits={checkoutPricing.eightMlEligibleUnits}
-          eightMlUnitsUntilNextBundle={checkoutPricing.eightMlUnitsUntilNextBundle}
-          freeGiftEligibleUnits={checkoutPricing.freeGiftEligibleUnits}
-          freeGiftClaimedUnits={checkoutPricing.freeGiftClaimedUnits}
-          freeGiftUnitsRemaining={checkoutPricing.freeGiftUnitsRemaining}
-          publicMarketStop04PackageBreakdown={checkoutPricing.publicMarketStop04PackageBreakdown}
-          offerHeadline={checkoutPricing.offerHeadline}
-          offerCallout={checkoutPricing.offerCallout}
-          submitting={submitting}
-          refreshing={refreshing}
-          feedback={feedback}
-          onNotesChange={setNotes}
-          onCustomerFieldChange={(field, value) =>
-            setCustomer((current) => ({
-              ...current,
-              [field]: value,
-            }))
-          }
-          onHydrateCustomer={hydrateCustomer}
-          onIncrease={(productId) => changeQuantity(productId, "up")}
-          onDecrease={(productId) => changeQuantity(productId, "down")}
-          onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))}
-          onAddTravelGift={addProduct}
-          onPromotionChange={setPromotionId}
-          onCheckout={handleCheckout}
-        />
-
-        <VoucherField
-          key={voucherResetKey}
-          cartTotal={subtotalCents / 100}
-          onApply={setVoucher}
-        />
-      </div>
+      <CartPanel
+        cart={cart}
+        travelGiftOptions={travelGiftOptions}
+        recentCustomers={recentCustomers}
+        notes={notes}
+        customer={customer}
+        subtotalCents={subtotalCents}
+        listSubtotalCents={checkoutPricing.listSubtotalCents}
+        discountCents={checkoutPricing.discountCents}
+        voucherDiscountCents={voucherDiscountCents}
+        taxCents={taxCents}
+        totalCents={totalCents}
+        promotionId={promotionId}
+        promotionLabel={checkoutPricing.promotionLabel}
+        promotionDescription={checkoutPricing.promotionDescription}
+        cartLinePricing={checkoutPricing.lines}
+        eightMlBundleCount={checkoutPricing.eightMlBundleCount}
+        eightMlEligibleUnits={checkoutPricing.eightMlEligibleUnits}
+        eightMlUnitsUntilNextBundle={checkoutPricing.eightMlUnitsUntilNextBundle}
+        freeGiftEligibleUnits={checkoutPricing.freeGiftEligibleUnits}
+        freeGiftClaimedUnits={checkoutPricing.freeGiftClaimedUnits}
+        freeGiftUnitsRemaining={checkoutPricing.freeGiftUnitsRemaining}
+        publicMarketStop04PackageBreakdown={checkoutPricing.publicMarketStop04PackageBreakdown}
+        offerHeadline={checkoutPricing.offerHeadline}
+        offerCallout={checkoutPricing.offerCallout}
+        submitting={submitting}
+        refreshing={refreshing}
+        feedback={feedback}
+        voucherSlot={
+          <VoucherField
+            key={voucherResetKey}
+            cartTotal={subtotalCents / 100}
+            onApply={setVoucher}
+          />
+        }
+        onNotesChange={setNotes}
+        onCustomerFieldChange={(field, value) =>
+          setCustomer((current) => ({
+            ...current,
+            [field]: value,
+          }))
+        }
+        onHydrateCustomer={hydrateCustomer}
+        onIncrease={(productId) => changeQuantity(productId, "up")}
+        onDecrease={(productId) => changeQuantity(productId, "down")}
+        onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))}
+        onAddTravelGift={addProduct}
+        onPromotionChange={setPromotionId}
+        onCheckout={handleCheckout}
+      />
     </section>
   );
 }
