@@ -13,6 +13,8 @@ const productImageMap: Record<string, string> = {
   "maris-10ml": "/products/maris-product-20260705.jpg",
   zephyr: "/products/zephyr-product-20260705.jpg",
   "zephyr-10ml": "/products/zephyr-product-20260705.jpg",
+  theon: "/products/theon-product-20260729.png",
+  "theon-10ml": "/products/theon-product-20260729.png",
 };
 
 const allScentsReferenceUrls = [
@@ -22,6 +24,7 @@ const allScentsReferenceUrls = [
   productImageMap.eliora,
   productImageMap.ashoka,
   productImageMap.ardor,
+  productImageMap.theon,
   `/products/all-scents-reference-${ALL_SCENTS_REFERENCE_VERSION}-2.png`,
 ];
 
