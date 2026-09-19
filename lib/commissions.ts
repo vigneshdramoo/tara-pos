@@ -156,6 +156,10 @@ function getDirectCommissionRateBps(sizeMl: number, staffUsername?: string | nul
     return 0;
   }
 
+  if (staffUsername === "rielyna.richard") {
+    return 1500;
+  }
+
   return isScentTrailCommissionStaff(staffUsername)
     ? SCENT_TRAIL_DIRECT_COMMISSION_RATE_BPS
     : target.commissionRateBps;
@@ -377,7 +381,7 @@ export function buildStaffCommissionProgress(
     }).length;
     const dailyTargetCommissionCents = roundCommissionCents(
       target.targetUnitPriceCents * target.dailyTargetUnits,
-      target.commissionRateBps,
+      getDirectCommissionRateBps(target.key === "fullBottle" ? 50 : 8, options.staffUsername),
     );
     const dailyTargetPayoutCents = dailyTargetCommissionCents + target.targetBonusCents;
 
